@@ -1,0 +1,18 @@
+[project]
+name = "protein-lab-backend"
+version = "0.1.0"
+description = "FastAPI backend for ProteinLab MVP"
+readme = "../README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi[standard]>=0.115.0",
+  "biopython>=1.84",
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "networkx>=3.2",
+  "pydantic>=2.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

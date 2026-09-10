@@ -1,0 +1,1 @@
+"""ProteinLab backend package."""
