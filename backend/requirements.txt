@@ -1,0 +1,6 @@
+fastapi[standard]>=0.115.0
+biopython>=1.84
+numpy>=1.26
+scipy>=1.11
+networkx>=3.2
+pydantic>=2.7
