@@ -15,3 +15,9 @@ frontend/dist/
 # Data
 data/uploads/
 !data/uploads/.gitkeep
+
+tools/src/dssp/build-msys/
+
+
+tools/src/dssp_backup/
+tools/src/stride_backup/
