@@ -5,6 +5,7 @@ import { TopologyView } from './components/topology/TopologyView';
 import { ExpandedProteinMap } from './components/topology/ExpandedProteinMap';
 import { AnalysisPanel } from './components/analysis/AnalysisPanel';
 import { SecondaryStructureTrack } from './components/analysis/SecondaryStructureTrack';
+import { TransmembraneTopologyDiagram } from './components/topology/TransmembraneTopologyDiagram';
 import { analyzeChain, getHealth, getSecondaryCapabilities, runSecondaryStructure, uploadStructure } from './services/api';
 import type { ChainAnalysis } from './types/analysis';
 import type { ProteinUpload } from './types/protein';
@@ -142,7 +143,28 @@ function App() {
 
       <section className="lower-grid">
         <div className="panel topology-panel"><div className="panel-heading"><div><span className="section-kicker">RESIDUE MAP</span><h2>Topology</h2><p className="panel-subtitle">A compact residue rail for locating the selected position across the chain.</p></div><span className="legend"><i /> selected residue</span></div><TopologyView chain={chain} selectedResidue={selectedResidue} onSelectResidue={setSelectedResidue} /></div>
-        <div className="panel method-panel"><div className="panel-heading"><div><span className="section-kicker">ANNOTATION METHOD</span><h2>Secondary structure</h2><p className="panel-subtitle">Compare helix, strand, turn, and loop assignments from standard coordinate-based methods.</p></div></div><div className="method-options">{(['DSSP', 'STRIDE', 'COMPARE', 'MANUAL'] as Method[]).map((item) => <button key={item} className={method === item ? 'method-option active' : 'method-option'} onClick={() => { setMethod(item); setSecondaryError(null); }}><span className="radio" />{item === 'COMPARE' ? 'DSSP + STRIDE' : item}<small className={secondaryCapabilities[item]?.available ? 'tool-status ready' : 'tool-status'}>{item === 'COMPARE' || item === 'MANUAL' ? 'mode' : secondaryCapabilities[item]?.available ? 'ready' : 'not installed'}</small></button>)}</div><div className="method-note">{method === 'MANUAL' ? 'Manual annotations will map residue ranges to helix, sheet, or turn.' : secondaryError ? secondaryError : secondaryResult ? `${secondaryResult.method} returned ${secondaryResult.residues.length} residue assignments.` : `${method === 'COMPARE' ? 'Comparison' : method} requires its native executable.`}</div>{secondaryError && <div className="tool-error">Install {method === 'DSSP' ? 'mkdssp' : 'stride'} and place it on PATH, then restart the backend.</div>}{secondaryResult && <SecondaryStructureTrack result={secondaryResult} />}<button className="run-button" onClick={runAnalysis}>Run annotation</button></div>
+        <div>
+          <div className="panel-heading">
+            <div>
+              <span className="section-kicker">ANNOTATION METHOD</span>
+              <h2>Secondary structure</h2>
+              <p className="panel-subtitle">Compare helix, strand, turn, and loop assignments from standard coordinate-based methods.</p>
+            </div>
+          </div>
+          <div className="method-options">
+            {(['DSSP', 'STRIDE', 'COMPARE', 'MANUAL'] as Method[]).map((item) => <button key={item} className={method === item ? 'method-option active' : 'method-option'} onClick={() => { setMethod(item); setSecondaryError(null); }}><span className="radio" />{item === 'COMPARE' ? 'DSSP + STRIDE' : item}<small className={secondaryCapabilities[item]?.available ? 'tool-status ready' : 'tool-status'}>{item === 'COMPARE' || item === 'MANUAL' ? 'mode' : secondaryCapabilities[item]?.available ? 'ready' : 'not installed'}</small></button>)}
+          </div>
+        </div>
+      </section>
+      <section>
+        <div className="panel method-panel">
+          <button className="run-button" onClick={runAnalysis}>Run annotation</button>
+          <div className="method-note">{method === 'MANUAL' ? 'Manual annotations will map residue ranges to helix, sheet, or turn.' : secondaryError ? secondaryError : secondaryResult ? `${secondaryResult.method} returned ${secondaryResult.residues.length} residue assignments.` : `${method === 'COMPARE' ? 'Comparison' : method} requires its native executable.`}</div>{secondaryError && <div className="tool-error">Install {method === 'DSSP' ? 'mkdssp' : 'stride'} and place it on PATH, then restart the backend.</div>}{secondaryResult && <SecondaryStructureTrack result={secondaryResult} selectedResidue={selectedResidue} onSelectResidue={setSelectedResidue} />}
+        </div>
+      </section>
+      
+      <section className="tm-topology-section">
+        <TransmembraneTopologyDiagram chain={chain} secondaryResult={secondaryResult} selectedResidue={selectedResidue} onSelectResidue={setSelectedResidue} uniprotId={protein?.uniprot_id} />
       </section>
 
       <section className="analysis-section panel"><AnalysisPanel analysis={analysis} loading={analysisLoading} onRun={runChainAnalysis} /></section>

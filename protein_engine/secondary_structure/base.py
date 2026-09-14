@@ -6,3 +6,4 @@ class SecondaryStructureMethod(ABC):
     name: str
     @abstractmethod
     def assign(self, structure_path: Path, model_id: int = 0) -> SecondaryStructureResult:
+        pass

@@ -27,5 +27,6 @@ export interface ProteinModel {
 export interface ProteinUpload {
   filename: string;
   saved_path: string;
+  uniprot_id?: string | null;
   models: ProteinModel[];
 }

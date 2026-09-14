@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as $3Dmol from '3dmol';
 import type { Chain } from '../../types/protein';
+import type { ColorScheme, RepresentationStyle } from '../../types/viewer';
+import { generateRibbonSpline, getHydropathyColor } from '../../utils/ribbonSpline';
 
 interface Props {
   chain: Chain | undefined;
@@ -20,6 +22,8 @@ const chainColors = [
 export function ProteinViewer({ chain, chains, filename, variant = 'interactive', focusChainId, selectedResidue, onSelectResidue }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<$3Dmol.Viewer>();
+  const [style, setStyle] = useState<RepresentationStyle>('ribbon');
+  const [colorScheme, setColorScheme] = useState<ColorScheme>('chain');
 
   useEffect(() => {
     if (!containerRef.current || !filename) return;
@@ -34,20 +38,19 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       viewerRef.current = viewer;
       viewer.setBackgroundColor('#0b151e');
       viewer.addModel(structure, filename.toLowerCase().endsWith('.pdb') || filename.toLowerCase().endsWith('.ent') ? 'pdb' : 'cif');
-      applyChainStyles(viewer, chains, focusChainId);
-      if (focusChainId) {
-        viewer.setStyle({}, { cartoon: { hidden: true } });
-        viewer.setStyle({ chain: focusChainId }, { cartoon: { color: chainColors[chains.findIndex((item) => item.id === focusChainId) % chainColors.length], opacity: 1 } });
-        viewer.zoomTo({ chain: focusChainId });
-      } else {
-        viewer.setStyle({ hetflag: true }, { stick: { colorscheme: 'Jmol', radius: 0.18 } });
-      }
+
+      applyStyles(viewer, chains, focusChainId, style, colorScheme, chain);
+
       if (variant === 'interactive') {
         viewer.setClickable({}, true, (atom) => {
           if (atom.resi !== undefined) onSelectResidue(Number(atom.resi));
         });
       }
-      if (!focusChainId) viewer.zoomTo();
+      if (focusChainId) {
+        viewer.zoomTo({ chain: focusChainId });
+      } else {
+        viewer.zoomTo();
+      }
       viewer.render();
     };
 
@@ -60,73 +63,184 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
     };
   }, [chains, filename, focusChainId, onSelectResidue, variant]);
 
+  // Re-apply style when style, colorScheme, or selectedResidue changes
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer) return;
-    applyChainStyles(viewer, chains, focusChainId);
-    if (focusChainId) {
-      viewer.setStyle({}, { cartoon: { hidden: true } });
-      viewer.setStyle({ chain: focusChainId }, { cartoon: { color: chainColors[chains.findIndex((item) => item.id === focusChainId) % chainColors.length], opacity: 1 } });
-    } else {
-      viewer.setStyle({ hetflag: true }, { stick: { colorscheme: 'Jmol', radius: 0.18 } });
-    }
+    applyStyles(viewer, chains, focusChainId, style, colorScheme, chain);
+
     if (variant === 'interactive' && selectedResidue !== null) {
       viewer.setStyle({ chain: chain?.id, resi: selectedResidue }, {
         cartoon: { color: '#ff6f61', opacity: 1 },
         stick: { colorscheme: 'Jmol', radius: 0.28 },
+        sphere: { color: '#ff6f61', scale: 0.9 },
       });
     }
     viewer.render();
-  }, [chain?.id, chains, focusChainId, selectedResidue, variant]);
+  }, [chain, chains, focusChainId, selectedResidue, style, colorScheme, variant]);
 
   if (!chain) return <div className="empty-state">Upload a PDB/mmCIF structure to begin.</div>;
 
   if (filename) {
     return (
       <div className="viewer-stage molecular-stage">
+        <div className="viewer-toolbar">
+          <div className="toolbar-group">
+            <span className="toolbar-label">STYLE:</span>
+            {(['ribbon', 'tube', 'stick', 'sphere', 'line', 'pipesAndPlanks'] as RepresentationStyle[]).map((st) => (
+              <button
+                key={st}
+                className={style === st ? 'toolbar-btn active' : 'toolbar-btn'}
+                onClick={() => setStyle(st)}
+              >
+                {st === 'ribbon' ? 'Ribbon' : st === 'tube' ? 'Tube' : st === 'stick' ? 'Stick' : st === 'sphere' ? 'Sphere' : st === 'line' ? 'Line' : 'Pipes & Planks'}
+              </button>
+            ))}
+          </div>
+
+          <div className="toolbar-group">
+            <span className="toolbar-label">COLOR:</span>
+            <button
+              className={colorScheme === 'chain' ? 'toolbar-btn active' : 'toolbar-btn'}
+              onClick={() => setColorScheme('chain')}
+            >
+              Chain
+            </button>
+            <button
+              className={colorScheme === 'ss' ? 'toolbar-btn active' : 'toolbar-btn'}
+              onClick={() => setColorScheme('ss')}
+            >
+              Secondary Structure
+            </button>
+            <button
+              className={colorScheme === 'hydropathy' ? 'toolbar-btn active' : 'toolbar-btn'}
+              onClick={() => setColorScheme('hydropathy')}
+            >
+              Hydropathy
+            </button>
+          </div>
+        </div>
+
         <div ref={containerRef} className="molecular-viewer" aria-label={`Interactive 3D structure of ${filename}`} />
-        <span className="viewer-caption">{focusChainId ? `Isolated chain ${focusChainId} · drag to rotate · scroll to zoom` : variant === 'overview' ? 'Full biological assembly · colored by chain' : 'Drag to rotate · scroll to zoom · click a residue'}</span>
+        <span className="viewer-caption">
+          {focusChainId ? `Isolated chain ${focusChainId} · style: ${style} · color: ${colorScheme}` : variant === 'overview' ? `Full biological assembly · style: ${style}` : `Drag to rotate · scroll to zoom · click a residue`}
+        </span>
       </div>
     );
   }
 
-  const points = chain.residues.map((residue) => {
+  // Fallback 2D/3D SVG Backbone Projection using Catmull-Rom Ribbon Spline
+  const caPoints = chain.residues.map((residue) => {
     const atom = residue.atoms.find((item) => item.name === 'CA') ?? residue.atoms[0];
-    return atom ? { id: residue.id, x: atom.x, y: atom.y, z: atom.z } : null;
-  }).filter((point): point is { id: number; x: number; y: number; z: number } => point !== null);
-  const max = Math.max(...points.flatMap((point) => [Math.abs(point.x), Math.abs(point.y), Math.abs(point.z)]), 1);
+    return atom ? { id: residue.id, x: atom.x, y: atom.y, z: atom.z, name: residue.name } : null;
+  }).filter((point): point is { id: number; x: number; y: number; z: number; name: string } => point !== null);
+
+  const max = Math.max(...caPoints.flatMap((point) => [Math.abs(point.x), Math.abs(point.y), Math.abs(point.z)]), 1);
   const project = (value: number, depth: number) => 50 + ((value + depth * 0.35) / (max * 2.7)) * 100;
+
+  // Generate smooth Catmull-Rom spline curve points
+  const ribbonSpline = generateRibbonSpline(caPoints, 4, 1.4);
 
   return (
     <div className="viewer-stage">
-      <svg viewBox="0 0 200 150" role="img" aria-label={`3D projection of chain ${chain.id}`}>
+      <svg viewBox="0 0 200 150" role="img" aria-label={`Catmull-Rom ribbon projection of chain ${chain.id}`}>
+        {/* Draw smooth Catmull-Rom Ribbon band */}
+        {ribbonSpline.length > 1 && (
+          <path
+            className="ribbon-spline-path"
+            d={
+              `M ${ribbonSpline.map((p) => `${project(p.left.x, p.left.z)},${project(p.left.y, -p.left.z)}`).join(' L ')} ` +
+              `L ${ribbonSpline.slice().reverse().map((p) => `${project(p.right.x, p.right.z)},${project(p.right.y, -p.right.z)}`).join(' L ')} Z`
+            }
+            fill="#78d8c1"
+            fillOpacity="0.4"
+            stroke="#78d8c1"
+            strokeWidth="0.8"
+          />
+        )}
+
+        {/* Backbone center line */}
         <polyline
           className="backbone-line"
-          points={points.map((point) => `${project(point.x, point.z)},${project(point.y, -point.z)}`).join(' ')}
+          points={caPoints.map((point) => `${project(point.x, point.z)},${project(point.y, -point.z)}`).join(' ')}
+          stroke="#457b9d"
+          strokeWidth="0.5"
+          strokeDasharray="1 1"
         />
-        {points.map((point) => (
+
+        {caPoints.map((point) => (
           <circle
             key={point.id}
             className={selectedResidue === point.id ? 'atom-point selected' : 'atom-point'}
             cx={project(point.x, point.z)}
             cy={project(point.y, -point.z)}
             r={selectedResidue === point.id ? 2.3 : 1.2}
+            fill={colorScheme === 'hydropathy' ? getHydropathyColor(point.name) : selectedResidue === point.id ? '#ff6f61' : '#78d8c1'}
             onClick={() => onSelectResidue(point.id)}
           />
         ))}
       </svg>
-      <span className="viewer-caption">CA backbone projection · chain {chain.id}</span>
+      <span className="viewer-caption">Catmull-Rom Ribbon Spline Projection · chain {chain.id}</span>
     </div>
   );
 }
 
-function applyChainStyles(viewer: $3Dmol.Viewer, chains: Chain[], focusChainId?: string) {
-  viewer.setStyle({}, { cartoon: { color: '#d8dee9', opacity: 1 } });
+function applyStyles(
+  viewer: $3Dmol.Viewer,
+  chains: Chain[],
+  focusChainId: string | undefined,
+  style: RepresentationStyle,
+  colorScheme: ColorScheme,
+  selectedChain?: Chain
+) {
+  (viewer as any).removeAllShapes();
+  viewer.setStyle({}, { cartoon: { hidden: true }, tube: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
+
   chains.forEach((item, index) => {
     if (focusChainId && item.id !== focusChainId) return;
-    viewer.setStyle(
-      { chain: item.id },
-      { cartoon: { color: chainColors[index % chainColors.length], opacity: 1 } },
-    );
+
+    const baseColor = chainColors[index % chainColors.length];
+    const selection = focusChainId ? { chain: focusChainId } : { chain: item.id };
+
+    if (style === 'ribbon') {
+      if (colorScheme === 'ss') {
+        viewer.setStyle(selection, { cartoon: { colorscheme: 'ssPyMOL', opacity: 1 } });
+      } else {
+        viewer.setStyle(selection, { cartoon: { color: baseColor, opacity: 1 } });
+      }
+    } else if (style === 'pipesAndPlanks') {
+      import('../../utils/customShapes').then(({ drawCustomPipesAndPlanks }) => {
+        drawCustomPipesAndPlanks(viewer, item.id, baseColor, colorScheme);
+        viewer.render();
+      });
+    } else if (style === 'tube') {
+      viewer.setStyle(selection, { tube: { radius: 0.7, color: baseColor } });
+    } else if (style === 'stick') {
+      viewer.setStyle(selection, { stick: { colorscheme: 'Jmol', radius: 0.22 } });
+    } else if (style === 'sphere') {
+      viewer.setStyle(selection, { sphere: { colorscheme: 'Jmol', scale: 0.75 } });
+    } else if (style === 'line') {
+      viewer.setStyle(selection, { line: { colorscheme: 'Jmol', linewidth: 1.5 } });
+    }
   });
+
+  // Apply hydropathy colors if selected
+  if (colorScheme === 'hydropathy' && selectedChain) {
+    selectedChain.residues.forEach((res) => {
+      const color = getHydropathyColor(res.name);
+      const sel = { chain: selectedChain.id, resi: res.id };
+      if (style === 'ribbon') {
+        viewer.setStyle(sel, { cartoon: { color, opacity: 1 } });
+      } else if (style === 'tube') {
+        viewer.setStyle(sel, { tube: { radius: 0.7, color } });
+      } else if (style === 'sphere') {
+        viewer.setStyle(sel, { sphere: { color, scale: 0.75 } });
+      } else if (style === 'stick') {
+        viewer.setStyle(sel, { stick: { color, radius: 0.22 } });
+      }
+    });
+  }
+
+  // Always keep heteratoms (ligands, water) readable as sticks
+  viewer.setStyle({ hetflag: true }, { stick: { colorscheme: 'Jmol', radius: 0.18 } });
 }

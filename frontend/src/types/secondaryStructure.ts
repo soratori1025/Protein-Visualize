@@ -12,3 +12,19 @@ export interface SecondaryStructureResult {
   method: string;
   residues: SecondaryStructureResidue[];
 }
+
+export interface UniProtTopologyRegion {
+  type: 'Transmembrane' | 'Topological domain' | 'Intramembrane';
+  start: number;
+  end: number;
+  description: string;
+  name: string;
+}
+
+export interface UniProtTopologyData {
+  uniprot_id: string;
+  protein_name: string;
+  gene_name: string;
+  organism: string;
+  regions: UniProtTopologyRegion[];
+}
