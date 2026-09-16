@@ -5,6 +5,7 @@ import { exportSvgAsImage } from './exportDiagram';
 import './TransmembraneTopologyDiagram.css';
 
 type FigureTheme = 'publication' | 'lab';
+type TopologySource = 'uniprot' | 'calculated';
 
 function getNTermInside(uniprotData: UniProtTopologyData | null): boolean {
   if (!uniprotData?.regions?.length) return true;
@@ -30,6 +31,7 @@ interface Props {
   selectedResidue?: number | null;
   onSelectResidue?: (residueNumber: number) => void;
   uniprotId?: string | null;
+  filename?: string | null;
 }
 
 export interface TMHelix {
@@ -111,11 +113,24 @@ const DEFAULT_PRESETS = [
   { id: 'P00533', label: 'P00533 (EGFR)' },
 ];
 
-export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedResidue, onSelectResidue, uniprotId }: Props) {
+export function TransmembraneTopologyDiagram({
+  chain,
+  secondaryResult,
+  selectedResidue,
+  onSelectResidue,
+  uniprotId,
+  filename,
+}: Props) {
   const [uniprotIdInput, setUniprotIdInput] = useState<string>('P31645');
   const [uniprotData, setUniprotData] = useState<UniProtTopologyData | null>(null);
   const [loadingUniProt, setLoadingUniProt] = useState<boolean>(false);
   const [uniprotError, setUniprotError] = useState<string | null>(null);
+
+  const [topologySource, setTopologySource] = useState<TopologySource>('uniprot');
+  const [calculatedData, setCalculatedData] = useState<UniProtTopologyData | null>(null);
+  const [loadingCalculated, setLoadingCalculated] = useState<boolean>(false);
+  const [calculatedError, setCalculatedError] = useState<string | null>(null);
+  const [showUniProtInfo, setShowUniProtInfo] = useState<boolean>(false);
 
   // Color Customizer state
   const [colorDrawerOpen, setColorDrawerOpen] = useState<boolean>(false);
@@ -161,6 +176,29 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
     }
   };
 
+  // Fetch structure-based calculated topology from backend endpoint
+  const fetchCalculatedTopology = useCallback(async (filenameToFetch: string) => {
+    if (!filenameToFetch.trim()) return;
+    setLoadingCalculated(true);
+    setCalculatedError(null);
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/secondary-structure/predict-topology/${encodeURIComponent(filenameToFetch.trim())}`
+      );
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || `Failed to compute topology for ${filenameToFetch}`);
+      }
+      const data: UniProtTopologyData = await response.json();
+      setCalculatedData(data);
+    } catch (err: any) {
+      setCalculatedError(err.message || 'Error computing topology');
+      setCalculatedData(null);
+    } finally {
+      setLoadingCalculated(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (uniprotId) {
       setUniprotIdInput(uniprotId);
@@ -168,7 +206,32 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
     } else {
       fetchUniProtTopology('P31645');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uniprotId]);
+
+  // Reset calculated data whenever a new structure is uploaded, and refetch if
+  // the user is currently viewing the Calculated tab.
+  useEffect(() => {
+    setCalculatedData(null);
+    setCalculatedError(null);
+    if (topologySource === 'calculated' && filename) {
+      fetchCalculatedTopology(filename);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filename]);
+
+  // Fetch when the user switches to the Calculated tab and no data is cached yet.
+  useEffect(() => {
+    if (topologySource === 'calculated' && filename && !calculatedData && !loadingCalculated) {
+      fetchCalculatedTopology(filename);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topologySource]);
+
+  // Single source of truth for "what data is currently being displayed"
+  const activeTopologyData = topologySource === 'calculated' ? calculatedData : uniprotData;
+  const activeError = topologySource === 'calculated' ? calculatedError : uniprotError;
+  const activeLoading = topologySource === 'calculated' ? loadingCalculated : loadingUniProt;
 
   // Compute active base colors array from preset or custom
   const currentPaletteColors = PALETTES[selectedPaletteKey]?.colors || PALETTES.PAPER_DEFAULT.colors;
@@ -183,11 +246,12 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
   const { helices, loops } = useMemo(() => {
     if (!chain) return { helices: [], loops: [] };
 
-    // --- CASE A: UniProt Topology Data ---
-    if (uniprotData && uniprotData.regions && uniprotData.regions.length > 0) {
-      const tmRegions = uniprotData.regions.filter((r) => r.type === 'Transmembrane');
-      const domainRegions = uniprotData.regions.filter((r) => r.type === 'Topological domain');
-      const intraRegions = uniprotData.regions.filter((r) => r.type === 'Intramembrane');
+    // --- CASE A: UniProt or Calculated Topology Data ---
+    if (activeTopologyData && activeTopologyData.regions && activeTopologyData.regions.length > 0) {
+      const tmRegions = activeTopologyData.regions.filter((r) => r.type === 'Transmembrane');
+      const domainRegions = activeTopologyData.regions.filter((r) => r.type === 'Topological domain');
+      const intraRegions = activeTopologyData.regions.filter((r) => r.type === 'Intramembrane');
+      void intraRegions; // reserved for future re-entrant-loop rendering
 
       const tmHelices: TMHelix[] = [];
       let hNum = 1;
@@ -242,12 +306,12 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
         hNum++;
       });
 
-      // Build loops — alternate EL/IL based on UniProt topological domain
+      // Build loops — alternate EL/IL based on topological domain
       const tmLoops: TMLoop[] = [];
       let elCount = 1;
       let ilCount = 1;
       let loopIndex = 0;
-      const nTermInside = getNTermInside(uniprotData);
+      const nTermInside = getNTermInside(activeTopologyData);
 
       for (let i = 0; i < tmHelices.length - 1; i++) {
         const hCurr = tmHelices[i];
@@ -432,14 +496,14 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
     }
 
     return { helices: tmHelices, loops: tmLoops };
-  }, [chain, secondaryResult, uniprotData, selectedPaletteKey, customHelixColors]);
+  }, [chain, secondaryResult, activeTopologyData, selectedPaletteKey, customHelixColors]);
 
   const handleExport = useCallback(
     async (format: 'png' | 'jpeg') => {
       if (!svgRef.current) return;
       setExporting(true);
       try {
-        const id = uniprotData?.uniprot_id ?? 'topology';
+        const id = activeTopologyData?.uniprot_id ?? 'topology';
         const ext = format === 'jpeg' ? 'jpg' : 'png';
         await exportSvgAsImage(svgRef.current, format, `${id}_TM_topology.${ext}`, 3);
       } catch {
@@ -448,7 +512,7 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
         setExporting(false);
       }
     },
-    [uniprotData?.uniprot_id],
+    [activeTopologyData],
   );
 
   // Handle adding custom residue color
@@ -542,11 +606,15 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
       {/* Panel Header & Toolbar */}
       <div className="panel-heading" style={{ flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <span className="section-kicker">UNIPROT TOPOLOGY · 2D STRUCTURE MAP</span>
+          <span className="section-kicker">
+            {topologySource === 'calculated'
+              ? 'CALCULATED TOPOLOGY (PCA SLAB-FIT + KYTE-DOOLITTLE) · 2D STRUCTURE MAP'
+              : 'UNIPROT TOPOLOGY · 2D STRUCTURE MAP'}
+          </span>
           <h2>Transmembrane Secondary Structure Map</h2>
           <p className="panel-subtitle">
-            {uniprotData
-              ? `${uniprotData.protein_name}${uniprotData.gene_name ? ` (${uniprotData.gene_name})` : ''} · ${uniprotData.uniprot_id}`
+            {activeTopologyData
+              ? `${activeTopologyData.protein_name}${activeTopologyData.gene_name ? ` (${activeTopologyData.gene_name})` : ''} · ${activeTopologyData.uniprot_id}`
               : 'Transmembrane helices, extracellular/intracellular loops, and re-entrant segments.'}
           </p>
         </div>
@@ -565,6 +633,24 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
             </button>
           </div>
 
+          {/* Topology Source Selector */}
+          <div className="tm-preset-chip" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <button
+              className={`tm-tab-btn ${topologySource === 'uniprot' ? 'active' : ''}`}
+              onClick={() => setTopologySource('uniprot')}
+            >
+              UniProt
+            </button>
+            <button
+              className={`tm-tab-btn ${topologySource === 'calculated' ? 'active' : ''}`}
+              onClick={() => setTopologySource('calculated')}
+              disabled={!filename}
+              title={!filename ? 'Upload a structure file to enable calculated topology' : undefined}
+            >
+              Calculated (Beta)
+            </button>
+          </div>
+
           {/* Export PNG/JPEG Buttons */}
           <button className="tm-color-toggle-btn" onClick={() => handleExport('png')} disabled={exporting}>
             <span>📷</span>
@@ -577,79 +663,179 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
             <span>{colorDrawerOpen ? 'Close Color Picker' : 'Customize Colors'}</span>
           </button>
 
-          {/* UniProt Search Input */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <input
-              type="text"
-              value={uniprotIdInput}
-              onChange={(e) => setUniprotIdInput(e.target.value)}
-              placeholder="e.g. P31645"
-              style={{
-                width: '90px',
-                padding: '4px 8px',
-                borderRadius: '5px',
-                border: '1px solid #334155',
-                background: '#0f172a',
-                color: '#f8fafc',
-                fontSize: '12px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') fetchUniProtTopology(uniprotIdInput);
-              }}
-            />
+          {/* UniProt Search Input (only relevant in UniProt mode) */}
+          {topologySource === 'uniprot' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+              <input
+                type="text"
+                value={uniprotIdInput}
+                onChange={(e) => setUniprotIdInput(e.target.value)}
+                placeholder="e.g. P31645"
+                style={{
+                  width: '90px',
+                  padding: '4px 8px',
+                  borderRadius: '5px',
+                  border: '1px solid #334155',
+                  background: '#0f172a',
+                  color: '#f8fafc',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') fetchUniProtTopology(uniprotIdInput);
+                }}
+              />
+              <button
+                onClick={() => fetchUniProtTopology(uniprotIdInput)}
+                disabled={loadingUniProt}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: '5px',
+                  border: 'none',
+                  background: '#3b82f6',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {loadingUniProt ? '...' : 'Fetch'}
+              </button>
+
+              {/* Info button: explains the UniProt method for anyone who wants to use it */}
+              <button
+                onClick={() => setShowUniProtInfo((open) => !open)}
+                title="How does the UniProt lookup method work?"
+                aria-label="How does the UniProt lookup method work?"
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  minWidth: '20px',
+                  borderRadius: '50%',
+                  border: '1px solid #475569',
+                  background: showUniProtInfo ? '#38bdf8' : '#1e293b',
+                  color: showUniProtInfo ? '#0f172a' : '#94a3b8',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  lineHeight: 1,
+                  padding: 0,
+                }}
+              >
+                ?
+              </button>
+
+              {showUniProtInfo && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    width: '270px',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #334155',
+                    background: '#0f172a',
+                    color: '#cbd5e1',
+                    fontSize: '11px',
+                    lineHeight: 1.55,
+                    zIndex: 30,
+                    boxShadow: '0 10px 28px rgba(0, 0, 0, 0.45)',
+                  }}
+                >
+                  <strong style={{ color: '#38bdf8', display: 'block', marginBottom: '4px', fontSize: '11.5px' }}>
+                    How the UniProt method works
+                  </strong>
+                  Type any UniProt accession (e.g. <code>P31645</code>) and click Fetch. The app calls
+                  the UniProt REST API for that entry and reads its curated "Transmembrane",
+                  "Topological domain", and "Intramembrane" features to draw the 2D map — no
+                  structure file upload is needed. Best for well-annotated proteins that already
+                  have expert-reviewed topology on UniProt; for a structure-derived estimate
+                  instead, switch to the "Calculated (Beta)" tab.
+                  <button
+                    onClick={() => setShowUniProtInfo(false)}
+                    style={{
+                      display: 'block',
+                      marginTop: '8px',
+                      marginLeft: 'auto',
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748b',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
             <button
-              onClick={() => fetchUniProtTopology(uniprotIdInput)}
-              disabled={loadingUniProt}
+              onClick={() => filename && fetchCalculatedTopology(filename)}
+              disabled={loadingCalculated || !filename}
               style={{
                 padding: '4px 10px',
                 borderRadius: '5px',
                 border: 'none',
-                background: '#3b82f6',
+                background: '#10b981',
                 color: '#ffffff',
                 fontSize: '11px',
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
             >
-              {loadingUniProt ? '...' : 'Fetch'}
+              {loadingCalculated ? 'Computing...' : 'Recalculate'}
             </button>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Presets row (UniProt mode only) */}
+      {topologySource === 'uniprot' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', margin: '4px 0 12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <small style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>UniProt Presets:</small>
+            {DEFAULT_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => {
+                  setUniprotIdInput(preset.id);
+                  fetchUniProtTopology(preset.id);
+                }}
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid #334155',
+                  background: uniprotData?.uniprot_id === preset.id ? '#1e293b' : '#090d16',
+                  color: uniprotData?.uniprot_id === preset.id ? '#38bdf8' : '#94a3b8',
+                  fontSize: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                {preset.label}
+              </button>
+            ))}
           </div>
-        </div>
-      </div>
 
-      {/* Quick Presets row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', margin: '4px 0 12px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-          <small style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>UniProt Presets:</small>
-          {DEFAULT_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              onClick={() => {
-                setUniprotIdInput(preset.id);
-                fetchUniProtTopology(preset.id);
-              }}
-              style={{
-                padding: '2px 8px',
-                borderRadius: '4px',
-                border: '1px solid #334155',
-                background: uniprotData?.uniprot_id === preset.id ? '#1e293b' : '#090d16',
-                color: uniprotData?.uniprot_id === preset.id ? '#38bdf8' : '#94a3b8',
-                fontSize: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-              }}
-            >
-              {preset.label}
-            </button>
-          ))}
+          <span className="tag">
+            {helices.length} HELICES · {loops.length} LOOPS
+          </span>
         </div>
+      )}
 
-        <span className="tag">
-          {helices.length} HELICES · {loops.length} LOOPS
-        </span>
-      </div>
+      {/* Calculated-mode stat tag (no presets row shown in this mode) */}
+      {topologySource === 'calculated' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '4px 0 12px' }}>
+          <span className="tag">
+            {helices.length} HELICES · {loops.length} LOOPS
+          </span>
+        </div>
+      )}
 
       {/* COLOR CUSTOMIZER DRAWER */}
       {colorDrawerOpen && (
@@ -774,8 +960,11 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
         </div>
       )}
 
-      {uniprotError && (
-        <div className="tm-error-banner">{uniprotError}</div>
+      {activeError && <div className="tm-error-banner">{activeError}</div>}
+      {activeLoading && !activeTopologyData && (
+        <div className="tm-error-banner" style={{ borderColor: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', color: '#7dd3fc' }}>
+          {topologySource === 'calculated' ? 'Computing structure-based topology…' : 'Fetching UniProt topology…'}
+        </div>
       )}
 
       {/* 2D SVG DIAGRAM */}
@@ -967,7 +1156,7 @@ export function TransmembraneTopologyDiagram({ chain, secondaryResult, selectedR
                       title: `Helix ${h.subLabel} (TM${h.helixNumber})`,
                       range: `Residues ${h.startRes}–${h.endRes}`,
                       length: h.length,
-                      details: h.description ? `UniProt: ${h.description}` : `Secondary Structure: Transmembrane Alpha Helix`,
+                      details: h.description ? `Source: ${h.description}` : `Secondary Structure: Transmembrane Alpha Helix`,
                     })
                   }
                   onMouseLeave={() => setHoveredElement(null)}
