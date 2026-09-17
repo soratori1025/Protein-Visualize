@@ -6,7 +6,8 @@ export function AppLayout() {
       <nav className="global-nav">
         <div className="global-nav-brand">🧬 ProteinJournal Framework</div>
         <div className="global-nav-links">
-          <NavLink to="/" className={({ isActive }) => (isActive ? 'global-nav-link active' : 'global-nav-link')}>Lab Workspace</NavLink>
+          <NavLink to="/" className={({ isActive }) => (isActive ? 'global-nav-link active' : 'global-nav-link')}>Transmembrane Analysis</NavLink>
+          <NavLink to="/visualize" className={({ isActive }) => (isActive ? 'global-nav-link active' : 'global-nav-link')}>Structure Viewer</NavLink>
           <NavLink to="/storyboard" className={({ isActive }) => (isActive ? 'global-nav-link active' : 'global-nav-link')}>Interactive Storyboard</NavLink>
         </div>
       </nav>

@@ -87,13 +87,13 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
         <div className="viewer-toolbar">
           <div className="toolbar-group">
             <span className="toolbar-label">STYLE:</span>
-            {(['ribbon', 'tube', 'stick', 'sphere', 'line', 'pipesAndPlanks'] as RepresentationStyle[]).map((st) => (
+            {(['ribbon', 'stick', 'sphere', 'line', 'pipesAndPlanks'] as RepresentationStyle[]).map((st) => (
               <button
                 key={st}
                 className={style === st ? 'toolbar-btn active' : 'toolbar-btn'}
                 onClick={() => setStyle(st)}
               >
-                {st === 'ribbon' ? 'Ribbon' : st === 'tube' ? 'Tube' : st === 'stick' ? 'Stick' : st === 'sphere' ? 'Sphere' : st === 'line' ? 'Line' : 'Pipes & Planks'}
+                {st === 'ribbon' ? 'Ribbon' : st === 'stick' ? 'Stick' : st === 'sphere' ? 'Sphere' : st === 'line' ? 'Line' : 'Pipes & Planks'}
               </button>
             ))}
           </div>
@@ -194,7 +194,7 @@ function applyStyles(
   selectedChain?: Chain
 ) {
   (viewer as any).removeAllShapes();
-  viewer.setStyle({}, { cartoon: { hidden: true }, tube: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
+  viewer.setStyle({}, { cartoon: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
 
   chains.forEach((item, index) => {
     if (focusChainId && item.id !== focusChainId) return;
@@ -209,12 +209,10 @@ function applyStyles(
         viewer.setStyle(selection, { cartoon: { color: baseColor, opacity: 1 } });
       }
     } else if (style === 'pipesAndPlanks') {
-      import('../../utils/customShapes').then(({ drawCustomPipesAndPlanks }) => {
+      import('../../utils/PipePlanks').then(({ drawCustomPipesAndPlanks }) => {
         drawCustomPipesAndPlanks(viewer, item.id, baseColor, colorScheme);
         viewer.render();
       });
-    } else if (style === 'tube') {
-      viewer.setStyle(selection, { tube: { radius: 0.7, color: baseColor } });
     } else if (style === 'stick') {
       viewer.setStyle(selection, { stick: { colorscheme: 'Jmol', radius: 0.22 } });
     } else if (style === 'sphere') {
@@ -231,8 +229,6 @@ function applyStyles(
       const sel = { chain: selectedChain.id, resi: res.id };
       if (style === 'ribbon') {
         viewer.setStyle(sel, { cartoon: { color, opacity: 1 } });
-      } else if (style === 'tube') {
-        viewer.setStyle(sel, { tube: { radius: 0.7, color } });
       } else if (style === 'sphere') {
         viewer.setStyle(sel, { sphere: { color, scale: 0.75 } });
       } else if (style === 'stick') {

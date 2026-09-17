@@ -1,4 +1,4 @@
-export type RepresentationStyle = 'ribbon' | 'tube' | 'stick' | 'sphere' | 'line' | 'pipesAndPlanks';
+export type RepresentationStyle = 'ribbon' | 'stick' | 'sphere' | 'line' | 'pipesAndPlanks';
 
 export type ColorScheme = 'chain' | 'ss' | 'hydropathy' | 'bFactor';
 

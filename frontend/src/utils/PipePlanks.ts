@@ -72,18 +72,22 @@ export function drawCustomPipesAndPlanks(
     const color = getColor(midAtom);
 
     if (seg.ss === 'h') {
-      // Draw Cylinder (Pipe) for Helix
-      const start = seg.atoms[0];
-      const end = seg.atoms[seg.atoms.length - 1];
+      // Draw Cylinder (Pipe) with Conical Arrowhead for Helix
+      const start = { x: seg.atoms[0].x, y: seg.atoms[0].y, z: seg.atoms[0].z };
+      const end = { x: seg.atoms[seg.atoms.length - 1].x, y: seg.atoms[seg.atoms.length - 1].y, z: seg.atoms[seg.atoms.length - 1].z };
 
-      // Approximate helix axis with start and end
-      v.addCylinder({
-        start: { x: start.x, y: start.y, z: start.z },
-        end: { x: end.x, y: end.y, z: end.z },
+      const dir = sub(end, start);
+      const len = Math.sqrt(dot(dir, dir));
+      const coneLength = Math.min(2.5, len * 0.4);
+
+      // Approximate helix axis with start and end, adding an arrow head (cone)
+      v.addArrow({
+        start: start,
+        end: end,
         radius: 1.2,
+        radiusRatio: 1.6, // Cone base is 1.6x wider than cylinder
+        midpos: -coneLength, // Cone length at the end
         color: color,
-        fromCap: true,
-        toCap: true,
       });
 
     } else if (seg.ss === 's') {
@@ -92,6 +96,8 @@ export function drawCustomPipesAndPlanks(
       const end = { x: seg.atoms[seg.atoms.length - 1].x, y: seg.atoms[seg.atoms.length - 1].y, z: seg.atoms[seg.atoms.length - 1].z };
       
       const dir = sub(end, start); // Strand direction vector
+      const len = Math.sqrt(dot(dir, dir));
+      const ndir = len > 0 ? scale(dir, 1 / len) : {x:0, y:0, z:0};
       
       // Calculate normal of the beta sheet using zigzag CA pattern
       let avgNormal = { x: 0, y: 0, z: 0 };
@@ -111,20 +117,24 @@ export function drawCustomPipesAndPlanks(
       
       avgNormal = normalize(avgNormal);
       if (avgNormal.x === 0 && avgNormal.y === 0 && avgNormal.z === 0) {
-        avgNormal = normalize(cross(dir, { x: 1, y: 0, z: 0 }));
+        avgNormal = normalize(cross(ndir, { x: 1, y: 0, z: 0 }));
         if (avgNormal.x === 0 && avgNormal.y === 0 && avgNormal.z === 0) {
-           avgNormal = normalize(cross(dir, { x: 0, y: 1, z: 0 }));
+           avgNormal = normalize(cross(ndir, { x: 0, y: 1, z: 0 }));
         }
       }
 
       // Depth vector orthogonal to direction and normal
-      const depthVec = normalize(cross(dir, avgNormal));
+      const depthVec = normalize(cross(ndir, avgNormal));
 
       const width = 2.4; 
       const thickness = 0.6;
       
       const w = scale(avgNormal, width);
       const h = scale(depthVec, thickness);
+      
+      const aLen = Math.min(3.0, len * 0.4);
+      const baseCenter = sub(end, scale(ndir, aLen));
+      const actualDir = scale(ndir, len - aLen);
       
       const corner = sub(sub(start, scale(w, 0.5)), scale(h, 0.5));
 
@@ -133,8 +143,42 @@ export function drawCustomPipesAndPlanks(
         dimensions: {
           w: w,
           h: h,
-          d: dir
+          d: actualDir
         },
+        color: color
+      });
+
+      // Arrowhead custom shape
+      const arrowWidth = width * 1.6;
+      const w_vec = scale(avgNormal, arrowWidth * 0.5);
+      const h_vec = scale(depthVec, thickness * 0.5);
+
+      const b_tr = add(add(baseCenter, w_vec), h_vec);
+      const b_tl = add(sub(baseCenter, w_vec), h_vec);
+      const b_bl = sub(sub(baseCenter, w_vec), h_vec);
+      const b_br = sub(add(baseCenter, w_vec), h_vec);
+
+      const tip_t = add(end, h_vec);
+      const tip_b = sub(end, h_vec);
+
+      const vertexArr = [b_tr, b_tl, b_bl, b_br, tip_t, tip_b];
+      const baseFaces = [
+        1, 2, 3,  1, 3, 0, // base
+        0, 1, 4, // top
+        2, 3, 5, // bottom
+        1, 2, 5,  1, 5, 4, // left
+        3, 0, 4,  3, 4, 5  // right
+      ];
+      
+      const faceArr: number[] = [];
+      for (let i = 0; i < baseFaces.length; i += 3) {
+        faceArr.push(baseFaces[i], baseFaces[i+1], baseFaces[i+2]);
+        faceArr.push(baseFaces[i], baseFaces[i+2], baseFaces[i+1]); // double-sided for robustness
+      }
+
+      v.addCustom({
+        vertexArr: vertexArr,
+        faceArr: faceArr,
         color: color
       });
 
