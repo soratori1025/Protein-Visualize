@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from protein_engine.secondary_structure.dssp import DSSPMethod
 from protein_engine.secondary_structure.stride import STRIDEMethod
 from .topology_predictor import predict_topology
+from .tm_sequence_predictor import predict_topology_from_sequence
 
 router = APIRouter(prefix="/api/secondary-structure", tags=["secondary-structure"])
 ROOT = Path(__file__).resolve().parents[3]
@@ -113,12 +114,14 @@ def get_uniprot_topology(uniprot_id: str) -> dict:
     }
 
 @router.get("/predict-topology/{filename}")
-def predict_topology_from_structure(filename: str) -> dict:
+def predict_topology_from_structure(filename: str, algorithm: str = "tmhmm_seq") -> dict:
     path = UPLOAD_DIR / Path(filename).name
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Uploaded structure not found")
     
     try:
-        return predict_topology(path)
+        if algorithm == "tmhmm_seq":
+            return predict_topology_from_sequence(path)
+        return predict_topology(path, algorithm)
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error)) from error

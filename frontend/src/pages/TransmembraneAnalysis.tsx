@@ -71,7 +71,7 @@ export function TransmembraneAnalysis() {
       <header className="topbar">
         <div>
           <div className="eyebrow">STRUCTURE LAB / MVP 0.1</div>
-          <h1>Topology Workspace</h1>
+          <h1>Transmembrane Analysis</h1>
           <p>Inspect secondary structure and transmembrane topology annotations.</p>
         </div>
         <div className="header-actions">
@@ -80,22 +80,7 @@ export function TransmembraneAnalysis() {
         </div>
       </header>
 
-      {chains.length > 0 && (
-        <section className="panel" style={{ padding: '16px', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <strong>Select Chain:</strong>
-            <select 
-              value={chainId || ''} 
-              onChange={(e) => { setChainId(e.target.value); setSelectedResidue(null); }}
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', color: '#333' }}
-            >
-              {chains.map(c => (
-                <option key={c.id} value={c.id}>Chain {c.id} ({c.residue_count} residues)</option>
-              ))}
-            </select>
-          </div>
-        </section>
-      )}
+
 
       <section className="lower-grid">
         <div className="panel method-selector-panel">
