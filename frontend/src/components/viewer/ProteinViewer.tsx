@@ -3,6 +3,7 @@ import * as $3Dmol from '3dmol';
 import type { Chain } from '../../types/protein';
 import type { ColorScheme, RepresentationStyle } from '../../types/viewer';
 import { generateRibbonSpline, getHydropathyColor } from '../../utils/ribbonSpline';
+import { API_URL } from '../../services/api';
 
 interface Props {
   chain: Chain | undefined;
@@ -31,7 +32,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
     let cancelled = false;
 
     const loadViewer = async () => {
-      const response = await fetch(`http://127.0.0.1:8000/api/structure/file/${encodeURIComponent(filename)}`);
+      const response = await fetch(`${API_URL}/api/structure/file/${encodeURIComponent(filename)}`);
       if (!response.ok || cancelled || !containerRef.current) return;
       const structure = await response.text();
       viewer = $3Dmol.createViewer(containerRef.current, { antialias: true });

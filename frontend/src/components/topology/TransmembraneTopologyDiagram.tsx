@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Chain } from '../../types/protein';
 import type { SecondaryStructureResult, UniProtTopologyData } from '../../types/secondaryStructure';
 import { exportSvgAsImage } from './exportDiagram';
+import { API_URL } from '../../services/api';
 import './TransmembraneTopologyDiagram.css';
 
 type FigureTheme = 'publication' | 'lab';
@@ -424,7 +425,7 @@ export function TransmembraneTopologyDiagram({
     setLoadingUniProt(true);
     setUniprotError(null);
     try {
-      const response = await fetch(`http://localhost:8000/api/secondary-structure/uniprot/${uniprotIdToFetch.trim()}`);
+      const response = await fetch(`${API_URL}/api/secondary-structure/uniprot/${uniprotIdToFetch.trim()}`);
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.detail || `Could not load UniProt entry ${uniprotIdToFetch}`);
@@ -453,7 +454,7 @@ export function TransmembraneTopologyDiagram({
       const ms = parseFloat(tmMinMembraneScore); if (!isNaN(ms) && ms !== 0.5) qp.set('min_membrane_score', String(ms));
 
       const response = await fetch(
-        `http://localhost:8000/api/secondary-structure/predict-topology/${encodeURIComponent(filenameToFetch.trim())}?${qp.toString()}`
+        `${API_URL}/api/secondary-structure/predict-topology/${encodeURIComponent(filenameToFetch.trim())}?${qp.toString()}`
       );
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));

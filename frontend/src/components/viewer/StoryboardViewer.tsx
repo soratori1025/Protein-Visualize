@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as $3Dmol from '3dmol';
+import { API_URL } from '../../services/api';
 
 export interface KeyframeConfig {
   id: string;
@@ -27,7 +28,7 @@ export function StoryboardViewer({ filename, activeKeyframe }: Props) {
     let cancelled = false;
 
     const loadViewer = async () => {
-      const response = await fetch(`http://127.0.0.1:8000/api/structure/file/${encodeURIComponent(filename)}`);
+      const response = await fetch(`${API_URL}/api/structure/file/${encodeURIComponent(filename)}`);
       if (!response.ok || cancelled || !containerRef.current) return;
       const structure = await response.text();
       
