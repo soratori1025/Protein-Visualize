@@ -126,6 +126,20 @@ function mentionsDiscontinuity(tm: RawTM): boolean {
 }
 
 /**
+ * Decide whether a transmembrane segment is a β-strand rather than an α-helix,
+ * from its description. UniProt writes beta-barrel TM segments as "Beta stranded"
+ * (occasionally "Beta-stranded"); the structure-based predictor writes
+ * "Transmembrane Beta Strand". Handles all of those plus "beta barrel"/"sheet",
+ * and never fires on "Helical".
+ */
+function isBetaStrandDescription(description?: string): boolean {
+  const d = (description ?? '').toLowerCase();
+  if (!d) return false;
+  const hasBeta = d.includes('beta') || d.includes('β');
+  return hasBeta && (d.includes('strand') || d.includes('barrel') || d.includes('sheet'));
+}
+
+/**
  * Two consecutive annotated segments that are really the two halves of one
  * broken helix: nearly touching, each too short to span the bilayer on its own,
  * or explicitly named "…a"/"…b" or "part 1"/"part 2".
@@ -141,6 +155,11 @@ function looksLikeHalfPair(prev: RawTM, curr: RawTM): boolean {
   const currNum = currText.match(/(\d+)\s*b\b/);
   if (prevNum && currNum && prevNum[1] === currNum[1]) return true;
   if (prevText.includes('part 1') && currText.includes('part 2')) return true;
+
+  // β-strands are legitimately short and pack close together in a barrel — never
+  // fuse two of them into "the two halves of one broken helix" (that heuristic is
+  // only meant for a single α-helix that UniProt split across the bilayer).
+  if (isBetaStrandDescription(prev.description) || isBetaStrandDescription(curr.description)) return false;
 
   const prevLen = prev.end - prev.start + 1;
   const currLen = curr.end - curr.start + 1;
@@ -274,7 +293,33 @@ export function getExtraFeatures(
     }
   }
 
-  // 2. Helical runs from assigned secondary structure.
+  // 1b. Extramembrane secondary structure straight from the predictor's region
+  //     schema. The structure-based predictor now splits each loop into its own
+  //     Helix / Strand / Coil regions and tags every region with `side` + `ss`,
+  //     so a helix or strand sitting OUTSIDE the bilayer (e.g. EL2, EL3a/3b) is a
+  //     "Topological domain" region carrying ss:"Helix"|"Strand". Draw those
+  //     directly — this is what makes loop structure appear for Calculated
+  //     topology without needing a separate DSSP/STRIDE overlay run.
+  for (const region of topologyData?.regions ?? []) {
+    const ss = (region as { ss?: string }).ss;
+    if (
+      region.type === 'Topological domain' &&
+      (ss === 'Helix' || ss === 'Strand') &&
+      region.start >= lStart &&
+      region.end <= lEnd
+    ) {
+      found.push({
+        startRes: region.start,
+        endRes: region.end,
+        type: ss, // 'Helix' | 'Strand'
+        label: ss === 'Helix' ? 'α-helix' : 'β-strand',
+      });
+    }
+  }
+
+  // 2. Helical runs from assigned secondary structure (fallback when the region
+  //    schema carries no `ss`, e.g. UniProt data or an older backend). The overlap
+  //    guard below skips anything already captured from the region schema above.
   if (secondaryResult?.residues && chainId) {
     const loopResidues = secondaryResult.residues
       .filter((r) => r.chain_id === chainId && r.residue_number >= lStart && r.residue_number <= lEnd)
@@ -335,12 +380,23 @@ export function TransmembraneTopologyDiagram({
   const [uniprotError, setUniprotError] = useState<string | null>(null);
 
   const [topologySource, setTopologySource] = useState<TopologySource>('uniprot');
-  const [calcAlgorithm, setCalcAlgorithm] = useState<'tmhmm_seq' | 'dssp_slab' | 'kd_slab'>('tmhmm_seq');
+  const [calcAlgorithm, setCalcAlgorithm] = useState<
+    'dssp_ss' | 'stride_ss' | 'dssp_slab' | 'stride_slab' | 'kd_slab' | 'tmhmm_seq'
+  >('dssp_ss');
   const [overlayType, setOverlayType] = useState<'none' | 'dssp' | 'stride'>('none');
   const [calculatedData, setCalculatedData] = useState<UniProtTopologyData | null>(null);
   const [loadingCalculated, setLoadingCalculated] = useState<boolean>(false);
   const [calculatedError, setCalculatedError] = useState<string | null>(null);
   const [showUniProtInfo, setShowUniProtInfo] = useState<boolean>(false);
+
+  // --- Advanced TM parameters (user-tunable biological thresholds) ---
+  const [showAdvancedParams, setShowAdvancedParams] = useState(false);
+  const [tmThickness, setTmThickness] = useState<string>('30');
+  const [tmMinElement, setTmMinElement] = useState<string>('4');
+  const [tmMinCrossSpan, setTmMinCrossSpan] = useState<string>('0.45');
+  const [tmFullCrossFrac, setTmFullCrossFrac] = useState<string>('0.66');
+  const [tmBrokenGapMax, setTmBrokenGapMax] = useState<string>('9');
+  const [tmMinMembraneScore, setTmMinMembraneScore] = useState<string>('0.5');
 
   const [colorDrawerOpen, setColorDrawerOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'preset' | 'helices' | 'residues'>('preset');
@@ -387,8 +443,17 @@ export function TransmembraneTopologyDiagram({
     setLoadingCalculated(true);
     setCalculatedError(null);
     try {
+      // Build query string with algorithm + any non-default advanced params
+      const qp = new URLSearchParams({ algorithm });
+      const th = parseFloat(tmThickness);    if (!isNaN(th) && th !== 30)    qp.set('thickness', String(th));
+      const me = parseInt(tmMinElement);      if (!isNaN(me) && me !== 4)     qp.set('min_tm_element', String(me));
+      const cs = parseFloat(tmMinCrossSpan);  if (!isNaN(cs) && cs !== 0.45)  qp.set('min_cross_span', String(cs));
+      const fc = parseFloat(tmFullCrossFrac); if (!isNaN(fc) && fc !== 0.66)  qp.set('full_cross_frac', String(fc));
+      const bg = parseInt(tmBrokenGapMax);    if (!isNaN(bg) && bg !== 9)     qp.set('broken_gap_max', String(bg));
+      const ms = parseFloat(tmMinMembraneScore); if (!isNaN(ms) && ms !== 0.5) qp.set('min_membrane_score', String(ms));
+
       const response = await fetch(
-        `http://localhost:8000/api/secondary-structure/predict-topology/${encodeURIComponent(filenameToFetch.trim())}?algorithm=${algorithm}`
+        `http://localhost:8000/api/secondary-structure/predict-topology/${encodeURIComponent(filenameToFetch.trim())}?${qp.toString()}`
       );
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
@@ -401,7 +466,7 @@ export function TransmembraneTopologyDiagram({
     } finally {
       setLoadingCalculated(false);
     }
-  }, []);
+  }, [tmThickness, tmMinElement, tmMinCrossSpan, tmFullCrossFrac, tmBrokenGapMax, tmMinMembraneScore]);
 
   useEffect(() => {
     if (uniprotId) {
@@ -742,7 +807,7 @@ export function TransmembraneTopologyDiagram({
         <div>
           <span className="section-kicker">
             {topologySource === 'calculated'
-              ? 'Calculated topology (PCA slab fit + Kyte–Doolittle)'
+              ? 'Calculated topology (DSSP/STRIDE elements + membrane fit)'
               : 'UniProt topology'}
           </span>
           <h2>Transmembrane secondary structure map</h2>
@@ -857,27 +922,88 @@ export function TransmembraneTopologyDiagram({
               )}
             </div>
                     ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <select 
-                className="tm-input-field" 
-                value={calcAlgorithm}
-                onChange={(e) => setCalcAlgorithm(e.target.value as any)}
-                style={{ padding: '4px 8px' }}
-              >
-                <option value="tmhmm_seq">TM Predictor (Sequence HMM)</option>
-                <option value="dssp_slab">Geometry (DSSP + Slab Fit)</option>
-                <option value="kd_slab">Geometry (KD + Slab Fit)</option>
-              </select>
-              <button
-                onClick={() => filename && fetchCalculatedTopology(filename, calcAlgorithm)}
-                disabled={loadingCalculated || !filename}
-                className="tm-add-btn"
-              >
-                {loadingCalculated ? 'Computing…' : 'Recalculate'}
-              </button>
-            </div>
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <select 
+                  className="tm-input-field" 
+                  value={calcAlgorithm}
+                  onChange={(e) => setCalcAlgorithm(e.target.value as any)}
+                  style={{ padding: '4px 8px' }}
+                >
+                  <option value="dssp_ss">DSSP elements + membrane (recommended)</option>
+                  <option value="stride_ss">STRIDE elements + membrane</option>
+                  <option value="dssp_slab">DSSP + slab (legacy)</option>
+                  <option value="stride_slab">STRIDE + slab (legacy)</option>
+                  <option value="kd_slab">Geometry only (no SS)</option>
+                  <option value="tmhmm_seq">Sequence only (no 3D)</option>
+                </select>
+                <button
+                  onClick={() => filename && fetchCalculatedTopology(filename, calcAlgorithm)}
+                  disabled={loadingCalculated || !filename}
+                  className="tm-add-btn"
+                >
+                  {loadingCalculated ? 'Computing…' : 'Recalculate'}
+                </button>
+                <button
+                  onClick={() => setShowAdvancedParams(!showAdvancedParams)}
+                  className="tm-add-btn"
+                  style={{ fontSize: '0.8em', opacity: 0.8 }}
+                  title="Tune biological thresholds for TM detection"
+                >
+                  {showAdvancedParams ? '▲ Parameters' : '▼ Parameters'}
+                </button>
+              </div>
+              {showAdvancedParams && (
+                <div style={{
+                  margin: '8px 0', padding: '10px 14px',
+                  background: 'rgba(100,100,140,0.08)', borderRadius: '8px',
+                  display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px 16px',
+                  fontSize: '0.82em',
+                }}>
+                  <label title="Hydrophobic core thickness (Å). Bacterial IM ~27, eukaryotic PM ~30, ER ~25. (Mitra 2004; OPM database)">
+                    Membrane thickness (Å)
+                    <input type="number" step="0.5" min="20" max="40" value={tmThickness}
+                      onChange={e => setTmThickness(e.target.value)}
+                      className="tm-input-field" style={{ width: '70px', marginLeft: 4 }} />
+                  </label>
+                  <label title="Min residues of a helix/strand inside the slab to count as TM. Lower = more sensitive.">
+                    Min element in slab
+                    <input type="number" step="1" min="2" max="15" value={tmMinElement}
+                      onChange={e => setTmMinElement(e.target.value)}
+                      className="tm-input-field" style={{ width: '50px', marginLeft: 4 }} />
+                  </label>
+                  <label title="Min fraction of thickness a crossing must span. Lower admits shallower crossings.">
+                    Min cross span
+                    <input type="number" step="0.05" min="0.2" max="0.9" value={tmMinCrossSpan}
+                      onChange={e => setTmMinCrossSpan(e.target.value)}
+                      className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
+                  </label>
+                  <label title="Fraction of thickness above which a single element is a full crossing (no fusion).">
+                    Full cross frac
+                    <input type="number" step="0.05" min="0.3" max="1.0" value={tmFullCrossFrac}
+                      onChange={e => setTmFullCrossFrac(e.target.value)}
+                      className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
+                  </label>
+                  <label title="Max gap (residues) to fuse two partial helices into one crossing (broken helix detection).">
+                    Broken gap max
+                    <input type="number" step="1" min="3" max="20" value={tmBrokenGapMax}
+                      onChange={e => setTmBrokenGapMax(e.target.value)}
+                      className="tm-input-field" style={{ width: '50px', marginLeft: 4 }} />
+                  </label>
+                  <label title="Min mean hydrophobicity inside the slab. Below this the protein is treated as soluble.">
+                    Min membrane score
+                    <input type="number" step="0.1" min="0" max="3" value={tmMinMembraneScore}
+                      onChange={e => setTmMinMembraneScore(e.target.value)}
+                      className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
+                  </label>
+                  <div style={{ gridColumn: '1 / -1', marginTop: 4, opacity: 0.65, fontSize: '0.9em' }}>
+                    Defaults are literature-derived (Kyte–Doolittle 1982; Mitra 2004; OPM/PDBTM).
+                    Hover each label for details.
+                  </div>
+                </div>
+              )}
+            </>
           )}
-          )
         </div>
       </div>
 
@@ -1188,16 +1314,27 @@ export function TransmembraneTopologyDiagram({
                               });
                             }}
                           >
-                            <rect
-                              x="0"
-                              y="0"
-                              width={w}
-                              height="21"
-                              rx={sh.type === 'Helix' || sh.type === 'Intramembrane' ? "10" : "4"}
-                              fill="url(#short-helix-grad)"
-                              stroke={isPub ? '#475569' : '#0f172a'}
-                              strokeWidth="1"
-                            />
+                            {sh.type === 'Strand' || sh.type === 'β-strand' ? (
+                              // β-strand outside the membrane: draw as an arrow
+                              <path
+                                d={`M 0 4 L ${w - 12} 4 L ${w - 12} 0 L ${w} 10.5 L ${w - 12} 21 L ${w - 12} 17 L 0 17 Z`}
+                                fill={isPub ? '#e0a64b' : '#c98a2b'}
+                                stroke={isPub ? '#475569' : '#0f172a'}
+                                strokeWidth="1"
+                              />
+                            ) : (
+                              // α-helix (or UniProt feature) outside the membrane: rounded cylinder
+                              <rect
+                                x="0"
+                                y="0"
+                                width={w}
+                                height="21"
+                                rx={sh.type === 'Helix' || sh.type === 'Intramembrane' ? '10' : '4'}
+                                fill="url(#short-helix-grad)"
+                                stroke={isPub ? '#475569' : '#0f172a'}
+                                strokeWidth="1"
+                              />
+                            )}
                             <text
                               x={w / 2}
                               y="15"
@@ -1227,9 +1364,9 @@ export function TransmembraneTopologyDiagram({
             const posLast = helixPositions[last.id];
             if (!posFirst || !posLast) return null;
 
-            const nFeatures = getExtraFeatures(1, first.startRes - 1, topologySource === 'uniprot' ? activeTopologyData : null, secondaryResult, chain?.id) || [];
+            const nFeatures = getExtraFeatures(1, first.startRes - 1, activeTopologyData, secondaryResult, chain?.id) || [];
             const lastResNum = chain?.sequence?.length || 10000;
-            const cFeatures = getExtraFeatures(last.endRes + 1, lastResNum, topologySource === 'uniprot' ? activeTopologyData : null, secondaryResult, chain?.id) || [];
+            const cFeatures = getExtraFeatures(last.endRes + 1, lastResNum, activeTopologyData, secondaryResult, chain?.id) || [];
 
             return (
               <g className="tm-terminals">
@@ -1337,6 +1474,15 @@ export function TransmembraneTopologyDiagram({
               const cy = cylHeight / 2;
               const labelColor = getContrastTextColor(baseColor);
 
+              const isBeta = isBetaStrandDescription(h.description);
+              const isAlpha = !isBeta;
+              
+              const pointsDown = pos.nEndY < pos.cEndY;
+              const headH = Math.min(20, cylHeight / 2);
+              const arrowPath = pointsDown
+                ? `M 6 0 L 6 ${cylHeight - headH} L 0 ${cylHeight - headH} L ${cx} ${cylHeight} L ${helixWidth} ${cylHeight - headH} L ${helixWidth - 6} ${cylHeight - headH} L ${helixWidth - 6} 0 Z`
+                : `M 6 ${cylHeight} L 6 ${headH} L 0 ${headH} L ${cx} 0 L ${helixWidth} ${headH} L ${helixWidth - 6} ${headH} L ${helixWidth - 6} ${cylHeight} Z`;
+
               return (
                 <g
                   key={h.id}
@@ -1344,65 +1490,76 @@ export function TransmembraneTopologyDiagram({
                   transform={`translate(${pos.x}, ${pos.topY}) rotate(${pos.angle}, ${cx}, ${cy})`}
                   onMouseEnter={() =>
                     setHoveredElement({
-                      title: `Helix TM${h.subLabel}`,
+                      title: `${isBeta ? 'Beta Strand' : 'Helix'} TM${h.subLabel}`,
                       range: `Residues ${h.startRes}–${h.endRes}`,
                       length: h.length,
                       details: h.isSplit
-                        ? `Discontinuous helix, part ${h.partIndex === 0 ? '1' : '2'}`
-                        : h.description || 'Transmembrane alpha helix',
+                        ? `Discontinuous segment, part ${h.partIndex === 0 ? '1' : '2'}`
+                        : h.description || `Transmembrane ${isBeta ? 'beta strand' : 'alpha helix'}`,
                     })
                   }
                   onMouseLeave={() => setHoveredElement(null)}
                   onClick={() => onSelectResidue?.(h.startRes)}
                 >
-                  <rect
-                    x="0"
-                    y="6"
-                    width={helixWidth}
-                    height={Math.max(0, cylHeight - 12)}
-                    fill={`url(#cyl-${h.id})`}
-                    className="cylinder-body"
-                  />
-                  {/* bottom cap sits behind the body edge, top cap in front */}
-                  <ellipse
-                    cx={cx}
-                    cy={cylHeight - 6}
-                    rx={helixWidth / 2}
-                    ry="6"
-                    fill={darken(baseColor, 0.28)}
-                  />
-                  <ellipse
-                    cx={cx}
-                    cy="6"
-                    rx={helixWidth / 2}
-                    ry="6"
-                    fill={lighten(baseColor, 0.28)}
-                    stroke={darken(baseColor, 0.25)}
-                    strokeWidth="0.8"
-                  />
-                  <rect
-                    x="0"
-                    y="6"
-                    width={helixWidth}
-                    height={Math.max(0, cylHeight - 12)}
-                    fill="none"
-                    stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
-                    strokeWidth={isSelected ? 2.5 : 0.8}
-                  />
+                  {isAlpha ? (
+                    <>
+                      <rect
+                        x="0"
+                        y="6"
+                        width={helixWidth}
+                        height={Math.max(0, cylHeight - 12)}
+                        fill={`url(#cyl-${h.id})`}
+                        className="cylinder-body"
+                      />
+                      <ellipse
+                        cx={cx}
+                        cy={cylHeight - 6}
+                        rx={helixWidth / 2}
+                        ry="6"
+                        fill={darken(baseColor, 0.28)}
+                      />
+                      <ellipse
+                        cx={cx}
+                        cy="6"
+                        rx={helixWidth / 2}
+                        ry="6"
+                        fill={lighten(baseColor, 0.28)}
+                        stroke={darken(baseColor, 0.25)}
+                        strokeWidth="0.8"
+                      />
+                      <rect
+                        x="0"
+                        y="6"
+                        width={helixWidth}
+                        height={Math.max(0, cylHeight - 12)}
+                        fill="none"
+                        stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
+                        strokeWidth={isSelected ? 2.5 : 0.8}
+                      />
+                    </>
+                  ) : (
+                    <path
+                      d={arrowPath}
+                      fill={`url(#cyl-${h.id})`}
+                      stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
+                      strokeWidth={isSelected ? 2.5 : 1.2}
+                    />
+                  )}
 
                   
                   {/* Disagreement Overlay */}
                   {overlayType !== 'none' && secondaryResult && (() => {
                      const ssResidues = secondaryResult.residues.filter(r => r.chain_id === chain?.id && r.residue_number >= h.startRes && r.residue_number <= h.endRes);
                      if (ssResidues.length === 0) return null;
-                     const mismatched = ssResidues.filter(r => !['H', 'G', 'I'].includes(r.code.toUpperCase()));
+                     const targetCodes = isBeta ? ['E', 'B'] : ['H', 'G', 'I'];
+                     const mismatched = ssResidues.filter(r => !targetCodes.includes(r.code.toUpperCase()));
                      if (mismatched.length === 0) return null;
                      
                      // Draw bands for mismatched regions
                      const bands = [];
                      let startIdx = -1;
                      for (let i = 0; i < ssResidues.length; i++) {
-                       const isMismatch = !['H', 'G', 'I'].includes(ssResidues[i].code.toUpperCase());
+                       const isMismatch = !targetCodes.includes(ssResidues[i].code.toUpperCase());
                        if (isMismatch && startIdx === -1) startIdx = i;
                        if (!isMismatch && startIdx !== -1) {
                          bands.push({ start: startIdx, end: i - 1 });

@@ -1,0 +1,479 @@
+﻿{
+    "uniprot_id":  "CALCULATED",
+    "protein_name":  "Structure-based TM prediction (SS-element-first + DSSP)",
+    "gene_name":  "",
+    "organism":  "Computed",
+    "membrane_score":  1.016,
+    "membrane_normal":  [
+                            -0.8284,
+                            -0.0546,
+                            0.5575
+                        ],
+    "labeler":  "DSSP",
+    "regions":  [
+                    {
+                        "type":  "Topological domain",
+                        "start":  74,
+                        "end":  84,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  85,
+                        "end":  111,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  112,
+                        "end":  112,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  113,
+                        "end":  113,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  114,
+                        "end":  143,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  144,
+                        "end":  148,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  149,
+                        "end":  152,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  153,
+                        "end":  155,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  156,
+                        "end":  173,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  174,
+                        "end":  175,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  176,
+                        "end":  185,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  186,
+                        "end":  186,
+                        "description":  "Cytoplasmic Helix",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  187,
+                        "end":  188,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  189,
+                        "end":  226,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  227,
+                        "end":  236,
+                        "description":  "Cytoplasmic Helix",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  237,
+                        "end":  238,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  239,
+                        "end":  241,
+                        "description":  "Cytoplasmic Helix",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  242,
+                        "end":  244,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  245,
+                        "end":  252,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  253,
+                        "end":  270,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  271,
+                        "end":  273,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  274,
+                        "end":  300,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  301,
+                        "end":  305,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  306,
+                        "end":  313,
+                        "description":  "Cytoplasmic Helix",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  314,
+                        "end":  316,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  317,
+                        "end":  319,
+                        "description":  "Cytoplasmic Helix",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  320,
+                        "end":  321,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  322,
+                        "end":  322,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  323,
+                        "end":  337,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  338,
+                        "end":  342,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  343,
+                        "end":  349,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  350,
+                        "end":  357,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  358,
+                        "end":  389,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  390,
+                        "end":  395,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  396,
+                        "end":  398,
+                        "description":  "Cytoplasmic Helix",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  399,
+                        "end":  401,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  402,
+                        "end":  402,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  403,
+                        "end":  403,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  404,
+                        "end":  415,
+                        "description":  "Cytoplasmic Helix",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  416,
+                        "end":  419,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  420,
+                        "end":  453,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  454,
+                        "end":  461,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  462,
+                        "end":  477,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  478,
+                        "end":  484,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  485,
+                        "end":  515,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  516,
+                        "end":  517,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  518,
+                        "end":  528,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  529,
+                        "end":  534,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Transmembrane",
+                        "start":  535,
+                        "end":  558,
+                        "description":  "Transmembrane Alpha Helix",
+                        "side":  "membrane",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  559,
+                        "end":  563,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  564,
+                        "end":  569,
+                        "description":  "Cytoplasmic Coil",
+                        "side":  "Cytoplasmic",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  570,
+                        "end":  573,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  574,
+                        "end":  583,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  584,
+                        "end":  587,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  588,
+                        "end":  599,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  600,
+                        "end":  603,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  604,
+                        "end":  612,
+                        "description":  "Extracellular Helix",
+                        "side":  "Extracellular",
+                        "ss":  "Helix"
+                    },
+                    {
+                        "type":  "Topological domain",
+                        "start":  613,
+                        "end":  617,
+                        "description":  "Extracellular Coil",
+                        "side":  "Extracellular",
+                        "ss":  "Coil"
+                    }
+                ]
+}
