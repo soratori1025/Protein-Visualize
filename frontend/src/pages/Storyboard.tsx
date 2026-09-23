@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { StoryboardViewer, KeyframeConfig } from '../components/viewer/StoryboardViewer';
-import { uploadStructure } from '../services/api';
+import { useProtein } from '../contexts/ProteinContext';
+import { Header } from '../components/layout/Header';
 
 const DEMO_KEYFRAMES: KeyframeConfig[] = [
   {
@@ -33,11 +34,18 @@ const DEMO_KEYFRAMES: KeyframeConfig[] = [
 ];
 
 export function Storyboard() {
+  const { protein } = useProtein();
   const [activeId, setActiveId] = useState<string>(DEMO_KEYFRAMES[0].id);
   const activeKeyframe = DEMO_KEYFRAMES.find(k => k.id === activeId) || DEMO_KEYFRAMES[0];
-  const [filename, setFilename] = useState<string | undefined>(undefined);
-  const [isUploading, setIsUploading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Reset active ID when protein changes
+  useEffect(() => {
+    if (protein?.filename) {
+      setActiveId(DEMO_KEYFRAMES[0].id);
+    }
+  }, [protein?.filename]);
+
   // IntersectionObserver for "Scroll-telling"
   useEffect(() => {
     if (!containerRef.current) return;
@@ -59,40 +67,17 @@ export function Storyboard() {
     const elements = containerRef.current.querySelectorAll('.keyframe-card');
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, [filename]); // Re-run if filename changes just in case DOM changes, but it's mostly static.
+  }, [protein?.filename]); // Re-run if filename changes just in case DOM changes, but it's mostly static.
 
   return (
-    <div className="storyboard-layout">
-      <div className="storyboard-content" ref={containerRef}>
-        <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <h2 style={{ fontSize: '32px', margin: '0 0 16px', color: '#fff' }}>Interactive Molecular Storyboarding</h2>
-          <p style={{ color: '#a5b9cb', fontSize: '18px', lineHeight: 1.6 }}>Scroll through the content blocks below. The 3D model alongside will automatically adjust the camera, representation, and highlight molecules corresponding to what you are reading.</p>
-          <div className="header-actions" style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <label className="upload-button">
-              <span>{isUploading ? 'Uploading...' : 'Upload PDB Demo'}</span>
-              <input 
-                type="file" 
-                accept=".pdb,.ent,.cif,.mmcif" 
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    setIsUploading(true);
-                    try {
-                      const data = await uploadStructure(file);
-                      setFilename(data.filename);
-                      setActiveId(DEMO_KEYFRAMES[0].id);
-                    } catch (err) {
-                      console.error(err);
-                    } finally {
-                      setIsUploading(false);
-                    }
-                  }
-                }} 
-              />
-            </label>
-            {filename && <span style={{ color: '#90be6d', fontWeight: 'bold' }}>✓ Uploaded {filename}</span>}
-          </div>
-        </div>
+    <main className="app-shell" style={{ overflow: 'hidden' }}>
+      <Header 
+        title="Interactive Molecular Storyboarding" 
+        subtitle="Scroll through the content blocks below. The 3D model alongside will automatically adjust the camera, representation, and highlight molecules corresponding to what you are reading." 
+      />
+      <div className="storyboard-layout" style={{ height: 'calc(100vh - 120px)' }}>
+        <div className="storyboard-content" ref={containerRef}>
+
 
         {DEMO_KEYFRAMES.map((kf) => (
           <div 
@@ -116,14 +101,15 @@ export function Storyboard() {
       </div>
       
       <div className="storyboard-viewer-container">
-        {!filename ? (
+        {!protein?.filename ? (
            <div className="empty-state" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a5b9cb' }}>
              Please upload a structural file (PDB/mmCIF) to start the story.
            </div>
         ) : (
-          <StoryboardViewer filename={filename} activeKeyframe={activeKeyframe} />
+          <StoryboardViewer filename={protein.filename} activeKeyframe={activeKeyframe} />
         )}
       </div>
     </div>
+    </main>
   );
 }

@@ -329,11 +329,11 @@
   transition: transform .2s ease;
 }
 .helix-group:hover .cylinder-body {
-  filter: brightness(1.25) drop-shadow(0 6px 14px rgba(0, 0, 0, .7));
+  filter: brightness(1.1) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   stroke: #ffffff;
 }
 .helix-group.selected .cylinder-body {
-  filter: brightness(1.35) drop-shadow(0 0 14px rgba(255, 111, 97, .9));
+  filter: brightness(1.15) drop-shadow(0 0 8px rgba(255, 111, 97, 0.6));
 }
 .helix-label-text {
   font-size: 13px;

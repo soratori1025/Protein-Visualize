@@ -13,6 +13,7 @@ frontend/dist/
 .vscode/
 
 # Data
+data/
 data/uploads/
 !data/uploads/.gitkeep
 

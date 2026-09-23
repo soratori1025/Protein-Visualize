@@ -1,19 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SecondaryStructureTrack } from '../components/analysis/SecondaryStructureTrack';
 import { TransmembraneTopologyDiagram } from '../components/topology/TransmembraneTopologyDiagram';
-import { getHealth, getSecondaryCapabilities, runSecondaryStructure, uploadStructure } from '../services/api';
-import type { ProteinUpload } from '../types/protein';
+import { getSecondaryCapabilities, runSecondaryStructure } from '../services/api';
 import type { SecondaryStructureResult } from '../types/secondaryStructure';
+import { useProtein } from '../contexts/ProteinContext';
+import { Header } from '../components/layout/Header';
 
-type Method = 'DSSP' | 'STRIDE' | 'COMPARE' | 'MANUAL';
+type Method = 'DSSP' | 'STRIDE';
 
 export function TransmembraneAnalysis() {
-  const [protein, setProtein] = useState<ProteinUpload | null>(null);
-  const [chainId, setChainId] = useState<string | null>(null);
-  const [selectedResidue, setSelectedResidue] = useState<number | null>(null);
+  const { protein, chainId, setChainId, selectedResidue, setSelectedResidue, status, setStatus, health } = useProtein();
   const [method, setMethod] = useState<Method>('DSSP');
-  const [status, setStatus] = useState('Ready for a structure file');
-  const [health, setHealth] = useState('API status unknown');
   const [secondaryCapabilities, setSecondaryCapabilities] = useState<Record<string, { available: boolean; executable: string }>>({});
   const [secondaryResult, setSecondaryResult] = useState<SecondaryStructureResult | null>(null);
   const [secondaryError, setSecondaryError] = useState<string | null>(null);
@@ -25,34 +22,9 @@ export function TransmembraneAnalysis() {
     void getSecondaryCapabilities().then(setSecondaryCapabilities).catch(() => setSecondaryCapabilities({}));
   }, []);
 
-  const handleUpload = async (file: File) => {
-    setStatus(`Parsing ${file.name}...`);
-    try {
-      const result = await uploadStructure(file);
-      setProtein(result);
-      setChainId(result.models[0]?.chains[0]?.id ?? null);
-      setSelectedResidue(null);
-      setSecondaryResult(null);
-      setSecondaryError(null);
-      setStatus(`${file.name} loaded`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Upload failed');
-    }
-  };
-
-  const checkHealth = async () => {
-    try {
-      const result = await getHealth();
-      setHealth(`${result.service} · ${result.version}`);
-      setSecondaryCapabilities(await getSecondaryCapabilities());
-    } catch {
-      setHealth('Backend unavailable');
-    }
-  };
-
   const runAnalysis = async () => {
     if (!protein || (method !== 'DSSP' && method !== 'STRIDE')) {
-      setStatus(method === 'COMPARE' ? 'Compare mode will run after both adapters return results' : 'Upload a structure before running analysis');
+      setStatus('Upload a structure before running analysis');
       return;
     }
     try {
@@ -68,17 +40,10 @@ export function TransmembraneAnalysis() {
 
   return (
     <main className="app-shell">
-      <header className="topbar">
-        <div>
-          <div className="eyebrow">STRUCTURE LAB / MVP 0.1</div>
-          <h1>Transmembrane Analysis</h1>
-          <p>Inspect secondary structure and transmembrane topology annotations.</p>
-        </div>
-        <div className="header-actions">
-          <label className="upload-button"><span>Upload PDB / mmCIF</span><input type="file" accept=".pdb,.ent,.cif,.mmcif" onChange={(event) => event.target.files?.[0] && handleUpload(event.target.files[0])} /></label>
-          <button className="quiet-button" onClick={checkHealth}>Check API</button>
-        </div>
-      </header>
+      <Header 
+        title="Transmembrane Analysis" 
+        subtitle="Inspect secondary structure and transmembrane topology annotations." 
+      />
 
 
 
@@ -93,7 +58,7 @@ export function TransmembraneAnalysis() {
           </div>
 
           <div className="method-pill-group">
-            {(['DSSP', 'STRIDE', 'COMPARE', 'MANUAL'] as Method[]).map((item) => {
+            {(['DSSP', 'STRIDE'] as Method[]).map((item) => {
               const isTool = item === 'DSSP' || item === 'STRIDE';
               const isReady = secondaryCapabilities[item]?.available;
 
@@ -103,7 +68,7 @@ export function TransmembraneAnalysis() {
                   className={`method-pill ${method === item ? 'active' : ''} ${isTool && !isReady ? 'missing-tool' : ''}`}
                   onClick={() => { setMethod(item); setSecondaryError(null); }}
                 >
-                  <span className="method-pill-name">{item === 'COMPARE' ? 'DSSP + STRIDE' : item}</span>
+                  <span className="method-pill-name">{item}</span>
                   <span className={`method-pill-status ${isReady ? 'ready' : ''}`}>
                     {!isTool ? 'MODE' : isReady ? 'READY' : 'NOT INSTALLED'}
                   </span>
@@ -117,17 +82,6 @@ export function TransmembraneAnalysis() {
           <button className="run-button" style={{ padding: '16px', fontSize: '16px' }} onClick={runAnalysis}>
             Run annotation
           </button>
-
-          <div className="method-note">
-            {method === 'MANUAL'
-              ? 'Manual annotations will map residue ranges to helix, sheet, or turn.'
-              : secondaryError
-                ? secondaryError
-                : secondaryResult
-                  ? `${secondaryResult.method} returned ${secondaryResult.residues.length} residue assignments.`
-                  : `${method === 'COMPARE' ? 'Comparison' : method} requires its native executable.`}
-          </div>
-
           {secondaryError && (
             <div className="tool-error">
               Install {method === 'DSSP' ? 'mkdssp' : 'stride'} and place it on PATH, then restart the backend.

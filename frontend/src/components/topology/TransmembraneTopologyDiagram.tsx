@@ -401,10 +401,12 @@ export function TransmembraneTopologyDiagram({
   const [tmMinMembraneScore, setTmMinMembraneScore] = useState<string>('0.5');
 
   const [colorDrawerOpen, setColorDrawerOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'preset' | 'helices' | 'residues'>('preset');
+  const [activeTab, setActiveTab] = useState<'preset' | 'helices' | 'residues' | 'effects'>('preset');
   const [selectedPaletteKey, setSelectedPaletteKey] = useState<string>('PAPER_DEFAULT');
   const [customHelixColors, setCustomHelixColors] = useState<Record<string, string>>({});
   const [customResidueRules, setCustomResidueRules] = useState<CustomResidueColorRule[]>([]);
+  const [hoverBrightness, setHoverBrightness] = useState<number>(1.1);
+  const [hoverShadow, setHoverShadow] = useState<number>(0.3);
 
   const [resStartInput, setResStartInput] = useState<string>('');
   const [resEndInput, setResEndInput] = useState<string>('');
@@ -803,7 +805,13 @@ export function TransmembraneTopologyDiagram({
   const lastHelix = helices[helices.length - 1];
 
   return (
-    <div className="tm-topology-panel panel">
+    <div 
+      className="tm-topology-panel panel"
+      style={{
+        '--hover-brightness': hoverBrightness,
+        '--hover-shadow-opacity': hoverShadow,
+      } as React.CSSProperties}
+    >
       {/* Header + toolbar */}
       <div className="panel-heading" style={{ flexWrap: 'wrap', gap: '12px' }}>
         <div>
@@ -1087,10 +1095,49 @@ export function TransmembraneTopologyDiagram({
             >
               Residue ranges
             </button>
+            <button
+              className={`tm-tab-btn ${activeTab === 'effects' ? 'active' : ''}`}
+              onClick={() => setActiveTab('effects')}
+            >
+              Effects
+            </button>
             <button className="tm-reset-btn" onClick={handleResetColors}>
               Reset
             </button>
           </div>
+
+          {activeTab === 'effects' && (
+            <div className="tm-effects-section" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Hover Brightness</span>
+                  <span>{hoverBrightness.toFixed(2)}</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="1.0" 
+                  max="2.0" 
+                  step="0.05" 
+                  value={hoverBrightness} 
+                  onChange={(e) => setHoverBrightness(parseFloat(e.target.value))} 
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Hover Shadow Opacity</span>
+                  <span>{hoverShadow.toFixed(2)}</span>
+                </label>
+                <input 
+                  type="range" 
+                  min="0.0" 
+                  max="1.0" 
+                  step="0.05" 
+                  value={hoverShadow} 
+                  onChange={(e) => setHoverShadow(parseFloat(e.target.value))} 
+                />
+              </div>
+            </div>
+          )}
 
           {activeTab === 'preset' && (
             <div className="tm-palette-grid">
