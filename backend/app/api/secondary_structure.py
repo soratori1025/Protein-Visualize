@@ -14,8 +14,8 @@ from app.services.topology.orchestrator import TopologyOrchestrator
 from app.api.dependencies import get_tm_params, get_topology_orchestrator
 
 router = APIRouter(prefix="/api/secondary-structure", tags=["secondary-structure"])
-ROOT = Path(__file__).resolve().parents[3]
-UPLOAD_DIR = ROOT / "backend" / "data" / "uploads"
+ROOT = Path(__file__).resolve().parents[2]
+UPLOAD_DIR = ROOT / "data" / "uploads"
 
 
 @router.get("/capabilities")
