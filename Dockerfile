@@ -12,8 +12,8 @@ WORKDIR /workspace
 RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local bin/micromamba && \
     /usr/local/bin/micromamba create -y -p /workspace/tools/conda-env -c conda-forge -c salilab -c bioconda dssp=3.0.0 stride && \
     mkdir -p /workspace/tools/bin && \
-    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/dssp" "$@"' > /workspace/tools/bin/dssp && \
-    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/dssp" "$@"' > /workspace/tools/bin/mkdssp && \
+    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/mkdssp" "$@"' > /workspace/tools/bin/dssp && \
+    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/mkdssp" "$@"' > /workspace/tools/bin/mkdssp && \
     echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/stride" "$@"' > /workspace/tools/bin/stride && \
     chmod +x /workspace/tools/bin/*
 
