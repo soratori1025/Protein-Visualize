@@ -178,6 +178,12 @@ interface Props {
   onSelectResidue?: (residueNumber: number) => void;
   uniprotId?: string | null;
   filename?: string | null;
+  tmAlgorithm?: string;
+  onTmAlgorithmChange?: (algo: string) => void;
+  topologySource?: TopologySource;
+  onTopologySourceChange?: (source: TopologySource) => void;
+  onTopologyDataChange?: (data: UniProtTopologyData | null) => void;
+  triggerTmRecalc?: number;
 }
 
 export interface TMHelix {
@@ -374,14 +380,34 @@ export function TransmembraneTopologyDiagram({
   onSelectResidue,
   selectedResidue,
   uniprotId,
+  tmAlgorithm: propsTmAlgorithm,
+  onTmAlgorithmChange,
+  topologySource: propsTopologySource,
+  onTopologySourceChange,
+  onTopologyDataChange,
+  triggerTmRecalc,
 }: Props) {
   const [uniprotIdInput, setUniprotIdInput] = useState<string>('P31645');
   const [uniprotData, setUniprotData] = useState<UniProtTopologyData | null>(null);
   const [loadingUniProt, setLoadingUniProt] = useState<boolean>(false);
   const [uniprotError, setUniprotError] = useState<string | null>(null);
 
-  const [topologySource, setTopologySource] = useState<TopologySource>('uniprot');
-  const [tmAlgorithm, setTmAlgorithm] = useState<string>('3d_slab_geom');
+  const [internalTopologySource, setInternalTopologySource] = useState<TopologySource>('uniprot');
+  const topologySource = propsTopologySource ?? internalTopologySource;
+  
+  const handleTopologySourceChange = (source: TopologySource) => {
+    if (onTopologySourceChange) onTopologySourceChange(source);
+    else setInternalTopologySource(source);
+  };
+
+  const [internalTmAlgorithm, setInternalTmAlgorithm] = useState<string>('3d_slab_geom');
+  const tmAlgorithm = propsTmAlgorithm ?? internalTmAlgorithm;
+  
+  const handleTmAlgorithmChange = (algo: string) => {
+    if (onTmAlgorithmChange) onTmAlgorithmChange(algo);
+    else setInternalTmAlgorithm(algo);
+  };
+
   const [ssAlgorithm, setSsAlgorithm] = useState<string>('dssp');
   const [flowType, setFlowType] = useState<string>('ss_then_tm');
   const [customUniprotId, setCustomUniprotId] = useState<string>('');
@@ -483,20 +509,24 @@ export function TransmembraneTopologyDiagram({
   }, [uniprotId]);
 
   useEffect(() => {
-    setCalculatedData(null);
-    setCalculatedError(null);
-    if (topologySource === 'calculated' && filename) fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId]);
-
-  useEffect(() => {
-    if (topologySource === 'calculated' && filename && !calculatedData && !loadingCalculated) {
-      fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId);
+    if (triggerTmRecalc && triggerTmRecalc > 0) {
+      if (filename) {
+        setCalculatedData(null);
+        setCalculatedError(null);
+        fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topologySource]);
+  }, [triggerTmRecalc]);
 
   const activeTopologyData = topologySource === 'calculated' ? calculatedData : uniprotData;
+
+  useEffect(() => {
+    if (onTopologyDataChange) {
+      onTopologyDataChange(activeTopologyData);
+    }
+  }, [activeTopologyData, onTopologyDataChange]);
+
   const activeError = topologySource === 'calculated' ? calculatedError : uniprotError;
   const activeLoading = topologySource === 'calculated' ? loadingCalculated : loadingUniProt;
 
@@ -849,13 +879,13 @@ export function TransmembraneTopologyDiagram({
           <div className="tm-preset-chip" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
             <button
               className={`tm-tab-btn ${topologySource === 'uniprot' ? 'active' : ''}`}
-              onClick={() => setTopologySource('uniprot')}
+              onClick={() => handleTopologySourceChange('uniprot')}
             >
               UniProt
             </button>
             <button
               className={`tm-tab-btn ${topologySource === 'calculated' ? 'active' : ''}`}
-              onClick={() => setTopologySource('calculated')}
+              onClick={() => handleTopologySourceChange('calculated')}
               disabled={!filename}
               title={!filename ? 'Upload a structure file to calculate topology' : undefined}
             >
@@ -938,7 +968,7 @@ export function TransmembraneTopologyDiagram({
                   <select 
                     className="tm-input-field" 
                     value={tmAlgorithm}
-                    onChange={(e) => setTmAlgorithm(e.target.value)}
+                    onChange={(e) => handleTmAlgorithmChange(e.target.value)}
                     style={{ padding: '4px 8px' }}
                   >
                     <option value="3d_slab_geom">3D Slab Geometry (Recommended)</option>
