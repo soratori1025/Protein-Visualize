@@ -56,8 +56,6 @@ from app.core.constants import (
     MIN_TM_ELEMENT_IN_SLAB, FULL_CROSS_FRAC, BROKEN_GAP_MAX, MIN_CROSS_SPAN_FRAC
 )
 from app.schemas.topology import TMParams, TopologyResponse, TopologyRegion
-from app.services.topology.base import BaseTopologyPredictor
-
 
 # =============================================================================
 # STAGE 1 helpers - pure geometry / hydrophobicity (numpy only)
@@ -775,40 +773,69 @@ def predict_topology_ss_first(file_path: Path, labeler: str = "DSSP",
     }
 
 
-class StructureTopologyPredictor(BaseTopologyPredictor):
-    """
-    Structure-based topology predictor (incorporates slab-geometry and SS-first algorithms).
-    """
-    
-    def predict(self, file_path: Path, labeler: str = "DSSP", params: TMParams | None = None, algorithm_variant: str = "dssp_ss") -> TopologyResponse:
-        """
-        Predict the transmembrane topology of a protein from its 3D structure.
-        """
+
+from app.services.topology.providers.tm.base import TMProvider, TMPrediction, TMBoundary
+import warnings
+from Bio.PDB import MMCIFParser, PDBParser
+from Bio.PDB.PDBExceptions import PDBConstructionWarning
+
+class GeometryTMProvider(TMProvider):
+    def predict_tm(self, file_path: Path, params: TMParams = None, **kwargs) -> TMPrediction:
         if params is None:
             params = TMParams()
             
-        if algorithm_variant == "kd_slab":
-            result_dict = predict_topology_structure(file_path, labeler="__none__", params=params)
-        elif algorithm_variant == "stride_slab":
-            result_dict = predict_topology_structure(file_path, labeler="STRIDE", params=params)
-        elif algorithm_variant == "dssp_slab":
-            result_dict = predict_topology_structure(file_path, labeler="DSSP", params=params)
-        elif algorithm_variant == "stride_ss":
-            result_dict = predict_topology_ss_first(file_path, labeler="STRIDE", params=params)
-        else:
-            # default is "dssp_ss"
-            result_dict = predict_topology_ss_first(file_path, labeler="DSSP", params=params)
-            
-        # Convert the dict result to the Pydantic TopologyResponse schema
-        regions = [TopologyRegion(**r) for r in result_dict.get("regions", [])]
-        return TopologyResponse(
-            uniprot_id=result_dict.get("uniprot_id", ""),
-            protein_name=result_dict.get("protein_name", ""),
-            gene_name=result_dict.get("gene_name", ""),
-            organism=result_dict.get("organism", ""),
-            membrane_score=result_dict.get("membrane_score", 0.0),
-            membrane_normal=result_dict.get("membrane_normal"),
-            labeler=result_dict.get("labeler", ""),
-            parameters_used=result_dict.get("parameters_used", {}),
-            regions=regions
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', PDBConstructionWarning)
+            parser = MMCIFParser() if file_path.suffix.lower() in ('.cif', '.mmcif') else PDBParser()
+            structure = parser.get_structure('protein', str(file_path))
+
+        model = next(iter(structure))
+        chain = next(iter(model))
+
+        residues_data = []
+        ca_coords = []
+        for residue in chain:
+            if 'CA' in residue and residue.get_resname() in KYTE_DOOLITTLE:
+                ca_coords.append(residue['CA'].get_coord())
+                residues_data.append({'id': residue.get_id()[1], 'name': residue.get_resname()})
+
+        if len(ca_coords) < 10:
+            return TMPrediction(boundaries=[])
+
+        coords = np.array(ca_coords)
+        weights = _membrane_weights([r['name'] for r in residues_data])
+
+        classifications, d, membrane_score, axis, center = _classify_by_slab(
+            coords, weights, thickness=params.membrane_thickness
+        )
+        
+        if membrane_score < params.min_membrane_score:
+            return TMPrediction(boundaries=[], membrane_score=membrane_score, membrane_normal=list(axis))
+
+        half = params.membrane_thickness / 2.0
+        classifications = _smooth_flickers(classifications, d, half)
+        classifications = _drop_short_tm(classifications)
+
+        # Convert classifications ("Transmembrane") to boundaries
+        boundaries = []
+        in_tm = False
+        start_idx = -1
+        for i, c in enumerate(classifications):
+            if c == "Transmembrane":
+                if not in_tm:
+                    in_tm = True
+                    start_idx = i
+            else:
+                if in_tm:
+                    boundaries.append(TMBoundary(start=residues_data[start_idx]['id'], end=residues_data[i-1]['id']))
+                    in_tm = False
+        
+        if in_tm:
+            boundaries.append(TMBoundary(start=residues_data[start_idx]['id'], end=residues_data[-1]['id']))
+
+        return TMPrediction(
+            boundaries=boundaries, 
+            membrane_normal=list(axis), 
+            membrane_score=membrane_score, 
+            labeler="3D_Geometry"
         )

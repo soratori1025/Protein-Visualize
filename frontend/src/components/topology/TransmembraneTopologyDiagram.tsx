@@ -381,9 +381,10 @@ export function TransmembraneTopologyDiagram({
   const [uniprotError, setUniprotError] = useState<string | null>(null);
 
   const [topologySource, setTopologySource] = useState<TopologySource>('uniprot');
-  const [calcAlgorithm, setCalcAlgorithm] = useState<
-    'dssp_ss' | 'stride_ss' | 'dssp_slab' | 'stride_slab' | 'kd_slab' | 'tmhmm_seq'
-  >('dssp_ss');
+  const [tmAlgorithm, setTmAlgorithm] = useState<string>('3d_slab_geom');
+  const [ssAlgorithm, setSsAlgorithm] = useState<string>('dssp');
+  const [flowType, setFlowType] = useState<string>('ss_then_tm');
+  const [customUniprotId, setCustomUniprotId] = useState<string>('');
   const [overlayType, setOverlayType] = useState<'none' | 'dssp' | 'stride'>('none');
   const [calculatedData, setCalculatedData] = useState<UniProtTopologyData | null>(null);
   const [loadingCalculated, setLoadingCalculated] = useState<boolean>(false);
@@ -439,13 +440,13 @@ export function TransmembraneTopologyDiagram({
     }
   };
 
-  const fetchCalculatedTopology = useCallback(async (filenameToFetch: string, algorithm: string) => {
+  const fetchCalculatedTopology = useCallback(async (filenameToFetch: string, tm: string, ss: string, flow: string, cUni: string) => {
     if (!filenameToFetch.trim()) return;
     setLoadingCalculated(true);
     setCalculatedError(null);
     try {
-      // Build query string with algorithm + any non-default advanced params
-      const qp = new URLSearchParams({ algorithm });
+      const qp = new URLSearchParams({ tm_algo: tm, ss_algo: ss, flow_type: flow });
+      if (tm === 'uniprot_api' && cUni) qp.set('uniprot_id', cUni);
       const th = parseFloat(tmThickness);    if (!isNaN(th) && th !== 30)    qp.set('thickness', String(th));
       const me = parseInt(tmMinElement);      if (!isNaN(me) && me !== 4)     qp.set('min_tm_element', String(me));
       const cs = parseFloat(tmMinCrossSpan);  if (!isNaN(cs) && cs !== 0.45)  qp.set('min_cross_span', String(cs));
@@ -482,13 +483,13 @@ export function TransmembraneTopologyDiagram({
   useEffect(() => {
     setCalculatedData(null);
     setCalculatedError(null);
-    if (topologySource === 'calculated' && filename) fetchCalculatedTopology(filename, calcAlgorithm);
+    if (topologySource === 'calculated' && filename) fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filename, calcAlgorithm]);
+  }, [filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId]);
 
   useEffect(() => {
     if (topologySource === 'calculated' && filename && !calculatedData && !loadingCalculated) {
-      fetchCalculatedTopology(filename, calcAlgorithm);
+      fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topologySource]);
@@ -924,35 +925,73 @@ export function TransmembraneTopologyDiagram({
             </div>
                     ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <select 
-                  className="tm-input-field" 
-                  value={calcAlgorithm}
-                  onChange={(e) => setCalcAlgorithm(e.target.value as any)}
-                  style={{ padding: '4px 8px' }}
-                >
-                  <option value="dssp_ss">DSSP elements + membrane (recommended)</option>
-                  <option value="stride_ss">STRIDE elements + membrane</option>
-                  <option value="dssp_slab">DSSP + slab (legacy)</option>
-                  <option value="stride_slab">STRIDE + slab (legacy)</option>
-                  <option value="kd_slab">Geometry only (no SS)</option>
-                  <option value="tmhmm_seq">Sequence only (no 3D)</option>
-                </select>
-                <button
-                  onClick={() => filename && fetchCalculatedTopology(filename, calcAlgorithm)}
-                  disabled={loadingCalculated || !filename}
-                  className="tm-add-btn"
-                >
-                  {loadingCalculated ? 'Computing…' : 'Recalculate'}
-                </button>
-                <button
-                  onClick={() => setShowAdvancedParams(!showAdvancedParams)}
-                  className="tm-add-btn"
-                  style={{ fontSize: '0.8em', opacity: 0.8 }}
-                  title="Tune biological thresholds for TM detection"
-                >
-                  {showAdvancedParams ? '▲ Parameters' : '▼ Parameters'}
-                </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid #333', padding: '8px', borderRadius: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <select 
+                    className="tm-input-field" 
+                    value={tmAlgorithm}
+                    onChange={(e) => setTmAlgorithm(e.target.value)}
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <option value="3d_slab_geom">3D Slab Geometry (Recommended)</option>
+                    <option value="kyte_doolittle_seq">Kyte-Doolittle Sequence</option>
+                    <option value="uniprot_api">UniProt API</option>
+                  </select>
+
+                  {tmAlgorithm === 'uniprot_api' && (
+                    <input 
+                      type="text"
+                      className="tm-input-field"
+                      placeholder="UniProt ID (e.g. P31645)"
+                      value={customUniprotId}
+                      onChange={(e) => setCustomUniprotId(e.target.value)}
+                      style={{ width: '150px', padding: '4px 8px' }}
+                    />
+                  )}
+
+                  <select 
+                    className="tm-input-field" 
+                    value={ssAlgorithm}
+                    onChange={(e) => setSsAlgorithm(e.target.value)}
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <option value="dssp">DSSP</option>
+                    <option value="stride">STRIDE</option>
+                    <option value="none">None (Only TM boundaries)</option>
+                  </select>
+
+                  <select 
+                    className="tm-input-field" 
+                    value={flowType}
+                    onChange={(e) => setFlowType(e.target.value)}
+                    style={{ padding: '4px 8px' }}
+                  >
+                    <option value="ss_then_tm">Filter TM by SS (Recommended)</option>
+                    <option value="tm_then_ss">Filter SS by TM</option>
+                    <option value="parallel_merge">Parallel Merge (Strict Intersection)</option>
+                  </select>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={() => filename && fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId)}
+                    disabled={loadingCalculated || !filename || (tmAlgorithm === 'uniprot_api' && !customUniprotId)}
+                    className="tm-add-btn"
+                  >
+                    {loadingCalculated ? 'Computing…' : 'Recalculate'}
+                  </button>
+                  <button
+                    onClick={() => setShowAdvancedParams(!showAdvancedParams)}
+                    className="tm-add-btn"
+                    style={{ fontSize: '0.8em', opacity: 0.8 }}
+                    title="Tune biological thresholds for TM detection"
+                  >
+                    {showAdvancedParams ? '▲ Parameters' : '▼ Parameters'}
+                  </button>
+                  {tmAlgorithm === 'uniprot_api' && !customUniprotId && (
+                    <span style={{color: '#ff4444', fontSize: '12px'}}>* UniProt ID is required</span>
+                  )}
+                </div>
               </div>
               {showAdvancedParams && (
                 <div style={{
@@ -1378,7 +1417,7 @@ export function TransmembraneTopologyDiagram({
                   stroke={first.color}
                   strokeWidth="2.6"
                 />
-                <text x="20" y={first.entrySide === 'out' ? membraneTopY - 70 : membraneBottomY + 75} textAnchor="middle" style={{ fill: isPub ? '#1e293b' : '#e2e8f0', fontSize: '11px', fontWeight: 'bold' }}>NH2</text>
+                <text x="20" y={first.entrySide === 'out' ? membraneTopY - 70 : membraneBottomY + 75} textAnchor="middle" style={{ fill: isPub ? '#1e293b' : '#e2e8f0', fontSize: '11px', fontWeight: 'bold' }}>N (NH2)</text>
                 
                 {nFeatures.map((f, i) => {
                    const y = first.entrySide === 'out' ? membraneTopY - 45 : membraneBottomY + 45;
@@ -1401,7 +1440,7 @@ export function TransmembraneTopologyDiagram({
                   stroke={last.color}
                   strokeWidth="2.6"
                 />
-                <text x={canvasWidth - 30} y={last.exitSide === 'out' ? membraneTopY - 70 : membraneBottomY + 75} textAnchor="middle" style={{ fill: isPub ? '#1e293b' : '#e2e8f0', fontSize: '11px', fontWeight: 'bold' }}>COOH</text>
+                <text x={canvasWidth - 30} y={last.exitSide === 'out' ? membraneTopY - 70 : membraneBottomY + 75} textAnchor="middle" style={{ fill: isPub ? '#1e293b' : '#e2e8f0', fontSize: '11px', fontWeight: 'bold' }}>C (COOH)</text>
                 
                 {cFeatures.map((f, i) => {
                    const y = last.exitSide === 'out' ? membraneTopY - 45 : membraneBottomY + 45;
@@ -1611,70 +1650,6 @@ export function TransmembraneTopologyDiagram({
             })}
           </g>
 
-          {/* N and C termini */}
-          {firstHelix && lastHelix && (
-            <g className="terminals">
-              {(() => {
-                const p = helixPositions[firstHelix.id];
-                if (!p) return null;
-                const y = p.nEndY;
-                const down = firstHelix.entrySide === 'in';
-                const tipY = down ? y + 42 : y - 42;
-                return (
-                  <>
-                    <path
-                      d={`M ${p.x + helixWidth / 2} ${y} C ${p.x - 4} ${(y + tipY) / 2}, ${p.x - 30} ${
-                        (y + tipY) / 2
-                      }, ${p.x - 34} ${tipY}`}
-                      fill="none"
-                      stroke={firstHelix.color}
-                      strokeWidth="2.4"
-                      strokeLinecap="round"
-                    />
-                    <text
-                      x={p.x - 48}
-                      y={tipY + 5}
-                      className="terminal-text"
-                      textAnchor="middle"
-                      style={{ fill: isPub ? '#0f172a' : '#e2e8f0' }}
-                    >
-                      N
-                    </text>
-                  </>
-                );
-              })()}
-
-              {(() => {
-                const p = helixPositions[lastHelix.id];
-                if (!p) return null;
-                const y = p.cEndY;
-                const down = lastHelix.exitSide === 'in';
-                const tipY = down ? y + 42 : y - 42;
-                return (
-                  <>
-                    <path
-                      d={`M ${p.x + helixWidth / 2} ${y} C ${p.x + helixWidth + 6} ${(y + tipY) / 2}, ${
-                        p.x + helixWidth + 26
-                      } ${(y + tipY) / 2}, ${p.x + helixWidth + 32} ${tipY}`}
-                      fill="none"
-                      stroke={lastHelix.color}
-                      strokeWidth="2.4"
-                      strokeLinecap="round"
-                    />
-                    <text
-                      x={p.x + helixWidth + 48}
-                      y={tipY + 5}
-                      className="terminal-text"
-                      textAnchor="middle"
-                      style={{ fill: isPub ? '#0f172a' : '#e2e8f0' }}
-                    >
-                      C
-                    </text>
-                  </>
-                );
-              })()}
-            </g>
-          )}
         </svg>
       </div>
 

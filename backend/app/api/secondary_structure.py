@@ -10,8 +10,8 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from protein_engine.secondary_structure.dssp import DSSPMethod
 from protein_engine.secondary_structure.stride import STRIDEMethod
 from app.schemas.topology import TMParams
-from app.services.topology.base import BaseTopologyPredictor
-from app.api.dependencies import get_tm_params, get_topology_predictor
+from app.services.topology.orchestrator import TopologyOrchestrator
+from app.api.dependencies import get_tm_params, get_topology_orchestrator
 
 router = APIRouter(prefix="/api/secondary-structure", tags=["secondary-structure"])
 ROOT = Path(__file__).resolve().parents[3]
@@ -119,20 +119,16 @@ def get_uniprot_topology(uniprot_id: str) -> dict:
 @router.get("/predict-topology/{filename}")
 def predict_topology_from_structure(
     filename: str,
-    algorithm: str = "dssp_slab",
+    uniprot_id: Optional[str] = Query(None, description="Required only if tm_algo=uniprot_api"),
     params: TMParams = Depends(get_tm_params),
-    predictor: BaseTopologyPredictor = Depends(get_topology_predictor)
+    orchestrator: TopologyOrchestrator = Depends(get_topology_orchestrator)
 ) -> dict:
     path = UPLOAD_DIR / Path(filename).name
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Uploaded structure not found")
 
     try:
-        # Note: Depending on the predictor, we pass the algorithm variant if it supports it
-        if algorithm == "tmhmm_seq":
-            response = predictor.predict(path, params=params)
-        else:
-            response = predictor.predict(path, algorithm_variant=algorithm, params=params)
+        response = orchestrator.execute(path, params=params, uniprot_id=uniprot_id)
         return response.dict()
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
@@ -140,29 +136,24 @@ def predict_topology_from_structure(
 
 @router.get("/predict-topology/{filename}/membrane-normal")
 def get_membrane_normal(
-    filename: str, 
-    algorithm: str = "dssp_slab",
-    predictor: BaseTopologyPredictor = Depends(get_topology_predictor)
+    filename: str
 ) -> dict:
     path = UPLOAD_DIR / Path(filename).name
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Uploaded structure not found")
     
     try:
-        if algorithm == "tmhmm_seq":
-            algorithm = "kd_slab"
-            
-        # Re-fetch predictor for kd_slab explicitly here
-        from app.services.topology.structure_predictor import StructureTopologyPredictor
-        geom_predictor = StructureTopologyPredictor()
+        # We always use the geometry provider to find the membrane normal, regardless of the chosen algorithm
+        from app.services.topology.providers.tm.geometry import GeometryTMProvider
+        geom_predictor = GeometryTMProvider()
         
-        response = geom_predictor.predict(path, algorithm_variant=algorithm)
-        if response.membrane_normal is None:
+        prediction = geom_predictor.predict_tm(path)
+        if prediction.membrane_normal is None:
             raise HTTPException(status_code=400, detail="No membrane normal detected (likely soluble)")
             
         return {
-            "membrane_normal": response.membrane_normal,
-            "membrane_score": response.membrane_score
+            "membrane_normal": prediction.membrane_normal,
+            "membrane_score": prediction.membrane_score
         }
     except HTTPException:
         raise
