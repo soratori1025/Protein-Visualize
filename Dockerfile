@@ -1,12 +1,21 @@
 FROM python:3.11-slim
 
-# Cài đặt DSSP
+# Cài đặt curl và bzip2 để tải Micromamba
 RUN apt-get update && apt-get install -y \
-    dssp \
+    curl bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Thiết lập thư mục gốc của repo
 WORKDIR /workspace
+
+# Cài đặt Micromamba, DSSP 3.0.0 (từ salilab) và STRIDE (từ bioconda)
+RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local bin/micromamba && \
+    /usr/local/bin/micromamba create -y -p /workspace/tools/conda-env -c conda-forge -c salilab -c bioconda dssp=3.0.0 stride && \
+    mkdir -p /workspace/tools/bin && \
+    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/dssp" "$@"' > /workspace/tools/bin/dssp && \
+    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/dssp" "$@"' > /workspace/tools/bin/mkdssp && \
+    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/stride" "$@"' > /workspace/tools/bin/stride && \
+    chmod +x /workspace/tools/bin/*
 
 # Chỉ copy requirements trước để tận dụng cache của Docker
 COPY backend/requirements.txt ./backend/
