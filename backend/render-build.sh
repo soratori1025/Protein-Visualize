@@ -20,9 +20,24 @@ fi
 echo "Installing DSSP and STRIDE via bioconda..."
 ./tools/bin/micromamba create -y -p ./tools/conda-env -c conda-forge -c bioconda dssp stride
 
-# Symlink the executables so main.py can find them in tools/bin
-ln -sf $(pwd)/tools/conda-env/bin/mkdssp tools/bin/mkdssp
-ln -sf $(pwd)/tools/conda-env/bin/stride tools/bin/stride
+# Create wrapper scripts to ensure the binaries can find Conda's shared libraries (like libstdc++)
+echo "Creating wrapper scripts..."
+
+cat << 'EOF' > tools/bin/mkdssp
+#!/usr/bin/env bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+export LD_LIBRARY_PATH="$DIR/../conda-env/lib:$LD_LIBRARY_PATH"
+exec "$DIR/../conda-env/bin/mkdssp" "$@"
+EOF
+chmod +x tools/bin/mkdssp
+
+cat << 'EOF' > tools/bin/stride
+#!/usr/bin/env bash
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+export LD_LIBRARY_PATH="$DIR/../conda-env/lib:$LD_LIBRARY_PATH"
+exec "$DIR/../conda-env/bin/stride" "$@"
+EOF
+chmod +x tools/bin/stride
 
 # 2. DSSP/libcifpp requires compound dictionaries to parse mmCIF/PDB files.
 # main.py already looks for tools/share/libcifpp, so we will download them there.
