@@ -12,7 +12,7 @@ RUN mkdir -p /usr/share/libcifpp && \
 
 # Cài đặt STRIDE qua Micromamba (vì apt không có stride) và đưa vào PATH
 RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local bin/micromamba && \
-    /usr/local/bin/micromamba create -y -p /opt/conda -c bioconda stride && \
+    /usr/local/bin/micromamba create -y -p /opt/conda -c conda-forge -c bioconda stride && \
     ln -s /opt/conda/bin/stride /usr/bin/stride
 
 # Thiết lập thư mục gốc của repo
