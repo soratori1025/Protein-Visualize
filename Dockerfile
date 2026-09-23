@@ -1,24 +1,22 @@
 FROM python:3.11-slim
 
-# Cài đặt curl và bzip2 để tải Micromamba
+# Cài đặt DSSP từ repo chính thức của Debian (chuẩn nhất, không bị lỗi C++ ABI) và curl/bzip2
 RUN apt-get update && apt-get install -y \
-    curl bzip2 \
+    dssp curl bzip2 \
     && rm -rf /var/lib/apt/lists/*
+
+# Tải file từ điển nén (chỉ 70MB) cho DSSP 4.x để tránh lỗi "Assertion 'compound' failed"
+RUN mkdir -p /usr/share/libcifpp && \
+    curl -s -o /usr/share/libcifpp/components.cif.gz https://files.wwpdb.org/pub/pdb/data/monomers/components.cif.gz && \
+    curl -s -o /usr/share/libcifpp/mmcif_pdbx.dic https://mmcif.wwpdb.org/dictionaries/ascii/mmcif_pdbx_v50.dic
+
+# Cài đặt STRIDE qua Micromamba (vì apt không có stride) và đưa vào PATH
+RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local bin/micromamba && \
+    /usr/local/bin/micromamba create -y -p /opt/conda -c bioconda stride && \
+    ln -s /opt/conda/bin/stride /usr/bin/stride
 
 # Thiết lập thư mục gốc của repo
 WORKDIR /workspace
-
-# Cài đặt Micromamba, DSSP (4.6.1) từ conda-forge và STRIDE từ bioconda
-RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local bin/micromamba && \
-    /usr/local/bin/micromamba create -y -p /workspace/tools/conda-env -c conda-forge -c bioconda dssp stride && \
-    mkdir -p /workspace/tools/bin && \
-    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/mkdssp" --output-format=dssp "$@"' > /workspace/tools/bin/dssp && \
-    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/mkdssp" --output-format=dssp "$@"' > /workspace/tools/bin/mkdssp && \
-    echo '#!/usr/bin/env bash\nexport LD_LIBRARY_PATH="/workspace/tools/conda-env/lib:$LD_LIBRARY_PATH"\nexec "/workspace/tools/conda-env/bin/stride" "$@"' > /workspace/tools/bin/stride && \
-    chmod +x /workspace/tools/bin/* && \
-    mkdir -p /workspace/tools/share/libcifpp && \
-    curl -s -o /workspace/tools/share/libcifpp/components.cif.gz https://files.wwpdb.org/pub/pdb/data/monomers/components.cif.gz && \
-    curl -s -o /workspace/tools/share/libcifpp/mmcif_pdbx.dic https://mmcif.wwpdb.org/dictionaries/ascii/mmcif_pdbx_v50.dic
 
 # Chỉ copy requirements trước để tận dụng cache của Docker
 COPY backend/requirements.txt ./backend/
