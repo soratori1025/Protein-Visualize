@@ -18,7 +18,7 @@ fi
 
 # Install dssp=3.0.0 (which avoids the heavy libcifpp dictionaries and RAM exhaustion on Render)
 echo "Installing DSSP 3.0.0 and STRIDE via bioconda..."
-../tools/bin/micromamba create -y -p ../tools/conda-env -c conda-forge -c bioconda dssp=3.0.0 stride
+../tools/bin/micromamba create -y -p ../tools/conda-env -c conda-forge -c salilab -c bioconda dssp=3.0.0 stride
 
 # Create wrapper scripts to ensure the binaries can find Conda's shared libraries
 echo "Creating wrapper scripts..."
