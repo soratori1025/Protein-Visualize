@@ -1,76 +1,91 @@
-import numpy as np
 from pathlib import Path
-import warnings
 from typing import Optional
-from Bio.PDB import PDBParser, MMCIFParser
-from Bio.PDB.PDBExceptions import PDBConstructionWarning
 
-from app.core.constants import KYTE_DOOLITTLE, SMOOTH_WINDOW, TM_HYDRO_THRESHOLD, TM_MIN_LENGTH, TM_MERGE_GAP
+import numpy as np
+
+from app.core.constants import (
+    KYTE_DOOLITTLE, SMOOTH_WINDOW, TM_HYDRO_THRESHOLD, TM_MERGE_GAP, TM_MIN_LENGTH,
+)
 from app.schemas.topology import TMParams
-from app.services.topology.providers.tm.base import TMProvider, TMPrediction, TMBoundary
+from app.services.topology.labels import TM, UNASSIGNED, build_regions
+from app.services.topology.providers.tm.base import TMPrediction, TMProvider
+from app.services.topology.residues import ResidueFrame, load_residue_frame
 
-def _smooth_hydrophobicity(sequence, window: int = SMOOTH_WINDOW) -> np.ndarray:
-    scores = [KYTE_DOOLITTLE.get(res, 0.0) for res in sequence]
+
+def _smooth_hydrophobicity(sequence, window: int = SMOOTH_WINDOW, fragments=None) -> np.ndarray:
+    """Windowed Kyte-Doolittle mean. With ``fragments`` (inclusive position ranges of
+    covalently continuous stretches) the window never reaches across a chain break,
+    so residues on both sides of an unresolved loop are not averaged together."""
+    scores = np.array([KYTE_DOOLITTLE.get(res, 0.0) for res in sequence], dtype=float)
+    n = len(scores)
+    if n == 0:
+        return scores
+    fragments = fragments or [(0, n - 1)]
     half = window // 2
-    out = []
-    for i in range(len(scores)):
-        lo, hi = max(0, i - half), min(len(scores), i + half + 1)
-        out.append(float(np.mean(scores[lo:hi])))
-    return np.array(out)
+    out = np.empty(n)
+    for f0, f1 in fragments:
+        for i in range(f0, f1 + 1):
+            lo, hi = max(f0, i - half), min(f1, i + half)
+            out[i] = scores[lo:hi + 1].mean()
+    return out
 
-def _find_hydrophobic_segments(hydro, threshold, min_length, merge_gap=TM_MERGE_GAP):
+
+def _find_hydrophobic_segments(hydro, threshold, min_length, merge_gap=TM_MERGE_GAP,
+                               window: int = SMOOTH_WINDOW):
+    """Positions (inclusive) of windows whose mean exceeds ``threshold``, widened by
+    half a window (the window centre marks the middle of the segment)."""
     raw_segments = []
-    in_seg = False
-    start = 0
+    in_seg, start = False, 0
     for i, h in enumerate(hydro):
-        if h > threshold:
-            if not in_seg:
-                in_seg = True
-                start = i
-        else:
-            if in_seg:
-                in_seg = False
-                raw_segments.append((start, i - 1))
+        if h > threshold and not in_seg:
+            in_seg, start = True, i
+        elif h <= threshold and in_seg:
+            in_seg = False
+            raw_segments.append((start, i - 1))
     if in_seg:
         raw_segments.append((start, len(hydro) - 1))
 
     merged = []
-    half = SMOOTH_WINDOW // 2
-    for seg in raw_segments:
-        s = max(0, seg[0] - half)
-        e = min(len(hydro) - 1, seg[1] + half)
+    half = window // 2
+    for s0, e0 in raw_segments:
+        s = max(0, s0 - half)
+        e = min(len(hydro) - 1, e0 + half)
         if merged and s - merged[-1][1] - 1 <= merge_gap:
             merged[-1] = (merged[-1][0], max(merged[-1][1], e))
         else:
             merged.append((s, e))
-
     return [(s, e) for s, e in merged if (e - s + 1) >= min_length]
 
+
 class SequenceTMProvider(TMProvider):
-    def predict_tm(self, file_path: Path, params: Optional[TMParams] = None, **kwargs) -> TMPrediction:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', PDBConstructionWarning)
-            parser = MMCIFParser() if file_path.suffix.lower() in ('.cif', '.mmcif') else PDBParser()
-            structure = parser.get_structure('protein', str(file_path))
+    """Kyte-Doolittle hydropathy scan on the OBSERVED residues of the chain.
 
-        model = next(iter(structure))
-        chain = next(iter(model))
+    Reports TM segments only; loop sides are left 'Unassigned' and are inferred by
+    the orchestrator (alternation + positive-inside rule)."""
 
-        residues_data = []
-        for residue in chain:
-            if 'CA' in residue and residue.get_resname() in KYTE_DOOLITTLE:
-                residues_data.append({'id': residue.get_id()[1], 'name': residue.get_resname()})
-                
-        sequence = [r['name'] for r in residues_data]
-        hydro = _smooth_hydrophobicity(sequence)
-        
+    LABELER = "Kyte-Doolittle_Sequence"
+
+    def predict_tm(self, file_path: Path, params: Optional[TMParams] = None,
+                   frame: Optional[ResidueFrame] = None, **kwargs) -> TMPrediction:
+        frame = frame if frame is not None else load_residue_frame(file_path, kwargs.get("chain_id"))
+        n = len(frame)
+        if n == 0:
+            return TMPrediction(labeler=self.LABELER, warnings=["no amino-acid residues in chain"])
+
+        hydro = _smooth_hydrophobicity(frame.names, fragments=frame.fragments())
         segments = _find_hydrophobic_segments(hydro, TM_HYDRO_THRESHOLD, TM_MIN_LENGTH)
-        
-        boundaries = []
+
+        labels = [UNASSIGNED] * n
         for s, e in segments:
-            boundaries.append(TMBoundary(start=residues_data[s]['id'], end=residues_data[e]['id']))
-            
+            for k in range(s, e + 1):
+                labels[k] = TM
+        groups = [-1] * n
+        for g, (s, e) in enumerate(segments):
+            for k in range(s, e + 1):
+                groups[k] = g
         return TMPrediction(
-            boundaries=boundaries,
-            labeler="Kyte-Doolittle_Sequence"
+            regions=build_regions(frame, labels, groups, skip=(UNASSIGNED,)),
+            labels=labels,
+            segments=segments,
+            labeler=self.LABELER,
         )

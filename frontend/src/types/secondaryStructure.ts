@@ -19,6 +19,8 @@ export interface UniProtTopologyRegion {
   end: number;
   description: string;
   name: string;
+  start_icode?: string | null;
+  end_icode?: string | null;
 }
 
 export interface UniProtTopologyData {
@@ -27,4 +29,6 @@ export interface UniProtTopologyData {
   gene_name: string;
   organism: string;
   regions: UniProtTopologyRegion[];
+  chain_id?: string | null;
+  warnings?: string[];
 }

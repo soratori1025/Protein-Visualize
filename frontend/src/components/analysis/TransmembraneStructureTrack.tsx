@@ -20,14 +20,18 @@ interface Props {
 export function TransmembraneStructureTrack({ chain, data, selectedResidue, onSelectResidue }: Props) {
   const [hoveredRes, setHoveredRes] = useState<number | null>(null);
 
-  const totalResidues = chain.sequence?.length || 0;
-
-  // Build an array of length N, where each element is the type of region for that residue
+  // Build an array where each element is the type of region for that residue
   const resArray = useMemo(() => {
     const arr: { number: number; type: string; description: string }[] = [];
-    for (let i = 1; i <= totalResidues; i++) {
-      arr.push({ number: i, type: 'Unknown', description: 'Unknown domain' });
-    }
+    
+    const residues = chain.residues || [];
+    const resNumbers = residues.length > 0 
+      ? residues.map(r => r.id) 
+      : Array.from({length: chain.sequence?.length || 0}, (_, i) => i + 1);
+
+    resNumbers.forEach(num => {
+      arr.push({ number: num, type: 'Unknown', description: 'Unknown domain' });
+    });
 
     // Apply domains (Extracellular / Cytoplasmic)
     const domains = (data?.regions || []).filter(r => r.type === 'Topological domain');
@@ -40,23 +44,27 @@ export function TransmembraneStructureTrack({ chain, data, selectedResidue, onSe
         type = 'Cytoplasmic';
       }
 
-      for (let i = Math.max(1, d.start); i <= Math.min(totalResidues, d.end); i++) {
-        arr[i - 1].type = type;
-        arr[i - 1].description = d.description || type;
-      }
+      arr.forEach(item => {
+        if (item.number >= d.start && item.number <= d.end) {
+          item.type = type;
+          item.description = d.description || type;
+        }
+      });
     });
 
     // Apply TM / Intramembrane over top
     const tms = (data?.regions || []).filter(r => ['Transmembrane', 'Intramembrane'].includes(r.type));
     tms.forEach(tm => {
-      for (let i = Math.max(1, tm.start); i <= Math.min(totalResidues, tm.end); i++) {
-        arr[i - 1].type = tm.type;
-        arr[i - 1].description = tm.description || tm.type;
-      }
+      arr.forEach(item => {
+        if (item.number >= tm.start && item.number <= tm.end) {
+          item.type = tm.type;
+          item.description = tm.description || tm.type;
+        }
+      });
     });
 
     return arr;
-  }, [data, totalResidues]);
+  }, [chain.residues, chain.sequence, data]);
 
   const categories = useMemo(() => {
     let tm = 0, extra = 0, cyto = 0, intra = 0, unk = 0;
@@ -67,27 +75,31 @@ export function TransmembraneStructureTrack({ chain, data, selectedResidue, onSe
       else if (r.type === 'Intramembrane') intra++;
       else unk++;
     });
+    const total = resArray.length;
     return {
-      tm: { count: tm, pct: totalResidues ? ((tm / totalResidues) * 100).toFixed(1) : '0' },
-      extra: { count: extra, pct: totalResidues ? ((extra / totalResidues) * 100).toFixed(1) : '0' },
-      cyto: { count: cyto, pct: totalResidues ? ((cyto / totalResidues) * 100).toFixed(1) : '0' },
-      intra: { count: intra, pct: totalResidues ? ((intra / totalResidues) * 100).toFixed(1) : '0' },
+      tm: { count: tm, pct: total ? ((tm / total) * 100).toFixed(1) : '0' },
+      extra: { count: extra, pct: total ? ((extra / total) * 100).toFixed(1) : '0' },
+      cyto: { count: cyto, pct: total ? ((cyto / total) * 100).toFixed(1) : '0' },
+      intra: { count: intra, pct: total ? ((intra / total) * 100).toFixed(1) : '0' },
     };
-  }, [resArray, totalResidues]);
+  }, [resArray]);
 
   const rulerMarkers = useMemo(() => {
     const markers: { number: number; index: number }[] = [];
-    if (totalResidues === 0) return markers;
-    for (let i = 1; i <= totalResidues; i++) {
-      if (i === 1 || i === totalResidues || i % 50 === 0) {
-        markers.push({ number: i, index: i - 1 });
+    if (resArray.length === 0) return markers;
+    const minRes = resArray[0].number;
+    const maxRes = resArray[resArray.length - 1].number;
+    
+    resArray.forEach((r, index) => {
+      if (r.number === minRes || r.number === maxRes || r.number % 50 === 0) {
+        markers.push({ number: r.number, index });
       }
-    }
+    });
     return markers;
-  }, [totalResidues]);
+  }, [resArray]);
 
   const activeResIndex = hoveredRes ?? selectedResidue;
-  const activeRes = activeResIndex ? resArray[activeResIndex - 1] : null;
+  const activeRes = activeResIndex ? resArray.find(r => r.number === activeResIndex) : null;
 
   return (
     <div className="secondary-track-workspace">
@@ -97,7 +109,7 @@ export function TransmembraneStructureTrack({ chain, data, selectedResidue, onSe
           <strong className="secondary-method-tag">TOPOLOGY ASSIGNMENT</strong>
         </div>
         <div className="secondary-badge">
-          <span>{totalResidues} RESIDUES</span>
+          <span>{resArray.length} RESIDUES</span>
         </div>
       </div>
 
@@ -158,7 +170,7 @@ export function TransmembraneStructureTrack({ chain, data, selectedResidue, onSe
       <div className="secondary-seq-track-container">
         <div className="secondary-ruler">
           {rulerMarkers.map((marker) => {
-            const leftPct = (marker.index / Math.max(totalResidues - 1, 1)) * 100;
+            const leftPct = (marker.index / Math.max(resArray.length - 1, 1)) * 100;
             return (
               <span key={marker.number} className="ruler-tick" style={{ left: `${leftPct}%` }}>
                 <i />

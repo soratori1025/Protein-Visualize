@@ -1,14 +1,13 @@
+from dataclasses import dataclass
 from typing import Optional
-from dataclasses import dataclass, field, asdict
 from pydantic import BaseModel, Field
-
 from app.core.constants import (
     MEMBRANE_THICKNESS,
     MIN_MEMBRANE_SCORE,
     MIN_TM_ELEMENT_IN_SLAB,
     MIN_CROSS_SPAN_FRAC,
     FULL_CROSS_FRAC,
-    BROKEN_GAP_MAX
+    BROKEN_GAP_MAX,
 )
 
 @dataclass
@@ -20,7 +19,6 @@ class TMParams:
     min_cross_span_frac: float = MIN_CROSS_SPAN_FRAC
     full_cross_frac: float = FULL_CROSS_FRAC
     broken_gap_max: int = BROKEN_GAP_MAX
-
     def to_response_dict(self) -> dict:
         return {
             "membrane_thickness": self.membrane_thickness,
@@ -33,11 +31,15 @@ class TMParams:
 
 class TopologyRegion(BaseModel):
     type: str
-    start: int
-    end: int
+    start: int                       # author residue number (first observed residue)
+    end: int                         # author residue number (last observed residue)
     description: str
     side: Optional[str] = None
     ss: Optional[str] = None
+    # Insertion codes of the boundary residues ("100A"); None when blank. Additive,
+    # so existing clients that only read start/end keep working.
+    start_icode: Optional[str] = None
+    end_icode: Optional[str] = None
 
 class TopologyResponse(BaseModel):
     uniprot_id: str
@@ -49,3 +51,7 @@ class TopologyResponse(BaseModel):
     membrane_normal: Optional[list[float]] = None
     parameters_used: Optional[dict] = None
     regions: list[TopologyRegion] = Field(default_factory=list)
+    # Additive fields: which chain was analysed, and anything the caller should know
+    # (SS tool missing, residue numbering re-mapped, features outside the model ...).
+    chain_id: Optional[str] = None
+    warnings: list[str] = Field(default_factory=list)

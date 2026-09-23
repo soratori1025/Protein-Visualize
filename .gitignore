@@ -19,6 +19,6 @@ data/uploads/
 
 tools/src/dssp/build-msys/
 
-
 tools/src/dssp_backup/
 tools/src/stride_backup/
+tools/share/

@@ -17,9 +17,16 @@ always defensible:
   STAGE 2 - SECONDARY-STRUCTURE LABELLING  (DSSP or STRIDE, DESCRIPTIVE ONLY)
     For each membrane-spanning run found in stage 1, the majority DSSP/STRIDE code
     decides Alpha helix / Beta strand / Loop, and the run boundaries are snapped
-    outward to the true ends of the overlapping SS element. Snapping is capped at
-    half the gap to the neighbouring TM run, so two distinct crossings can never be
-    merged. DSSP/STRIDE never adds or removes a TM call.
+    outward to the true ends of the overlapping SS element. Snapping is capped so
+    that at least one loop residue always remains between two TM runs, so two
+    distinct crossings can never be merged. DSSP/STRIDE never adds or removes a TM
+    call.
+
+Residue indexing: the structure is parsed ONCE into a ResidueFrame (see
+``app.services.topology.residues``) and every per-residue list in this module is
+indexed by frame POSITION. DSSP/STRIDE output is mapped onto those positions by
+residue key verified against residue identity (sequence-alignment fallback), never
+by looking up a bare author residue number.
 
 Sides are named Cytoplasmic / Extracellular geometrically (which face of the slab
 a loop sits on) plus the positive-inside rule - NOT by topological alternation.
@@ -27,13 +34,14 @@ This keeps re-entrant / half-membrane loops correct, which matters for the
 transporter/GPCR families this tool targets.
 
 Design notes / known limitations (state these in the paper):
-  * Only the first chain of the first model is analysed. For an oligomeric bundle,
-    fit per chain or merge chains upstream before calling this.
+  * One chain of the first model is analysed (the requested chain, else the first
+    chain that contains amino acids). For an oligomeric bundle, fit per chain or
+    merge chains upstream before calling this.
   * The hydrophobic-core thickness is a fixed parameter (default 30 Angstrom); it
     is not optimised per structure.
   * `membrane_score` is a heuristic confidence (mean hydrophobic weight inside the
-    slab). Non-membrane proteins are reported with regions=[] when it falls below
-    MIN_MEMBRANE_SCORE; expose the score so a caller can apply its own threshold.
+    slab). Non-membrane proteins are reported with no TM regions when it falls
+    below MIN_MEMBRANE_SCORE; expose the score so a caller can apply its own threshold.
 
 Heavy imports (Bio.PDB, the DSSP/STRIDE adapters) are loaded lazily inside the
 functions that need them, so the numeric core can be imported and unit-tested with
@@ -42,9 +50,8 @@ numpy alone.
 
 from __future__ import annotations
 
-import warnings
-from dataclasses import dataclass, field, asdict
 from pathlib import Path
+from typing import Optional, Sequence
 
 import numpy as np
 
@@ -55,7 +62,10 @@ from app.core.constants import (
     MIN_FACE_FRACTION, MAX_SNAP, MIN_MEMBRANE_SCORE, MIN_EXTRA_SS_LEN,
     MIN_TM_ELEMENT_IN_SLAB, FULL_CROSS_FRAC, BROKEN_GAP_MAX, MIN_CROSS_SPAN_FRAC
 )
-from app.schemas.topology import TMParams, TopologyResponse, TopologyRegion
+from app.schemas.topology import TMParams
+from app.services.topology import labels as L
+from app.services.topology.providers.tm.base import TMPrediction, TMProvider
+from app.services.topology.residues import ResidueFrame, load_residue_frame
 
 # =============================================================================
 # STAGE 1 helpers - pure geometry / hydrophobicity (numpy only)
@@ -252,9 +262,11 @@ def _smooth_flickers(classifications, d, half,
     return out
 
 
-def _drop_short_tm(classifications, min_core: int = MIN_TM_CORE):
-    """Demote TM runs whose in-slab core is shorter than `min_core` back to the
-    neighbouring side (spurious slab dips by a terminal tail or a sharp turn)."""
+def _drop_short_tm(classifications, min_core: int = MIN_TM_CORE, d=None):
+    """Demote TM runs whose in-slab core is shorter than `min_core` back to a side
+    (spurious slab dips by a terminal tail or a sharp turn). The side is the one both
+    neighbours share; if they differ (or at a terminus) and `d` is given, the face the
+    run's C-alphas are closer to is used."""
     n = len(classifications)
     out = list(classifications)
     i = 0
@@ -266,31 +278,52 @@ def _drop_short_tm(classifications, min_core: int = MIN_TM_CORE):
         while j < n and out[j] == "Transmembrane":
             j += 1
         if j - i < min_core:
-            side = out[i - 1] if i > 0 and out[i - 1] != "Transmembrane" else (
-                out[j] if j < n and out[j] != "Transmembrane" else "Side_A")
+            left = out[i - 1] if i > 0 and out[i - 1] != "Transmembrane" else None
+            right = out[j] if j < n and out[j] != "Transmembrane" else None
+            if left and left == right:
+                side = left
+            elif d is not None:
+                side = "Side_A" if float(np.mean(d[i:j])) >= 0 else "Side_B"
+            else:
+                side = left or right or "Side_A"
             for k in range(i, j):
                 out[k] = side
         i = j
     return out
 
 
+def _tm_runs(classifications) -> list[tuple[int, int]]:
+    runs, i, n = [], 0, len(classifications)
+    while i < n:
+        if not L.is_tm(classifications[i]):
+            i += 1
+            continue
+        j = i
+        while j < n and L.is_tm(classifications[j]):
+            j += 1
+        runs.append((i, j - 1))
+        i = j
+    return runs
+
+
 # =============================================================================
 # STAGE 2 helpers - DSSP / STRIDE labelling (descriptive only)
 # =============================================================================
-def _run_labeler(file_path: Path, labeler: str) -> dict:
-    """Return {residue_number: ss_code} from DSSP or STRIDE. Imported lazily."""
-    name = (labeler or "DSSP").upper()
-    if name == "STRIDE":
-        from protein_engine.secondary_structure.stride import STRIDEMethod
-        result = STRIDEMethod().assign(file_path).to_dict()
-    else:
-        from protein_engine.secondary_structure.dssp import DSSPMethod
-        result = DSSPMethod().assign(file_path).to_dict()
-    # First chain only, matching _load_structure_residues.
-    ss_map = {}
-    for r in result.get("residues", []):
-        ss_map[r["residue_number"]] = r["code"]
-    return ss_map
+def _run_labeler(file_path: Path, labeler: str, frame: ResidueFrame):
+    """Per-POSITION DSSP/STRIDE codes on `frame` ('C' where the tool said nothing).
+
+    Returns (codes, warnings). The old version returned {residue_number: code} for
+    ALL chains keyed by whatever the tool printed (str or int), which was then looked
+    up with int author numbers - chains overwrote each other and string keys never
+    matched."""
+    from app.services.topology.providers.ss.dssp import DSSPProvider
+    from app.services.topology.providers.ss.stride import STRIDEProvider
+
+    provider = STRIDEProvider() if (labeler or "DSSP").upper() == "STRIDE" else DSSPProvider()
+    result = provider.assign(file_path, frame)
+    if result.matched == 0:
+        return [], result.warnings
+    return [c if c is not None else "C" for c in result.codes], result.warnings
 
 
 def _classify_code(code: str):
@@ -303,100 +336,37 @@ def _classify_code(code: str):
 
 def _ss_label(code: str) -> str:
     """DSSP/STRIDE code -> coarse SS class for drawing (Helix / Strand / Coil)."""
-    if code in HELIX_CODES:
-        return "Helix"
-    if code in STRAND_CODES:
-        return "Strand"
-    return "Coil"
+    return L.ss_word(L.coarse_ss(code))
 
 
-def _label_extramembrane(descriptions, residues_data, ss_map,
-                         min_ss_len: int = MIN_EXTRA_SS_LEN):
+def _label_extramembrane(descriptions, ss_codes: Sequence[str],
+                         min_ss_len: int = MIN_EXTRA_SS_LEN, breaks=None):
     """Append secondary-structure detail to the extramembrane (Cytoplasmic /
     Extracellular) residues, so the loops of a topology snake-plot can show their
     own helices and strands (e.g. EL2, EL3a/3b in a transporter diagram) instead of
-    a bare line. TM labels and any un-renamed sides pass through untouched.
-
-    Each side residue's description becomes "<side> <Helix|Strand|Coil>", which
-    `_build_regions` then splits into contiguous drawable elements. Short helix/
-    strand specks (< min_ss_len) are demoted to Coil so a 1-2 residue DSSP flicker
-    in a loop does not become a cylinder.
-    """
-    n = len(descriptions)
-    out = list(descriptions)
-
-    raw: list[str | None] = [None] * n
-    for i in range(n):
-        if out[i] in ("Cytoplasmic", "Extracellular"):
-            raw[i] = _ss_label(ss_map.get(residues_data[i]["id"], "C"))
-
-    # demote short helix/strand runs (within one side) to Coil
-    i = 0
-    while i < n:
-        if raw[i] in ("Helix", "Strand"):
-            j = i
-            while j < n and raw[j] == raw[i]:
-                j += 1
-            if j - i < min_ss_len:
-                for k in range(i, j):
-                    raw[k] = "Coil"
-            i = j
-        else:
-            i += 1
-
-    for i in range(n):
-        if raw[i] is not None:
-            out[i] = f"{out[i]} {raw[i]}"
-    return out
+    a bare line. `ss_codes` is indexed by frame position."""
+    return L.label_extramembrane_ss(descriptions, [L.coarse_ss(c) for c in ss_codes],
+                                    min_len=min_ss_len, breaks=breaks)
 
 
 def _region_side_ss(description: str):
-    """Derive explicit (side, ss) tags from a region description so the frontend
-    needs no string parsing. side in {membrane, Cytoplasmic, Extracellular};
-    ss in {Helix, Strand, Loop, Coil, None}."""
-    if "Transmembrane" in description:
-        side = "membrane"
-    elif "Cytoplasmic" in description:
-        side = "Cytoplasmic"
-    elif "Extracellular" in description:
-        side = "Extracellular"
-    else:
-        side = None
-    if "Helix" in description:
-        ss = "Helix"
-    elif "Strand" in description:
-        ss = "Strand"
-    elif "Loop" in description:
-        ss = "Loop"
-    elif "Coil" in description:
-        ss = "Coil"
-    else:
-        ss = None
+    """(side, ss) tags derived from a region description (kept for older callers)."""
+    _, side, ss = L.region_fields(description)
     return side, ss
 
 
-def _label_and_snap(classifications, residues_data, ss_map, max_snap: int = MAX_SNAP):
+def _label_and_snap(classifications, ss_codes: Sequence[str], max_snap: int = MAX_SNAP,
+                    breaks=None):
     """Label each TM run Alpha/Beta/Loop by majority SS code and snap boundaries
-    outward along the same SS element, capped at half the gap to the neighbouring
-    TM run so distinct crossings never merge."""
+    outward along the same SS element. Each side may grow by at most
+    min(max_snap, (gap - 1) // 2) residues, so at least one loop residue always
+    separates two crossings, and never across a chain break."""
     n = len(classifications)
     out = list(classifications)
-
-    # Collect TM run intervals [start, end] inclusive.
-    runs = []
-    i = 0
-    while i < n:
-        if classifications[i] != "Transmembrane":
-            i += 1
-            continue
-        j = i
-        while j < n and classifications[j] == "Transmembrane":
-            j += 1
-        runs.append((i, j - 1))
-        i = j
+    runs = _tm_runs(classifications)
 
     for idx, (start, end) in enumerate(runs):
-        codes = [ss_map.get(residues_data[k]["id"], "C") for k in range(start, end + 1)]
+        codes = ss_codes[start:end + 1]
         alpha = sum(1 for c in codes if c in HELIX_CODES)
         beta = sum(1 for c in codes if c in STRAND_CODES)
         if alpha == 0 and beta == 0:
@@ -410,17 +380,22 @@ def _label_and_snap(classifications, residues_data, ss_map, max_snap: int = MAX_
         if target is not None:
             prev_end = runs[idx - 1][1] if idx > 0 else -1
             next_start = runs[idx + 1][0] if idx + 1 < len(runs) else n
-            left_budget = min(max_snap, (start - prev_end - 1) // 2)
-            right_budget = min(max_snap, (next_start - end - 1) // 2)
+            left_gap = start - prev_end - 1
+            right_gap = next_start - end - 1
+            # towards a terminus: half the tail (as before); between two runs: keep >= 1
+            # loop residue (the old `gap // 2` on both sides could consume an even gap)
+            left_budget = min(max_snap, left_gap // 2 if idx == 0 else (left_gap - 1) // 2)
+            right_budget = min(max_snap, right_gap // 2 if idx + 1 == len(runs)
+                               else (right_gap - 1) // 2)
 
             moved = 0
-            while (s > 0 and moved < left_budget
-                   and ss_map.get(residues_data[s - 1]["id"], "C") in target):
+            while (s > 0 and moved < left_budget and ss_codes[s - 1] in target
+                   and not (breaks is not None and breaks[s])):
                 s -= 1
                 moved += 1
             moved = 0
-            while (e < n - 1 and moved < right_budget
-                   and ss_map.get(residues_data[e + 1]["id"], "C") in target):
+            while (e < n - 1 and moved < right_budget and ss_codes[e + 1] in target
+                   and not (breaks is not None and breaks[e + 1])):
                 e += 1
                 moved += 1
 
@@ -432,130 +407,112 @@ def _label_and_snap(classifications, residues_data, ss_map, max_snap: int = MAX_
 def _apply_positive_inside_rule(descriptions, residues_data):
     """Rename Side_A/Side_B to Cytoplasmic/Extracellular by the positive-inside
     rule (the cytoplasmic face is enriched in Lys/Arg). TM labels pass through."""
-    def _pos_density(side):
-        idx = [i for i, c in enumerate(descriptions) if c == side]
-        if not idx:
-            return 0.0
-        pos = sum(1 for i in idx if residues_data[i]["name"] in POSITIVE_RESIDUES)
-        return pos / len(idx)
-
-    if "Side_A" not in descriptions and "Side_B" not in descriptions:
-        return list(descriptions)
-
-    cyto = "Side_A" if _pos_density("Side_A") >= _pos_density("Side_B") else "Side_B"
-    rename = {cyto: "Cytoplasmic",
-              ("Side_B" if cyto == "Side_A" else "Side_A"): "Extracellular"}
-    return [rename.get(c, c) for c in descriptions]
+    return L.apply_positive_inside_rule(descriptions, [r["name"] for r in residues_data])
 
 
-def _build_regions(residues_data, descriptions):
-    def _emit(desc, start_id, end_id):
-        base = "Transmembrane" if "Transmembrane" in desc else "Topological domain"
-        side, ss = _region_side_ss(desc)
-        return {"type": base, "start": start_id, "end": end_id,
-                "description": desc, "side": side, "ss": ss}
+def _build_regions(frame: ResidueFrame, descriptions, group_ids=None):
+    """Per-position descriptions -> region dicts (author numbering + insertion codes)."""
+    return [r.model_dump() for r in L.build_regions(frame, descriptions, group_ids)]
 
-    regions = []
-    current, start_id = descriptions[0], residues_data[0]["id"]
-    for i in range(1, len(descriptions)):
-        if descriptions[i] != current:
-            regions.append(_emit(current, start_id, residues_data[i - 1]["id"]))
-            current, start_id = descriptions[i], residues_data[i]["id"]
-    regions.append(_emit(current, start_id, residues_data[-1]["id"]))
-    return regions
+
+def _groups_for_runs(n, runs):
+    groups = [-1] * n
+    for g, (s, e) in enumerate(runs):
+        for k in range(s, e + 1):
+            groups[k] = g
+    return groups
+
+
+def _sides_by_sign(d) -> list[str]:
+    """Nearest slab face for every residue. (The old rule `Side_A if d > half else
+    Side_B` sent every in-slab residue on the A half to side B.)"""
+    return ["Side_A" if di >= 0 else "Side_B" for di in d]
 
 
 # =============================================================================
 # Structure loading (lazy Bio.PDB)
 # =============================================================================
 def _load_structure_residues(file_path: Path, chain_id: str | None = None):
-    from Bio.PDB import MMCIFParser, PDBParser
-    from Bio.PDB.PDBExceptions import PDBConstructionWarning
+    """Kept for older callers: (residues_data, ca_coords) of the analysed chain."""
+    frame = load_residue_frame(file_path, chain_id)
+    return frame.residues_data(), frame.coords
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", PDBConstructionWarning)
-        is_cif = file_path.suffix.lower() in (".cif", ".mmcif")
-        parser = MMCIFParser(QUIET=True) if is_cif else PDBParser(QUIET=True)
-        structure = parser.get_structure("protein", str(file_path))
 
-    model = next(iter(structure))
-    chain = model[chain_id] if chain_id else next(iter(model))
-
-    residues_data, ca_coords = [], []
-    for residue in chain:
-        if "CA" in residue and residue.get_resname() in KYTE_DOOLITTLE:
-            ca_coords.append(residue["CA"].get_coord())
-            residues_data.append({"id": residue.get_id()[1], "name": residue.get_resname()})
-
-    coords = np.array(ca_coords, dtype=float) if ca_coords else np.empty((0, 3))
-    return residues_data, coords
+def _empty_result(labeler, params, name, frame=None, warnings=None, score=0.0):
+    return {"uniprot_id": "CALCULATED", "protein_name": name,
+            "gene_name": "", "organism": "Computed",
+            "membrane_score": round(float(score), 3), "labeler": labeler,
+            "parameters_used": params.to_response_dict(), "regions": [],
+            "chain_id": frame.chain_id if frame is not None else None,
+            "warnings": list(warnings or [])}
 
 
 # =============================================================================
 # Public entry points
 # =============================================================================
 def predict_topology_structure(file_path: Path, labeler: str = "DSSP",
-                               params: TMParams | None = None) -> dict:
+                               params: TMParams | None = None,
+                               chain_id: str | None = None) -> dict:
     """Unified structure-based prediction: slab geometry gates TM (stage 1),
     DSSP/STRIDE labels alpha/beta/loop (stage 2)."""
     if params is None:
         params = TMParams()
     thickness = params.membrane_thickness
 
-    residues_data, coords = _load_structure_residues(file_path)
-    if len(residues_data) < 10:
-        return {"uniprot_id": "PREDICTED", "protein_name": "Too few residues",
-                "gene_name": "", "organism": "Computed",
-                "membrane_score": 0.0, "labeler": labeler,
-                "parameters_used": params.to_response_dict(), "regions": []}
+    frame = load_residue_frame(file_path, chain_id)
+    residues_data = frame.residues_data()
+    if len(frame) < 10:
+        return _empty_result(labeler, params, "Too few residues", frame)
 
-    names = [r["name"] for r in residues_data]
-    weights = _membrane_weights(names)
+    weights = _membrane_weights(frame.names)
+    breaks = frame.chain_breaks()
+    warns: list[str] = []
 
     # STAGE 1 - geometry decides TM.
     classifications, d, membrane_score, axis, center = _classify_by_slab(
-        coords, weights, thickness)
+        frame.coords, weights, thickness)
     classifications = _smooth_flickers(classifications, d, thickness / 2.0)
-    classifications = _drop_short_tm(classifications)
+    classifications = _drop_short_tm(classifications, d=d)
 
     # Guard: if the best slab is not convincingly hydrophobic, treat as soluble.
     if membrane_score < params.min_membrane_score:
-        descriptions = _apply_positive_inside_rule(
-            ["Side_A" if c == "Transmembrane" else c for c in classifications],
-            residues_data)
+        descriptions = _apply_positive_inside_rule(_sides_by_sign(d), residues_data)
         return {
             "uniprot_id": "CALCULATED",
             "protein_name": "No membrane slab detected (likely soluble)",
             "gene_name": "", "organism": "Computed",
             "membrane_score": round(membrane_score, 3), "labeler": labeler,
             "parameters_used": params.to_response_dict(),
-            "regions": _build_regions(residues_data, descriptions),
+            "regions": _build_regions(frame, descriptions),
+            "chain_id": frame.chain_id, "warnings": warns,
         }
 
     # STAGE 2 - DSSP/STRIDE labels the already-fixed TM runs.
-    ss_map, labeler_used = {}, labeler
+    ss_codes, labeler_used = [], labeler
     if labeler == "__none__":
         labeler_used = "geometry-only (no SS tool)"
     else:
         try:
-            ss_map = _run_labeler(file_path, labeler)
+            ss_codes, ss_warns = _run_labeler(file_path, labeler, frame)
+            warns.extend(ss_warns)
         except Exception as error:  # noqa: BLE001 - tool may be missing at runtime
             print(f"[topology_predictor] {labeler} failed, geometry-only labels. {error}")
+            warns.append(f"{labeler} unavailable ({error}); geometry-only labels")
+        if not ss_codes:
             labeler_used = f"{labeler} (unavailable)"
 
-    if ss_map:
-        descriptions = _label_and_snap(classifications, residues_data, ss_map)
+    if ss_codes:
+        descriptions = _label_and_snap(classifications, ss_codes, breaks=breaks)
         descriptions = _apply_positive_inside_rule(descriptions, residues_data)
         # Give extramembrane loops their own helix/strand/coil elements to draw.
-        descriptions = _label_extramembrane(descriptions, residues_data, ss_map)
+        descriptions = _label_extramembrane(descriptions, ss_codes, breaks=breaks)
     else:
         # No SS tool: keep TM calls, but we cannot tell alpha from beta.
         descriptions = ["Transmembrane (helical, unverified)"
                         if c == "Transmembrane" else c for c in classifications]
         descriptions = _apply_positive_inside_rule(descriptions, residues_data)
 
-    regions = _build_regions(residues_data, descriptions)
-
+    groups = _groups_for_runs(len(frame), _tm_runs(descriptions))
     return {
         "uniprot_id": "CALCULATED",
         "protein_name": f"Structure-based TM prediction (slab-fit + {labeler_used})",
@@ -564,24 +521,31 @@ def predict_topology_structure(file_path: Path, labeler: str = "DSSP",
         "membrane_normal": [round(float(a), 4) for a in axis],
         "labeler": labeler_used,
         "parameters_used": params.to_response_dict(),
-        "regions": regions,
+        "regions": _build_regions(frame, descriptions, groups),
+        "chain_id": frame.chain_id, "warnings": warns,
     }
 
 
 # =============================================================================
 # SS-element-first pipeline  (more accurate boundaries on real polytopic proteins)
 # =============================================================================
-def _helix_axis_normal(coords: np.ndarray, k: int = 4) -> np.ndarray:
+def _helix_axis_normal(coords: np.ndarray, k: int = 4, breaks=None) -> np.ndarray:
     """Estimate the membrane normal from geometry alone: the dominant direction of
     the chain, taken as the top eigenvector of the scatter of local CA(i+k)-CA(i)
     vectors. Transmembrane helices are the longest straight runs so they dominate,
     and the outer-product scatter is sign-invariant, so up- and down-helices
-    reinforce the same axis. Unlike a hydrophobicity fit this does not degrade when
-    the TM core is weakly hydrophobic (a substrate pore lined with polar residues),
-    which is exactly where the slab-contrast fit fails."""
+    reinforce the same axis. Vectors that span a chain break (unresolved residues)
+    are ignored - they point anywhere."""
     if len(coords) <= k:
         return np.array([0.0, 0.0, 1.0])
     dirs = coords[k:] - coords[:-k]
+    if breaks is not None:
+        br = np.asarray(breaks, dtype=int)
+        cum = np.cumsum(br)
+        spans_break = (cum[k:] - cum[:-k]) > 0         # any break in (i, i+k]
+        dirs = dirs[~spans_break]
+        if len(dirs) == 0:
+            return np.array([0.0, 0.0, 1.0])
     norm = np.linalg.norm(dirs, axis=1, keepdims=True)
     norm[norm == 0] = 1.0
     dirs = dirs / norm
@@ -590,16 +554,15 @@ def _helix_axis_normal(coords: np.ndarray, k: int = 4) -> np.ndarray:
     return axis / np.linalg.norm(axis)
 
 
-def _ss_runs(ss_map: dict, residues_data):
-    """Maximal contiguous runs of one coarse SS class over the sequence.
-    Returns [(start_idx, end_idx, 'Helix'|'Strand'|'Coil'), ...]."""
-    classes = [_ss_label(ss_map.get(r["id"], "C")) for r in residues_data]
+def _ss_runs(ss_codes: Sequence[str], breaks=None):
+    """Maximal contiguous runs of one coarse SS class over the frame positions,
+    split at chain breaks. Returns [(start_idx, end_idx, 'Helix'|'Strand'|'Coil'), ...]."""
+    classes = [_ss_label(c) for c in ss_codes]
     runs = []
-    i = 0
-    n = len(classes)
+    i, n = 0, len(classes)
     while i < n:
-        j = i
-        while j < n and classes[j] == classes[i]:
+        j = i + 1
+        while j < n and classes[j] == classes[i] and not (breaks is not None and breaks[j]):
             j += 1
         runs.append((i, j - 1, classes[i]))
         i = j
@@ -694,7 +657,8 @@ def _membrane_crossings(runs, z, center, half, thickness, params: TMParams):
 
 
 def predict_topology_ss_first(file_path: Path, labeler: str = "DSSP",
-                              params: TMParams | None = None) -> dict:
+                              params: TMParams | None = None,
+                              chain_id: str | None = None) -> dict:
     """Recommended structure-based predictor for real polytopic proteins.
 
     Order is inverted vs `predict_topology_structure`: DSSP/STRIDE define the actual
@@ -707,31 +671,30 @@ def predict_topology_ss_first(file_path: Path, labeler: str = "DSSP",
         params = TMParams()
     thickness = params.membrane_thickness
 
-    residues_data, coords = _load_structure_residues(file_path)
-    if len(residues_data) < 10:
-        return {"uniprot_id": "PREDICTED", "protein_name": "Too few residues",
-                "gene_name": "", "organism": "Computed",
-                "membrane_score": 0.0, "labeler": labeler,
-                "parameters_used": params.to_response_dict(), "regions": []}
+    frame = load_residue_frame(file_path, chain_id)
+    residues_data = frame.residues_data()
+    if len(frame) < 10:
+        return _empty_result(labeler, params, "Too few residues", frame)
 
-    ss_map, labeler_used = {}, labeler
+    ss_codes, labeler_used, warns = [], labeler, []
     try:
-        ss_map = _run_labeler(file_path, labeler)
+        ss_codes, warns = _run_labeler(file_path, labeler, frame)
     except Exception as error:  # noqa: BLE001
         print(f"[topology_predictor] {labeler} failed; falling back to slab-first. {error}")
-    if not ss_map:
-        return predict_topology_structure(file_path, labeler="__none__", params=params)
+    if not ss_codes:
+        return predict_topology_structure(file_path, labeler="__none__", params=params,
+                                          chain_id=frame.chain_id)
 
-    names = [r["name"] for r in residues_data]
-    weights = _membrane_weights(names)
-    n = len(residues_data)
+    weights = _membrane_weights(frame.names)
+    breaks = frame.chain_breaks()
+    coords = frame.coords
 
-    normal = _helix_axis_normal(coords)
+    normal = _helix_axis_normal(coords, breaks=breaks)
     centroid = coords.mean(axis=0)
     z = (coords - centroid) @ normal
     half = thickness / 2.0
 
-    runs = _ss_runs(ss_map, residues_data)
+    runs = _ss_runs(ss_codes, breaks)
     center = _membrane_center_geometric(z, runs, half)
     d = z - center
     inside = np.abs(d) <= half
@@ -739,27 +702,28 @@ def predict_topology_ss_first(file_path: Path, labeler: str = "DSSP",
     crossings = _membrane_crossings(runs, z, center, half, thickness, params)
 
     if not crossings or mean_in < params.min_membrane_score:
-        descriptions = _apply_positive_inside_rule(
-            ["Side_A" if di > half else "Side_B" for di in d], residues_data)
-        descriptions = _label_extramembrane(descriptions, residues_data, ss_map)
+        descriptions = _apply_positive_inside_rule(_sides_by_sign(d), residues_data)
+        descriptions = _label_extramembrane(descriptions, ss_codes, breaks=breaks)
         return {
             "uniprot_id": "CALCULATED",
             "protein_name": "No transmembrane crossings detected (likely soluble)",
             "gene_name": "", "organism": "Computed",
             "membrane_score": round(mean_in, 3), "labeler": labeler_used,
             "parameters_used": params.to_response_dict(),
-            "regions": _build_regions(residues_data, descriptions),
+            "regions": _build_regions(frame, descriptions),
+            "chain_id": frame.chain_id, "warnings": warns,
         }
 
     # Per-residue labels: TM crossings first, then sides, then extramembrane SS.
-    descriptions = ["Side_A" if di > half else "Side_B" for di in d]
-    for a, b, cls in crossings:
+    descriptions = _sides_by_sign(d)
+    groups = [-1] * len(frame)
+    for g, (a, b, cls) in enumerate(crossings):
         label = "Transmembrane Alpha Helix" if cls == "Helix" else "Transmembrane Beta Strand"
         for k in range(a, b + 1):
             descriptions[k] = label
+            groups[k] = g
     descriptions = _apply_positive_inside_rule(descriptions, residues_data)
-    descriptions = _label_extramembrane(descriptions, residues_data, ss_map)
-    regions = _build_regions(residues_data, descriptions)
+    descriptions = _label_extramembrane(descriptions, ss_codes, breaks=breaks)
 
     return {
         "uniprot_id": "CALCULATED",
@@ -769,67 +733,54 @@ def predict_topology_ss_first(file_path: Path, labeler: str = "DSSP",
         "membrane_normal": [round(float(a), 4) for a in normal],
         "labeler": labeler_used,
         "parameters_used": params.to_response_dict(),
-        "regions": regions,
+        "regions": _build_regions(frame, descriptions, groups),
+        "chain_id": frame.chain_id, "warnings": warns,
     }
 
 
-
-from app.services.topology.providers.tm.base import TMProvider, TMPrediction
-import warnings
-from Bio.PDB import MMCIFParser, PDBParser
-from Bio.PDB.PDBExceptions import PDBConstructionWarning
-
+# =============================================================================
+# Orchestrator provider: slab geometry as a TM block
+# =============================================================================
 class GeometryTMProvider(TMProvider):
-    def predict_tm(self, file_path: Path, params: TMParams = None, **kwargs) -> TMPrediction:
-        if params is None:
-            params = TMParams()
-            
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', PDBConstructionWarning)
-            parser = MMCIFParser() if file_path.suffix.lower() in ('.cif', '.mmcif') else PDBParser()
-            structure = parser.get_structure('protein', str(file_path))
+    """Stage 1 of the slab pipeline as a TMProvider: per-position labels
+    (Transmembrane / Cytoplasmic / Extracellular) on the shared ResidueFrame."""
 
-        model = next(iter(structure))
-        chain = next(iter(model))
+    LABELER = "3D_Geometry"
 
-        residues_data = []
-        ca_coords = []
-        for residue in chain:
-            if 'CA' in residue and residue.get_resname() in KYTE_DOOLITTLE:
-                ca_coords.append(residue['CA'].get_coord())
-                residues_data.append({'id': residue.get_id()[1], 'name': residue.get_resname()})
+    def predict_tm(self, file_path: Path, params: Optional[TMParams] = None,
+                   frame: Optional[ResidueFrame] = None, **kwargs) -> TMPrediction:
+        params = params if params is not None else TMParams()
+        frame = frame if frame is not None else load_residue_frame(file_path, kwargs.get("chain_id"))
+        n = len(frame)
+        if n < 10:
+            # (the old code returned TMPrediction(boundaries=[]) -> pydantic ValidationError)
+            return TMPrediction(labeler=self.LABELER,
+                                warnings=[f"only {n} residues - too few to fit a membrane slab"])
 
-        if len(ca_coords) < 10:
-            return TMPrediction(boundaries=[])
-
-        coords = np.array(ca_coords)
-        weights = _membrane_weights([r['name'] for r in residues_data])
-
-        classifications, d, membrane_score, axis, center = _classify_by_slab(
-            coords, weights, thickness=params.membrane_thickness
-        )
-        
-        if membrane_score < params.min_membrane_score:
-            # Not a membrane protein, return everything as Extracellular or Cytoplasmic
-            descriptions = _apply_positive_inside_rule(
-                ["Side_A" if c == "Transmembrane" else c for c in classifications],
-                residues_data
-            )
-            regions_dicts = _build_regions(residues_data, descriptions)
-            regions = [TopologyRegion(**r) for r in regions_dicts]
-            return TMPrediction(regions=regions, membrane_score=membrane_score, membrane_normal=list(axis))
-
+        residues_data = frame.residues_data()
+        weights = _membrane_weights(frame.names)
         half = params.membrane_thickness / 2.0
+        classifications, d, membrane_score, axis, _ = _classify_by_slab(
+            frame.coords, weights, thickness=params.membrane_thickness)
+        normal = [round(float(a), 4) for a in axis]
+
+        if membrane_score < params.min_membrane_score:
+            labels = _apply_positive_inside_rule(_sides_by_sign(d), residues_data)
+            return TMPrediction(
+                labels=labels, segments=[], membrane_score=membrane_score,
+                membrane_normal=normal, labeler=self.LABELER,
+                warnings=[f"membrane_score {membrane_score:.2f} < {params.min_membrane_score} "
+                          "- treated as soluble (no TM segments)"])
+
         classifications = _smooth_flickers(classifications, d, half)
-        classifications = _drop_short_tm(classifications)
-
-        descriptions = _apply_positive_inside_rule(classifications, residues_data)
-        regions_dicts = _build_regions(residues_data, descriptions)
-        regions = [TopologyRegion(**r) for r in regions_dicts]
-
+        classifications = _drop_short_tm(classifications, d=d)
+        labels = _apply_positive_inside_rule(classifications, residues_data)
+        segments = _tm_runs(labels)
         return TMPrediction(
-            regions=regions, 
-            membrane_normal=list(axis), 
-            membrane_score=membrane_score, 
-            labeler="3D_Geometry"
+            regions=L.build_regions(frame, labels, _groups_for_runs(n, segments)),
+            labels=labels,
+            segments=segments,
+            membrane_normal=normal,
+            membrane_score=membrane_score,
+            labeler=self.LABELER,
         )

@@ -151,14 +151,14 @@ export function TransmembraneAnalysis() {
         </div>
       </section>
 
-      {activeTopologyData && chain && (
-        <section className="secondary-result-section" style={{ marginTop: '14px' }}>
-          <TransmembraneStructureTrack
-            chain={chain}
-            data={activeTopologyData}
-            selectedResidue={selectedResidue}
-            onSelectResidue={setSelectedResidue}
-          />
+      {activeTopologyData?.warnings && activeTopologyData.warnings.length > 0 && (
+        <section className="warnings-section" style={{ marginTop: '14px', padding: '12px', backgroundColor: '#fffbe3', border: '1px solid #fef08a', borderRadius: '6px', color: '#854d0e' }}>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '16px' }}>⚠️</span> Warnings from {activeTopologyData.chain_id ? `Chain ${activeTopologyData.chain_id}` : 'Topology Predictor'}
+          </h4>
+          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px' }}>
+            {activeTopologyData.warnings.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
         </section>
       )}
 

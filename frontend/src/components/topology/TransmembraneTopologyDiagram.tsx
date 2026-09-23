@@ -280,6 +280,8 @@ export function getExtraFeatures(
   secondaryResult: SecondaryStructureResult | null | undefined,
   chainId: string | undefined
 ): ExtraFeature[] | undefined {
+  return undefined; // Tạm thời ẩn các cấu trúc phụ ngoài màng
+  /*
   if (lEnd < lStart) return undefined;
 
   const found: ExtraFeature[] = [];
@@ -367,6 +369,7 @@ export function getExtraFeatures(
     ...sh,
     offsetFactor: kept.length > 1 ? idx - (kept.length - 1) / 2 : 0,
   }));
+  */
 }
 
 /* ------------------------------------------------------------------ *
@@ -1296,6 +1299,12 @@ export function TransmembraneTopologyDiagram({
               <stop offset="70%" stopColor="#94a3b8" />
               <stop offset="100%" stopColor="#64748b" />
             </linearGradient>
+            <linearGradient id="short-helix-grad-vert" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#94a3b8" />
+              <stop offset="35%" stopColor="#f1f5f9" />
+              <stop offset="70%" stopColor="#94a3b8" />
+              <stop offset="100%" stopColor="#475569" />
+            </linearGradient>
 
             {/* Break gradients for split helices */}
             {helices.map((h) => {
@@ -1361,7 +1370,7 @@ export function TransmembraneTopologyDiagram({
                 ? Math.max(42, Math.min(startY, endY) - archDepth)
                 : Math.min(canvasHeight - 34, Math.max(startY, endY) + archDepth);
 
-              const pathD = `M ${startX} ${startY} C ${startX} ${apexY}, ${endX} ${apexY}, ${endX} ${endY}`;
+              const pathD = `M ${startX} ${startY} Q ${startX} ${apexY} ${midX} ${apexY} T ${endX} ${endY}`;
               const loopColorStart = helices.find((h) => h.id === loop.prevHelixId)?.color ?? '#64748b';
               const loopColorEnd = helices.find((h) => h.id === loop.nextHelixId)?.color ?? '#64748b';
 
@@ -1416,7 +1425,8 @@ export function TransmembraneTopologyDiagram({
                       {loop.extraFeatures.map((sh, idx) => {
                         const w = 48; // a bit wider for labels
                         const shX = midX - w / 2 + (sh.offsetFactor ?? 0) * (w + 10);
-                        const shY = isEL ? apexY - 6 : apexY - 12;
+                        const shY = apexY - 10.5;
+                        const helixName = loop.extraFeatures!.length > 1 ? `${loop.label}${String.fromCharCode(97 + idx)}` : loop.label;
                         return (
                           <g
                             key={`${loop.id}-sh-${idx}`}
@@ -1441,16 +1451,13 @@ export function TransmembraneTopologyDiagram({
                               />
                             ) : (
                               // α-helix (or UniProt feature) outside the membrane: rounded cylinder
-                              <rect
-                                x="0"
-                                y="0"
-                                width={w}
-                                height="21"
-                                rx={sh.type === 'Helix' || sh.type === 'Intramembrane' ? '10' : '4'}
-                                fill="url(#short-helix-grad)"
-                                stroke={isPub ? '#475569' : '#0f172a'}
-                                strokeWidth="1"
-                              />
+                              <g>
+                                <rect x="5" y="0" width={Math.max(0, w - 10)} height="21" fill="url(#short-helix-grad-vert)" />
+                                <ellipse cx={w - 5} cy="10.5" rx="5" ry="10.5" fill={isPub ? '#64748b' : '#475569'} />
+                                <ellipse cx="5" cy="10.5" rx="5" ry="10.5" fill={isPub ? '#f1f5f9' : '#cbd5e1'} stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                                <line x1="5" y1="0" x2={w - 5} y2="0" stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                                <line x1="5" y1="21" x2={w - 5} y2="21" stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                              </g>
                             )}
                             <text
                               x={w / 2}
@@ -1459,7 +1466,7 @@ export function TransmembraneTopologyDiagram({
                               textAnchor="middle"
                               style={{ fill: '#0f172a', fontSize: '10px' }}
                             >
-                              {sh.label.substring(0, 7)}
+                              {helixName}
                             </text>
                           </g>
                         );
@@ -1504,7 +1511,13 @@ export function TransmembraneTopologyDiagram({
                        e.stopPropagation();
                        setHoveredElement({ title: `${f.type}: ${f.label}`, range: `Residues ${f.startRes}-${f.endRes}`, length: f.endRes - f.startRes + 1, details: 'N-terminus' });
                      }} onMouseLeave={() => setHoveredElement(null)}>
-                       <rect x="0" y="0" width="45" height="18" rx={f.type === 'Helix' ? 9 : 4} fill="url(#short-helix-grad)" stroke={isPub ? '#475569' : '#0f172a'} />
+                       <g>
+                         <rect x="5" y="0" width="35" height="18" fill="url(#short-helix-grad-vert)" />
+                         <ellipse cx="40" cy="9" rx="5" ry="9" fill={isPub ? '#64748b' : '#475569'} />
+                         <ellipse cx="5" cy="9" rx="5" ry="9" fill={isPub ? '#f1f5f9' : '#cbd5e1'} stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                         <line x1="5" y1="0" x2="40" y2="0" stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                         <line x1="5" y1="18" x2="40" y2="18" stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                       </g>
                        <text x="22.5" y="13" textAnchor="middle" style={{ fill: '#0f172a', fontSize: '9px' }}>{f.label.substring(0, 7)}</text>
                      </g>
                    );
@@ -1527,7 +1540,13 @@ export function TransmembraneTopologyDiagram({
                        e.stopPropagation();
                        setHoveredElement({ title: `${f.type}: ${f.label}`, range: `Residues ${f.startRes}-${f.endRes}`, length: f.endRes - f.startRes + 1, details: 'C-terminus' });
                      }} onMouseLeave={() => setHoveredElement(null)}>
-                       <rect x="0" y="0" width="45" height="18" rx={f.type === 'Helix' ? 9 : 4} fill="url(#short-helix-grad)" stroke={isPub ? '#475569' : '#0f172a'} />
+                       <g>
+                         <rect x="5" y="0" width="35" height="18" fill="url(#short-helix-grad-vert)" />
+                         <ellipse cx="40" cy="9" rx="5" ry="9" fill={isPub ? '#64748b' : '#475569'} />
+                         <ellipse cx="5" cy="9" rx="5" ry="9" fill={isPub ? '#f1f5f9' : '#cbd5e1'} stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                         <line x1="5" y1="0" x2="40" y2="0" stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                         <line x1="5" y1="18" x2="40" y2="18" stroke={isPub ? '#475569' : '#0f172a'} strokeWidth="1" />
+                       </g>
                        <text x="22.5" y="13" textAnchor="middle" style={{ fill: '#0f172a', fontSize: '9px' }}>{f.label.substring(0, 7)}</text>
                      </g>
                    );
@@ -1708,9 +1727,9 @@ export function TransmembraneTopologyDiagram({
                     className="helix-label-text"
                     textAnchor="middle"
                     transform={`rotate(${-pos.angle}, ${cx}, ${cy})`}
-                    style={{ fill: labelColor }}
+                    style={{ fill: labelColor, fontSize: '11px' }}
                   >
-                    {h.subLabel}
+                    {h.startRes}–{h.endRes}
                   </text>
                   <text
                     x={cx}
@@ -1720,7 +1739,7 @@ export function TransmembraneTopologyDiagram({
                     transform={`rotate(${-pos.angle}, ${cx}, ${cy})`}
                     style={{ fill: labelColor, opacity: 0.85 }}
                   >
-                    {h.startRes}–{h.endRes}
+                    TM{h.subLabel}
                   </text>
                 </g>
               );
