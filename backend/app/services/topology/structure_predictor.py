@@ -48,85 +48,15 @@ from pathlib import Path
 
 import numpy as np
 
-# --- Kyte-Doolittle hydropathy (higher = more hydrophobic) --------------------
-KYTE_DOOLITTLE = {
-    "ALA": 1.8, "ARG": -4.5, "ASN": -3.5, "ASP": -3.5, "CYS": 2.5,
-    "GLN": -3.5, "GLU": -3.5, "GLY": -0.4, "HIS": -3.2, "ILE": 4.5,
-    "LEU": 3.8, "LYS": -3.9, "MET": 1.9, "PHE": 2.8, "PRO": -1.6,
-    "SER": -0.8, "THR": -0.7, "TRP": -0.9, "TYR": -1.3, "VAL": 4.2,
-}
-POSITIVE_RESIDUES = {"LYS", "ARG"}  # positive-inside rule
-
-# --- Secondary-structure code sets (shared by DSSP and STRIDE) ----------------
-HELIX_CODES = {"H", "G", "I"}          # alpha, 3-10, pi
-STRAND_CODES = {"E", "B", "b"}         # extended strand / beta bridge
-
-# --- Membrane geometry parameters ---------------------------------------------
-MEMBRANE_THICKNESS = 30.0   # Angstrom, typical hydrophobic-core thickness
-N_AXIS_SAMPLES = 500        # candidate membrane-normal directions
-N_CENTER_SAMPLES = 160      # slab positions scanned along each candidate normal
-SMOOTH_WINDOW = 19          # residues, hydropathy smoothing window (~1 TM helix)
-MAX_JITTER_LEN = 3          # max length of a slab-edge jitter dip that may be merged
-JITTER_MARGIN = 3.0         # Angstrom a jitter residue may sit beyond the slab face
-MIN_TM_CORE = 5             # drop TM runs whose in-slab core is shorter than this
-MIN_FACE_RESIDUES = 5       # min residues required OUTSIDE the slab on each face
-MIN_FACE_FRACTION = 0.08    # ...and each face must hold >= this fraction of residues
-                            # (balance: rejects a slab shoved to one extreme, which
-                            #  is how a single hydrophilic sliver gamed the contrast)
-MAX_SNAP = 4                # max residues a boundary may snap past the slab edge
-MIN_MEMBRANE_SCORE = 0.5    # below this the structure is treated as non-membrane
-MIN_EXTRA_SS_LEN = 3        # extramembrane helix/strand shorter than this -> Coil
-
-# --- SS-element-first pipeline (predict_topology_ss_first) ---------------------
-MIN_TM_ELEMENT_IN_SLAB = 4  # a DSSP element needs this many residues in the slab
-FULL_CROSS_FRAC = 0.66      # element whose z-span >= this*thickness crosses fully
-BROKEN_GAP_MAX = 9          # max intramembrane break between the two halves of one
-                            # discontinuous helix (TM1a/1b, TM6a/6b in a LeuT fold)
-MIN_CROSS_SPAN_FRAC = 0.45  # a crossing must reach across at least this*thickness of
-                            # the bilayer; short helices that sit in one leaflet
-                            # (interfacial / re-entrant) are not TM crossings
-
-
-# =============================================================================
-# User-configurable parameter bundle
-# =============================================================================
-@dataclass
-class TMParams:
-    """All biology-dependent thresholds that affect TM detection.
-
-    Each field carries a sensible default derived from literature.  The values
-    can be overridden per-call via the API query string so that users can tune
-    the predictor to their specific membrane type or protein family without
-    editing source code.
-
-    References for default values:
-      * membrane_thickness: Mitra et al., Biochemistry 2004; OPM database
-        (Lomize et al., Proteins 2006). Typical range 25–32 Å.
-      * min_membrane_score: heuristic; calibrated on OPM soluble-vs-membrane
-        classification.  Expose the score so callers can apply their own cut.
-      * Kyte-Doolittle scale: Kyte & Doolittle, J. Mol. Biol. 157:105–132, 1982.
-      * Positive-inside rule: Von Heijne, J. Mol. Biol. 225:487–494, 1992.
-    """
-    # --- Biology-dependent thresholds (user-tunable) --------------------------
-    membrane_thickness: float = MEMBRANE_THICKNESS
-    min_tm_element_in_slab: int = MIN_TM_ELEMENT_IN_SLAB
-    min_cross_span_frac: float = MIN_CROSS_SPAN_FRAC
-    full_cross_frac: float = FULL_CROSS_FRAC
-    broken_gap_max: int = BROKEN_GAP_MAX
-    min_membrane_score: float = MIN_MEMBRANE_SCORE
-
-    def to_response_dict(self) -> dict:
-        """Serialise into a dict suitable for inclusion in the API response
-        under the key ``parameters_used``, so users / papers know exactly
-        which values produced the result."""
-        return {
-            "membrane_thickness_angstrom": self.membrane_thickness,
-            "min_tm_element_in_slab": self.min_tm_element_in_slab,
-            "min_cross_span_frac": self.min_cross_span_frac,
-            "full_cross_frac": self.full_cross_frac,
-            "broken_gap_max": self.broken_gap_max,
-            "min_membrane_score": self.min_membrane_score,
-        }
+from app.core.constants import (
+    KYTE_DOOLITTLE, POSITIVE_RESIDUES, HELIX_CODES, STRAND_CODES,
+    MEMBRANE_THICKNESS, N_AXIS_SAMPLES, N_CENTER_SAMPLES, SMOOTH_WINDOW,
+    MAX_JITTER_LEN, JITTER_MARGIN, MIN_TM_CORE, MIN_FACE_RESIDUES,
+    MIN_FACE_FRACTION, MAX_SNAP, MIN_MEMBRANE_SCORE, MIN_EXTRA_SS_LEN,
+    MIN_TM_ELEMENT_IN_SLAB, FULL_CROSS_FRAC, BROKEN_GAP_MAX, MIN_CROSS_SPAN_FRAC
+)
+from app.schemas.topology import TMParams, TopologyResponse, TopologyRegion
+from app.services.topology.base import BaseTopologyPredictor
 
 
 # =============================================================================
@@ -845,25 +775,40 @@ def predict_topology_ss_first(file_path: Path, labeler: str = "DSSP",
     }
 
 
-def predict_topology(file_path: Path, algorithm: str = "dssp_slab",
-                     params: TMParams | None = None) -> dict:
-    """Router-facing dispatcher.
-
-      dssp_ss    -> SS-element-first + DSSP   (recommended, most accurate)
-      stride_ss  -> SS-element-first + STRIDE
-      dssp_slab  -> slab geometry + DSSP labelling
-      stride_slab-> slab geometry + STRIDE labelling
-      kd_slab    -> slab geometry only, no SS tool (cannot distinguish beta)
+class StructureTopologyPredictor(BaseTopologyPredictor):
     """
-    if params is None:
-        params = TMParams()
-    if algorithm == "kd_slab":
-        return predict_topology_structure(file_path, labeler="__none__", params=params)
-    if algorithm == "stride_slab":
-        return predict_topology_structure(file_path, labeler="STRIDE", params=params)
-    if algorithm == "dssp_slab":
-        return predict_topology_structure(file_path, labeler="DSSP", params=params)
-    if algorithm == "stride_ss":
-        return predict_topology_ss_first(file_path, labeler="STRIDE", params=params)
-    # default + "dssp_ss"
-    return predict_topology_ss_first(file_path, labeler="DSSP", params=params)
+    Structure-based topology predictor (incorporates slab-geometry and SS-first algorithms).
+    """
+    
+    def predict(self, file_path: Path, labeler: str = "DSSP", params: TMParams | None = None, algorithm_variant: str = "dssp_ss") -> TopologyResponse:
+        """
+        Predict the transmembrane topology of a protein from its 3D structure.
+        """
+        if params is None:
+            params = TMParams()
+            
+        if algorithm_variant == "kd_slab":
+            result_dict = predict_topology_structure(file_path, labeler="__none__", params=params)
+        elif algorithm_variant == "stride_slab":
+            result_dict = predict_topology_structure(file_path, labeler="STRIDE", params=params)
+        elif algorithm_variant == "dssp_slab":
+            result_dict = predict_topology_structure(file_path, labeler="DSSP", params=params)
+        elif algorithm_variant == "stride_ss":
+            result_dict = predict_topology_ss_first(file_path, labeler="STRIDE", params=params)
+        else:
+            # default is "dssp_ss"
+            result_dict = predict_topology_ss_first(file_path, labeler="DSSP", params=params)
+            
+        # Convert the dict result to the Pydantic TopologyResponse schema
+        regions = [TopologyRegion(**r) for r in result_dict.get("regions", [])]
+        return TopologyResponse(
+            uniprot_id=result_dict.get("uniprot_id", ""),
+            protein_name=result_dict.get("protein_name", ""),
+            gene_name=result_dict.get("gene_name", ""),
+            organism=result_dict.get("organism", ""),
+            membrane_score=result_dict.get("membrane_score", 0.0),
+            membrane_normal=result_dict.get("membrane_normal"),
+            labeler=result_dict.get("labeler", ""),
+            parameters_used=result_dict.get("parameters_used", {}),
+            regions=regions
+        )

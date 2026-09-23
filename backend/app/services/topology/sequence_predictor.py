@@ -1,34 +1,18 @@
 import numpy as np
 from pathlib import Path
 import warnings
+from typing import Optional
 from Bio.PDB import PDBParser, MMCIFParser
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
 from protein_engine.secondary_structure.dssp import DSSPMethod
 
-KYTE_DOOLITTLE = {
-    'ALA': 1.8, 'ARG': -4.5, 'ASN': -3.5, 'ASP': -3.5, 'CYS': 2.5,
-    'GLN': -3.5, 'GLU': -3.5, 'GLY': -0.4, 'HIS': -3.2, 'ILE': 4.5,
-    'LEU': 3.8, 'LYS': -3.9, 'MET': 1.9, 'PHE': 2.8, 'PRO': -1.6,
-    'SER': -0.8, 'THR': -0.7, 'TRP': -0.9, 'TYR': -1.3, 'VAL': 4.2
-}
-POSITIVE_RESIDUES = {"LYS", "ARG"}
-
-TM_WINDOW = 19
-
-# --- Confident pass: pure hydrophobicity, no DSSP involved. This is the primary,
-# high-precision signal. ---
-TM_HYDRO_THRESHOLD = 1.6
-TM_MIN_LENGTH = 15
-TM_MERGE_GAP = 3
-
-# --- Rescue pass: catches real TM helices/strands whose average hydrophobicity is
-# too weak to clear the confident threshold (common for transporters/GPCRs with
-# polar residues lining a pore), but ONLY when DSSP shows a long, uninterrupted
-# helix or strand there. Hydrophobicity still gates it (RESCUE_HYDRO_THRESHOLD);
-# DSSP is corroborating evidence, not the primary decision. ---
-RESCUE_HYDRO_THRESHOLD = 0.6
-RESCUE_MIN_ALPHA_LENGTH = 12
-RESCUE_MIN_BETA_LENGTH = 5
+from app.core.constants import (
+    KYTE_DOOLITTLE, POSITIVE_RESIDUES, TM_WINDOW,
+    TM_HYDRO_THRESHOLD, TM_MIN_LENGTH, TM_MERGE_GAP,
+    RESCUE_HYDRO_THRESHOLD, RESCUE_MIN_ALPHA_LENGTH, RESCUE_MIN_BETA_LENGTH
+)
+from app.schemas.topology import TMParams, TopologyResponse, TopologyRegion
+from app.services.topology.base import BaseTopologyPredictor
 
 
 def _smooth_hydrophobicity(sequence, window: int = TM_WINDOW) -> np.ndarray:
@@ -271,10 +255,23 @@ def predict_topology_from_sequence(file_path: Path):
     regions.append({"type": base_type,
                      "start": start_id, "end": end_id, "description": current_type})
 
-    return {
-        "uniprot_id": "CALCULATED",
-        "protein_name": "Prediction (Kyte-Doolittle TM scan, DSSP-refined + rescue)",
-        "gene_name": "",
-        "organism": "Computed",
-        "regions": regions,
-    }
+class SequenceTopologyPredictor(BaseTopologyPredictor):
+    """
+    Sequence-based topology predictor (Kyte-Doolittle TM scan, DSSP-refined + rescue).
+    """
+
+    def predict(self, file_path: Path, labeler: str = "DSSP", params: Optional[TMParams] = None) -> TopologyResponse:
+        # Pass params implicitly or explicitly if needed.
+        # Sequence logic ignores 'params' mostly (it relies on sequence constants).
+        result_dict = predict_tm_sequence(file_path)
+        
+        regions = [TopologyRegion(**r) for r in result_dict.get("regions", [])]
+        return TopologyResponse(
+            uniprot_id=result_dict.get("uniprot_id", ""),
+            protein_name=result_dict.get("protein_name", ""),
+            gene_name=result_dict.get("gene_name", ""),
+            organism=result_dict.get("organism", ""),
+            labeler="DSSP",
+            parameters_used={},
+            regions=regions
+        )

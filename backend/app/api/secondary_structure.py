@@ -5,11 +5,13 @@ import subprocess
 import urllib.request
 from urllib.error import HTTPError, URLError
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
+
 from protein_engine.secondary_structure.dssp import DSSPMethod
 from protein_engine.secondary_structure.stride import STRIDEMethod
-from .topology_predictor import predict_topology, TMParams
-from .tm_sequence_predictor import predict_topology_from_sequence
+from app.schemas.topology import TMParams
+from app.services.topology.base import BaseTopologyPredictor
+from app.api.dependencies import get_tm_params, get_topology_predictor
 
 router = APIRouter(prefix="/api/secondary-structure", tags=["secondary-structure"])
 ROOT = Path(__file__).resolve().parents[3]
@@ -118,78 +120,49 @@ def get_uniprot_topology(uniprot_id: str) -> dict:
 def predict_topology_from_structure(
     filename: str,
     algorithm: str = "dssp_slab",
-    # --- User-tunable biological thresholds (all optional) ---
-    thickness: Optional[float] = Query(
-        None, ge=20.0, le=40.0,
-        description="Hydrophobic core thickness in Angstrom. "
-                    "Bacterial IM ~27, eukaryotic PM ~30, ER ~25. (Mitra 2004; OPM)"),
-    min_tm_element: Optional[int] = Query(
-        None, ge=2, le=15,
-        description="Min residues of an SS element that must fall inside the slab "
-                    "to be considered transmembrane. Lower = more sensitive."),
-    min_cross_span: Optional[float] = Query(
-        None, ge=0.2, le=0.9,
-        description="Min fraction of membrane thickness a crossing must span. "
-                    "Lower admits shallower crossings (e.g. TM12 of hSERT)."),
-    full_cross_frac: Optional[float] = Query(
-        None, ge=0.3, le=1.0,
-        description="Fraction of thickness above which a single element counts "
-                    "as a full crossing (no fusion needed)."),
-    broken_gap_max: Optional[int] = Query(
-        None, ge=3, le=20,
-        description="Max gap (residues) between two partial helices that can be "
-                    "fused into one crossing (broken/discontinuous helix)."),
-    min_membrane_score: Optional[float] = Query(
-        None, ge=0.0, le=3.0,
-        description="Min mean hydrophobicity inside the slab to call membrane. "
-                    "Below this the structure is treated as soluble."),
+    params: TMParams = Depends(get_tm_params),
+    predictor: BaseTopologyPredictor = Depends(get_topology_predictor)
 ) -> dict:
     path = UPLOAD_DIR / Path(filename).name
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Uploaded structure not found")
 
-    # Build TMParams, overriding only the fields the user explicitly provided.
-    overrides = {}
-    if thickness is not None:
-        overrides["membrane_thickness"] = thickness
-    if min_tm_element is not None:
-        overrides["min_tm_element_in_slab"] = min_tm_element
-    if min_cross_span is not None:
-        overrides["min_cross_span_frac"] = min_cross_span
-    if full_cross_frac is not None:
-        overrides["full_cross_frac"] = full_cross_frac
-    if broken_gap_max is not None:
-        overrides["broken_gap_max"] = broken_gap_max
-    if min_membrane_score is not None:
-        overrides["min_membrane_score"] = min_membrane_score
-    params = TMParams(**overrides)
-
     try:
+        # Note: Depending on the predictor, we pass the algorithm variant if it supports it
         if algorithm == "tmhmm_seq":
-            return predict_topology_from_sequence(path)
-        return predict_topology(path, algorithm, params=params)
+            response = predictor.predict(path, params=params)
+        else:
+            response = predictor.predict(path, algorithm_variant=algorithm, params=params)
+        return response.dict()
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
 
 
 @router.get("/predict-topology/{filename}/membrane-normal")
-def get_membrane_normal(filename: str, algorithm: str = "dssp_slab") -> dict:
+def get_membrane_normal(
+    filename: str, 
+    algorithm: str = "dssp_slab",
+    predictor: BaseTopologyPredictor = Depends(get_topology_predictor)
+) -> dict:
     path = UPLOAD_DIR / Path(filename).name
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Uploaded structure not found")
     
     try:
-        # Sequence-based methods do not provide a 3D membrane normal, fallback to geometry only
         if algorithm == "tmhmm_seq":
             algorithm = "kd_slab"
             
-        result = predict_topology(path, algorithm)
-        if "membrane_normal" not in result:
+        # Re-fetch predictor for kd_slab explicitly here
+        from app.services.topology.structure_predictor import StructureTopologyPredictor
+        geom_predictor = StructureTopologyPredictor()
+        
+        response = geom_predictor.predict(path, algorithm_variant=algorithm)
+        if response.membrane_normal is None:
             raise HTTPException(status_code=400, detail="No membrane normal detected (likely soluble)")
             
         return {
-            "membrane_normal": result["membrane_normal"],
-            "membrane_score": result.get("membrane_score", 0.0)
+            "membrane_normal": response.membrane_normal,
+            "membrane_score": response.membrane_score
         }
     except HTTPException:
         raise
