@@ -5,10 +5,11 @@ RUN apt-get update && apt-get install -y \
     dssp curl bzip2 \
     && rm -rf /var/lib/apt/lists/*
 
-# Tải file từ điển nén (chỉ 70MB) cho DSSP 4.x để tránh lỗi "Assertion 'compound' failed"
-RUN mkdir -p /usr/share/libcifpp && \
-    curl -s -o /usr/share/libcifpp/components.cif.gz https://files.wwpdb.org/pub/pdb/data/monomers/components.cif.gz && \
-    curl -s -o /usr/share/libcifpp/mmcif_pdbx.dic https://mmcif.wwpdb.org/dictionaries/ascii/mmcif_pdbx_v50.dic
+# Tải file từ điển nén và giải nén thành components.cif tĩnh tại /var/cache/libcifpp (đúng như DSSP yêu cầu)
+RUN mkdir -p /var/cache/libcifpp && \
+    curl -s -o /var/cache/libcifpp/components.cif.gz https://files.wwpdb.org/pub/pdb/data/monomers/components.cif.gz && \
+    gunzip /var/cache/libcifpp/components.cif.gz && \
+    curl -s -o /var/cache/libcifpp/mmcif_pdbx.dic https://mmcif.wwpdb.org/dictionaries/ascii/mmcif_pdbx_v50.dic
 
 # Cài đặt STRIDE qua Micromamba (vì apt không có stride) và đưa vào PATH
 RUN curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /usr/local bin/micromamba && \
