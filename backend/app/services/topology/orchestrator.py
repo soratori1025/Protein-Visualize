@@ -528,7 +528,7 @@ class TopologyOrchestrator:
             found = False
             for a, b in groups:
                 inside = [k for k in range(a, b + 1) if membrane.in_envelope(k)]
-                if len(inside) < min(params.min_tm_element_in_slab, b - a + 1):
+                if len(inside) < params.min_tm_element_in_slab:
                     continue                    # element does not reach the bilayer
                 a2, b2 = inside[0], inside[-1]
                 cls = self._majority(coarse[a2:b2 + 1])
@@ -561,32 +561,50 @@ class TopologyOrchestrator:
         return [(g[0][0], g[-1][1]) for g in
                 self._element_groups(cand, breaks, coords, membrane, gap_max, full_cross, min_cross)]
 
-    def _element_groups(self, cand, breaks, coords, membrane: MembraneFrame,
-                        gap_max: int, full_cross: float, min_cross: Optional[float] = None,
-                        with_evidence: bool = False) -> Any:
-        """Group consecutive SS elements into crossings with the transition state
-        machine (transitions.classify_membrane_transition). ``gap_max`` only limits
-        which pairs are considered; geometry decides. Elements shorter than
-        MIN_FRAGMENT_LEN are treated as part of a gap when longer ones exist.
-        Returns member lists per group (+ the transitions inside each group)."""
+    def _element_groups(
+        self,
+        cand,
+        breaks,
+        coords,
+        membrane: MembraneFrame,
+        gap_max: int,
+        full_cross: float,
+        min_cross: Optional[float] = None,
+        with_evidence: bool = False,
+    ) -> Any:
         if min_cross is None:
             min_cross = 0.45 * 2.0 * membrane.half_thickness
-        els = sorted((a, b) for a, b, _ in cand)
-        if any(b - a + 1 >= MIN_FRAGMENT_LEN for a, b in els):
-            els = [(a, b) for a, b in els if b - a + 1 >= MIN_FRAGMENT_LEN]
-        groups: list[list[tuple[int, int]]] = []
+        els = sorted((a, b, c) for a, b, c in cand)
+        if any(b - a + 1 >= MIN_FRAGMENT_LEN for a, b, _ in els):
+            els = [
+                (a, b, c)
+                for a, b, c in els
+                if b - a + 1 >= MIN_FRAGMENT_LEN
+            ]
+        groups: list[list[tuple[int, int, str]]] = []
         evidence: list[list[TransitionEvidence]] = []
-        for a, b in els:
+        for a, b, cls in els:
             if groups:
                 g = groups[-1]
-                if a - g[-1][1] - 1 <= gap_max:
-                    ev = classify_membrane_transition((g[0][0], g[-1][1]), (a, b), membrane,
-                                                      coords, breaks, min_cross, full_cross)
+                prev_a, prev_b, prev_cls = g[-1]
+                gap = a - prev_b - 1
+                if gap <= gap_max:
+                    ev = classify_membrane_transition(
+                        (prev_a, prev_b),
+                        (a, b),
+                        membrane,
+                        coords,
+                        breaks,
+                        min_cross,
+                        full_cross,
+                        ss_class_a=prev_cls,
+                        ss_class_b=cls,
+                    )
                     if ev.classification in MERGING:
-                        g.append((a, b))
+                        g.append((a, b, cls))
                         evidence[-1].append(ev)
                         continue
-            groups.append([(a, b)])
+            groups.append([(a, b, cls)])
             evidence.append([])
         return (groups, evidence) if with_evidence else groups
 

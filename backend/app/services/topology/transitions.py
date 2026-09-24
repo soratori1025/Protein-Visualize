@@ -52,6 +52,9 @@ class TransitionEvidence:
     gap_in_membrane: bool
     gap_in_core: bool
     same_orientation: bool
+    ss_class_a: Optional[str]
+    ss_class_b: Optional[str]
+    same_ss_class: bool
     a_tilt_deg: Optional[float]
     b_tilt_deg: Optional[float]
     single_crossing: bool
@@ -86,10 +89,16 @@ def _max_reversal(depths: np.ndarray, direction: float) -> float:
 
 def classify_membrane_transition(a: tuple[int, int], b: tuple[int, int], membrane: MembraneFrame,
                                  coords, breaks, min_cross: float,
-                                 full_cross: float) -> TransitionEvidence:
+                                 full_cross: float, ss_class_a: Optional[str] = None,
+                                 ss_class_b: Optional[str] = None, ) -> TransitionEvidence:
     """Classify A -> gap -> B (inclusive frame positions, A before B)."""
+    same_ss_class = (
+        ss_class_a is None
+        or ss_class_b is None
+        or ss_class_a == ss_class_b
+    )
     a0, a1 = a
-    b0, b1 = b
+    b0, b1 = b  
     depth = membrane.depth
     half = membrane.half_thickness
     gap = list(range(a1 + 1, b0))
@@ -120,9 +129,22 @@ def classify_membrane_transition(a: tuple[int, int], b: tuple[int, int], membran
     b_full = membrane.span(b0, b1) >= full_cross
 
     def result(cls, reason):
-        return TransitionEvidence(cls, len(gap), gap_in_membrane, gap_in_core, same_orientation,
-                                  ta, tb, single_crossing, a_full, b_full, reason)
-
+        return TransitionEvidence(
+            cls,
+            len(gap),
+            gap_in_membrane,
+            gap_in_core,
+            same_orientation,
+            ss_class_a,
+            ss_class_b,
+            same_ss_class,
+            ta,
+            tb,
+            single_crossing,
+            a_full,
+            b_full,
+            reason,
+        )
     if min(a1 - a0, b1 - b0) + 1 < MIN_FRAGMENT_LEN:
         return result("SEPARATE", "fragment shorter than MIN_FRAGMENT_LEN")
     if breaks is not None and any(breaks[k] for k in range(a1 + 1, b0 + 1)):
@@ -136,6 +158,11 @@ def classify_membrane_transition(a: tuple[int, int], b: tuple[int, int], membran
         if not same_sign:
             return result("SEPARATE", "antiparallel across the membrane (hairpin)")
         return result("SEPARATE", "a fragment lies almost parallel to the membrane (interfacial)")
+    if not same_ss_class:
+        return result(
+            "SEPARATE",
+            f"different SS classes: {ss_class_a} -> {ss_class_b}"
+        )
     if not single_crossing:
         if same_side and deep and partial_pair:
             return result("REENTRANT", "A+B enter and leave on the same side")
@@ -145,7 +172,7 @@ def classify_membrane_transition(a: tuple[int, int], b: tuple[int, int], membran
     if a_full or b_full:
         return result("AMBIGUOUS", "one fragment crosses alone, the other only partly")
     if len(gap) >= MIN_UNWOUND and gap_in_core:
-        return result("BROKEN_TM", "two partial fragments, one traversal, unwound in the core")
+        return result("BROKEN_TM", "same-class partial fragments form one membrane traversal with an unwound gap in the core")
     if len(gap) >= MIN_UNWOUND:
         return result("CONTINUOUS", "break lies at the interface, not in the core")
     return result("CONTINUOUS", "1-2 residue kink inside one traversal")
