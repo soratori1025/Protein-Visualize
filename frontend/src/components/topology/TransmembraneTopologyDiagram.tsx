@@ -147,8 +147,12 @@ interface RawTM {
   end: number;
   name?: string;
   description?: string;
-  /** 'Helix' | 'Strand' | 'Loop' from the calculated endpoint. */
+  /** 'Helix' | 'Strand' | 'Irregular' from the calculated endpoint. */
   ss?: string | null;
+  confidence?: string | null;
+  /** Calculated endpoint: crossing number + 'a'/'b' part of a broken crossing. */
+  crossing?: number | null;
+  part?: string | null;
 }
 
 function mentionsDiscontinuity(tm: RawTM): boolean {
@@ -239,6 +243,9 @@ export interface TMHelix {
   description?: string;
   /** β-strand crossing (drawn as an arrow) rather than an α-helix. */
   isBeta?: boolean;
+  /** Drawn dashed: irregular membrane segment or low-confidence call. */
+  uncertain?: boolean;
+  confidence?: string | null;
   /** Side of the membrane where this segment's N-terminal end sits. */
   entrySide: MembraneSide;
   /** Side of the membrane where this segment's C-terminal end sits. */
@@ -322,8 +329,6 @@ export function getExtraFeatures(
   secondaryResult: SecondaryStructureResult | null | undefined,
   chainId: string | undefined
 ): ExtraFeature[] | undefined {
-  return undefined; // Tạm thời ẩn các cấu trúc phụ ngoài màng
-  /*
   if (lEnd < lStart) return undefined;
 
   const found: ExtraFeature[] = [];
@@ -339,7 +344,7 @@ export function getExtraFeatures(
         startRes: region.start,
         endRes: region.end,
         type: region.type,
-        label: region.name || region.description || region.type,
+        label: region.topology_label || region.name || region.description || region.type,
       });
     }
   }
@@ -363,7 +368,11 @@ export function getExtraFeatures(
         startRes: region.start,
         endRes: region.end,
         type: ss, // 'Helix' | 'Strand'
-        label: ss === 'Helix' ? 'α-helix' : 'β-strand',
+        // backend topology label (EL2, EL3a, IL1 …) names the element by its loop,
+        // like published topology figures; SS type stays in `type`
+        label:
+          region.topology_label ||
+          (region.description.includes('Interfacial') ? 'interf. α' : ss === 'Helix' ? 'α-helix' : 'β-strand'),
       });
     }
   }
@@ -399,10 +408,24 @@ export function getExtraFeatures(
     flush();
   }
 
-  if (found.length === 0) return undefined;
+  const filteredFound = !(isCalculatedTopology(topologyData) && topologyData.residues && topologyData.membrane)
+    ? found
+    : found.filter((feature) => {
+        // Temporarily hide RE and IL/EL segments that are outside the lipid membrane
+        const isReOrLoopHelix = feature.type === 'Intramembrane' || feature.type === 'Helix' || feature.type === 'Strand';
+        if (isReOrLoopHelix) {
+          const insideCount = topologyData.residues!.filter(
+            (res) => res.residue_number >= feature.startRes && res.residue_number <= feature.endRes && (res.zone === 'CORE' || res.zone === 'EDGE')
+          ).length;
+          return insideCount >= 5;
+        }
+        return true;
+      });
+
+  if (filteredFound.length === 0) return undefined;
 
   // Keep the longest 3 to avoid cluttering
-  const kept = found
+  const kept = filteredFound
     .sort((a, b) => b.endRes - b.startRes - (a.endRes - a.startRes))
     .slice(0, 3)
     .sort((a, b) => a.startRes - b.startRes);
@@ -411,7 +434,6 @@ export function getExtraFeatures(
     ...sh,
     offsetFactor: kept.length > 1 ? idx - (kept.length - 1) / 2 : 0,
   }));
-  */
 }
 
 /* ------------------------------------------------------------------ *
@@ -454,8 +476,19 @@ export function buildTopologyModel({
   if (activeTopologyData) {
     usingAnnotation = true;
     rawTMs = (activeTopologyData.regions ?? [])
-      .filter((r) => r.type === 'Transmembrane')
-      .map((r) => ({ start: r.start, end: r.end, name: r.name, description: r.description, ss: r.ss }))
+      // the unwound stretch between the two halves of a broken crossing is drawn as
+      // the connector between them, not as a helix of its own
+      .filter((r) => r.type === 'Transmembrane' && !(r.description ?? '').includes('Unwound'))
+      .map((r) => ({
+        start: r.start,
+        end: r.end,
+        name: r.name,
+        description: r.description,
+        ss: r.ss,
+        confidence: r.confidence,
+        crossing: r.crossing,
+        part: r.part,
+      }))
       .sort((a, b) => a.start - b.start);
     domainRegions = activeTopologyData.regions
       .filter((r) => r.type === 'Topological domain')
@@ -489,10 +522,19 @@ export function buildTopologyModel({
   /* --- Step 2: group segments into helices (a broken helix = one group of 2) --- */
   const trustSegments = topologySource === 'calculated';
   const groups: RawTM[][] = [];
+  const hasCrossingIds = trustSegments && rawTMs.some((tm) => tm.crossing != null);
   for (const tm of rawTMs) {
     const last = groups[groups.length - 1];
-    if (last && last.length === 1 && looksLikeHalfPair(last[0], tm, trustSegments)) last.push(tm);
-    else groups.push([tm]);
+    if (hasCrossingIds) {
+      // The backend decided which pieces form one crossing (broken helix = same
+      // crossing number, parts 'a' and 'b'); draw exactly that.
+      if (last && tm.crossing != null && last[0].crossing === tm.crossing) last.push(tm);
+      else groups.push([tm]);
+    } else if (last && last.length === 1 && looksLikeHalfPair(last[0], tm, trustSegments)) {
+      last.push(tm);
+    } else {
+      groups.push([tm]);
+    }
   }
 
   /* --- Step 3: palette sized to the actual number of helices --- */
@@ -530,6 +572,7 @@ export function buildTopologyModel({
     const shouldSplit =
       preSplit || mentionsDiscontinuity(first) || (!trustSegments && spanLen >= LONG_TM_RESIDUES);
     const isBeta = isBetaSegment(first);
+    const uncertain = first.ss === 'Irregular' || first.confidence === 'low';
 
     if (!shouldSplit) {
       const subLabel = `${hNum}`;
@@ -544,6 +587,8 @@ export function buildTopologyModel({
         isSplit: false,
         description: first.description,
         isBeta,
+        uncertain,
+        confidence: first.confidence,
         entrySide,
         exitSide,
         column: gi,
@@ -578,6 +623,8 @@ export function buildTopologyModel({
         partIndex: idx,
         description: half.description,
         isBeta,
+        uncertain,
+        confidence: first.confidence,
         // Part a runs from the entry side inwards; part b carries on to the exit side.
         entrySide: idx === 0 ? entrySide : entrySide,
         exitSide: idx === 0 ? entrySide : exitSide,
@@ -759,11 +806,15 @@ export function TransmembraneTopologyDiagram({
         const value = integer ? parseInt(raw, 10) : parseFloat(raw);
         if (!isNaN(value)) qp.set(key, String(value));
       };
-      // Read by the TM x SS flows. (min_tm_element / min_cross_span / full_cross_frac
-      // are only read by the SS-element-first predictor, so they are not sent.)
       setNumber('thickness', tmThickness);
       setNumber('broken_gap_max', tmBrokenGapMax, true);
       setNumber('min_membrane_score', tmMinMembraneScore);
+      // crossing geometry: read only by the structure-guided flow
+      if (flow === 'ss_then_tm') {
+        setNumber('min_tm_element', tmMinElement, true);
+        setNumber('min_cross_span', tmMinCrossSpan);
+        setNumber('full_cross_frac', tmFullCrossFrac);
+      }
 
       const response = await fetch(
         `${API_URL}/api/secondary-structure/predict-topology/${encodeURIComponent(filenameToFetch.trim())}?${qp.toString()}`
@@ -779,7 +830,7 @@ export function TransmembraneTopologyDiagram({
     } finally {
       setLoadingCalculated(false);
     }
-  }, [tmThickness, tmBrokenGapMax, tmMinMembraneScore]);
+  }, [tmThickness, tmBrokenGapMax, tmMinMembraneScore, tmMinElement, tmMinCrossSpan, tmFullCrossFrac]);
 
   useEffect(() => {
     if (uniprotId) {
@@ -940,7 +991,8 @@ export function TransmembraneTopologyDiagram({
 
   const isPub = figureTheme === 'publication';
   const slabParamsActive = tmAlgorithm === '3d_slab_geom';
-  const gapParamActive = flowType !== 'tm_then_ss' && ssAlgorithm !== 'none';
+  const gapParamActive = ssAlgorithm !== 'none';
+  const crossParamsActive = flowType === 'ss_then_tm' && ssAlgorithm !== 'none';
   const usedParam = (key: string): string => {
     const value = calculatedData?.parameters_used?.[key];
     return value === undefined || value === null ? 'default' : String(value);
@@ -1036,9 +1088,11 @@ export function TransmembraneTopologyDiagram({
           <h2>Transmembrane secondary structure map</h2>
           <p className="panel-subtitle">
             {isCalculatedTopology(activeTopologyData)
-              ? `${activeTopologyData.labeler} · chain ${activeTopologyData.chain_id ?? '?'} · membrane score ${
-                  (activeTopologyData.membrane_score ?? 0).toFixed(2)
-                } · ${helixCount} crossings, ${loops.length} loops`
+              ? `${activeTopologyData.labeler} · chain ${activeTopologyData.chain_id ?? '?'} · ${helixCount} crossings, ${
+                  loops.length
+                } loops${activeTopologyData.domain_type ? ` · ${activeTopologyData.domain_type.replace('_', ' ')}` : ''}${
+                  activeTopologyData.membrane ? ` · membrane: ${activeTopologyData.membrane.source}` : ''
+                }`
               : activeTopologyData
               ? `${activeTopologyData.protein_name}${
                   activeTopologyData.gene_name ? ` (${activeTopologyData.gene_name})` : ''
@@ -1196,9 +1250,9 @@ export function TransmembraneTopologyDiagram({
                     onChange={(e) => setFlowType(e.target.value)}
                     style={{ padding: '4px 8px' }}
                   >
-                    <option value="ss_then_tm">Filter TM by SS (Recommended)</option>
-                    <option value="tm_then_ss">Filter SS by TM</option>
-                    <option value="parallel_merge">Parallel Merge (Strict Intersection)</option>
+                    <option value="ss_then_tm">Structure-guided (Recommended)</option>
+                    <option value="tm_then_ss">TM first (keep TM boundaries)</option>
+                    <option value="parallel_merge">Consensus (residue-level agreement)</option>
                   </select>
                 </div>
                 
@@ -1255,25 +1309,23 @@ export function TransmembraneTopologyDiagram({
                       onChange={e => setTmBrokenGapMax(e.target.value)}
                       className="tm-input-field" style={{ width: '50px', marginLeft: 4 }} />
                   </label>
-                  {/* Only read by the SS-element-first predictor (predict_topology_ss_first),
-                      not by the TM x SS flows used here - shown for reference, not sent. */}
-                  <label title="SS-first predictor only — not used by the TM × SS flows." style={{ opacity: 0.45 }}>
+                  <label title="Min residues of a helix/strand inside the membrane envelope to count as a crossing. Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
                     Min element in slab
-                    <input type="number" value={tmMinElement} disabled
+                    <input type="number" step="1" min="1" max="40" value={tmMinElement} disabled={!crossParamsActive}
                       placeholder={usedParam('min_tm_element_in_slab')}
                       onChange={e => setTmMinElement(e.target.value)}
                       className="tm-input-field" style={{ width: '50px', marginLeft: 4 }} />
                   </label>
-                  <label title="SS-first predictor only — not used by the TM × SS flows." style={{ opacity: 0.45 }}>
+                  <label title="Min fraction of the thickness a group must span along the membrane normal to be a crossing; shallower groups that reach the core become Intramembrane (re-entrant). Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
                     Min cross span
-                    <input type="number" value={tmMinCrossSpan} disabled
+                    <input type="number" step="0.05" min="0.05" max="1" value={tmMinCrossSpan} disabled={!crossParamsActive}
                       placeholder={usedParam('min_cross_span_frac')}
                       onChange={e => setTmMinCrossSpan(e.target.value)}
                       className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
                   </label>
-                  <label title="SS-first predictor only — not used by the TM × SS flows." style={{ opacity: 0.45 }}>
+                  <label title="An element spanning this fraction of the thickness is a full crossing on its own and is never fused with a neighbour. Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
                     Full cross frac
-                    <input type="number" value={tmFullCrossFrac} disabled
+                    <input type="number" step="0.05" min="0.1" max="1.5" value={tmFullCrossFrac} disabled={!crossParamsActive}
                       placeholder={usedParam('full_cross_frac')}
                       onChange={e => setTmFullCrossFrac(e.target.value)}
                       className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
@@ -1833,9 +1885,14 @@ export function TransmembraneTopologyDiagram({
                       title: `${isBeta ? 'Beta Strand' : 'Helix'} TM${h.subLabel}`,
                       range: `Residues ${h.startRes}–${h.endRes}`,
                       length: h.length,
-                      details: h.isSplit
-                        ? `Discontinuous segment, part ${h.partIndex === 0 ? '1' : '2'}`
-                        : h.description || `Transmembrane ${isBeta ? 'beta strand' : 'alpha helix'}`,
+                      details: [
+                        h.isSplit
+                          ? `Discontinuous segment, part ${h.partIndex === 0 ? '1' : '2'}`
+                          : h.description || `Transmembrane ${isBeta ? 'beta strand' : 'alpha helix'}`,
+                        h.confidence ? `confidence: ${h.confidence}` : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · '),
                     })
                   }
                   onMouseLeave={() => setHoveredElement(null)}
@@ -1874,7 +1931,8 @@ export function TransmembraneTopologyDiagram({
                         height={Math.max(0, cylHeight - 12)}
                         fill="none"
                         stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
-                        strokeWidth={isSelected ? 2.5 : 0.8}
+                        strokeWidth={isSelected ? 2.5 : h.uncertain ? 1.6 : 0.8}
+                        strokeDasharray={h.uncertain ? '5 3' : undefined}
                       />
                     </>
                   ) : (
@@ -1883,6 +1941,7 @@ export function TransmembraneTopologyDiagram({
                       fill={`url(#cyl-${h.id})`}
                       stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
                       strokeWidth={isSelected ? 2.5 : 1.2}
+                      strokeDasharray={h.uncertain ? '5 3' : undefined}
                     />
                   )}
 

@@ -23,7 +23,13 @@ KNOWN_SIDES = (CYTO, EXTRA)
 GEOMETRIC_SIDES = (SIDE_A, SIDE_B)
 
 TM_CLASS_LABEL = {"H": "Transmembrane Alpha Helix", "E": "Transmembrane Beta Strand",
+                  # in the membrane, but not one regular helix/strand (mixed elements,
+                  # no SS assignment, or SS and membrane evidence disagree)
+                  "I": "Transmembrane Irregular",
                   "L": "Transmembrane Loop", None: TM}
+INTERFACIAL = "Interfacial Helix"
+# non-helical stretch INSIDE the bilayer between the two halves of a broken crossing
+UNWOUND = "Transmembrane Unwound"
 
 # UniProt "Topological domain" vocabulary -> which face it is topologically equivalent to.
 # (Lumenal / periplasmic / intermembrane spaces are non-cytoplasmic = "outside".)
@@ -138,7 +144,7 @@ def region_fields(desc: str) -> tuple[str, Optional[str], Optional[str]]:
         rtype = "Topological domain"
         side = CYTO if desc.startswith(CYTO) else EXTRA if desc.startswith(EXTRA) else None
     ss = None
-    for word in ("Helix", "Strand", "Loop", "Coil"):
+    for word in ("Irregular", "Helix", "Strand", "Loop", "Coil"):
         if word in desc:
             ss = word
             break

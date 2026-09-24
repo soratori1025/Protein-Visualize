@@ -63,7 +63,7 @@ PARENT_RESIDUE = {
     "OCS": "CYS", "CME": "CYS", "SEC": "CYS", "PYL": "LYS", "HIC": "HIS", "MLE": "LEU",
     "NLE": "LEU", "CGU": "GLU", "PCA": "GLU", "HSD": "HIS", "HSE": "HIS", "HSP": "HIS",
     "HID": "HIS", "HIE": "HIS", "HIP": "HIS", "CYX": "CYS", "CYM": "CYS", "ASH": "ASP",
-    "GLH": "GLU", "LYN": "LYS",
+    "GLH": "GLU", "LYN": "LYS", "FME": "MET",
 }
 
 
@@ -100,8 +100,14 @@ class ResidueFrame:
     """Ordered observed residues of ONE chain; positions 0..n-1 are the shared index."""
 
     def __init__(self, chain_id: str, residues: Sequence[Residue],
-                 coords: Optional[np.ndarray] = None):
+                 coords: Optional[np.ndarray] = None, b_factors: Optional[np.ndarray] = None,
+                 predicted_model: bool = False, source_path: Optional[Path] = None):
         self.chain_id = chain_id
+        # CA B-factors. In predicted models (AlphaFold, ESMFold ...) this column holds
+        # pLDDT (0-100), a per-residue structure confidence; `predicted_model` says so.
+        self.b_factors = None if b_factors is None else np.asarray(b_factors, dtype=float)
+        self.predicted_model = predicted_model
+        self.source_path = source_path
         self.residues: list[Residue] = list(residues)
         n = len(self.residues)
         if coords is None:
@@ -218,7 +224,7 @@ def load_residue_frame(file_path: Path, chain_id: Optional[str] = None) -> Resid
         raise ValueError(f"{file_path.name}: no model/coordinates found")
     chain = _pick_chain(model, chain_id)
 
-    residues, coords = [], []
+    residues, coords, bfac = [], [], []
     for residue in chain:
         hetflag, resseq, icode = residue.get_id()
         raw = residue.get_resname().strip().upper()
@@ -229,7 +235,28 @@ def load_residue_frame(file_path: Path, chain_id: Optional[str] = None) -> Resid
             continue  # free amino acid ligand (HETATM) - not part of the chain
         residues.append(Residue(chain.id, int(resseq), (icode or "").strip(), name, one_letter(name)))
         coords.append(residue["CA"].get_coord())
-    return ResidueFrame(chain.id, residues, np.array(coords, dtype=float) if coords else None)
+        bfac.append(float(residue["CA"].get_bfactor()))
+    return ResidueFrame(chain.id, residues, np.array(coords, dtype=float) if coords else None,
+                        b_factors=np.array(bfac) if bfac else None,
+                        predicted_model=_looks_predicted(file_path), source_path=file_path)
+
+
+_PREDICTED_MARKERS = ("ALPHAFOLD", "ESMFOLD", "COLABFOLD", "_MA_QA_METRIC", "ROSETTAFOLD", "OPENFOLD")
+
+
+def _looks_predicted(file_path: Path, max_lines: int = 400) -> bool:
+    """True for predicted models whose B-factor column is pLDDT (header markers)."""
+    try:
+        with open(file_path, errors="replace") as fh:
+            for i, line in enumerate(fh):
+                if i >= max_lines:
+                    break
+                upper = line.upper()
+                if any(m in upper for m in _PREDICTED_MARKERS):
+                    return True
+    except OSError:
+        pass
+    return False
 
 
 # =============================================================================
@@ -404,9 +431,6 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
             duplicates += 1
         else:
             first_idx[key] = j
-    if duplicates:
-        warns.append(f"{source}: {duplicates} duplicated residue numbers (several chains?) - "
-                     "first occurrence used")
 
     need = min(n, m)
     best: Optional[ReferenceMapping] = None
@@ -423,6 +447,9 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
                 return cand
         elif matched == need:
             # unverifiable: accept only a complete match of the smaller side
+            if duplicates:
+                cand.warnings.append(f"{source}: {duplicates} residue number(s) occur twice - "
+                                     "first occurrence used (no residue names to disambiguate)")
             return cand
         if best is None or matched > best.matched:
             best = cand
@@ -443,7 +470,11 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
             else:
                 method = "sequence alignment"
             if note_remap:
-                if best is not None and best.matched:
+                if duplicates:
+                    warns.append(f"{source}: {duplicates} residue number(s) occur twice (insertion "
+                                 "codes not reported, or several chains without chain IDs); "
+                                 f"mapped by {method}")
+                elif best is not None and best.matched:
                     warns.append(f"{source}: residue numbers did not match the structure "
                                  f"(identity {best.identity or 0:.0%}); re-mapped by {method}")
                 else:
@@ -454,6 +485,9 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
         return ReferenceMapping([None] * n, "unmapped", 0, ident, warns)
 
     # No residue names: numbering cannot be verified.
+    if duplicates:
+        warns.append(f"{source}: {duplicates} residue number(s) occur twice - first occurrence "
+                     "used (no residue names to disambiguate)")
     if allow_order_fallback and m == n:
         warns.append(f"{source}: residue numbers do not match; mapped by ORDER (same count, "
                      "unverified - expose residue names in the tool output to verify)")

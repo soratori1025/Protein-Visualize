@@ -65,6 +65,7 @@ from app.core.constants import (
 from app.schemas.topology import TMParams
 from app.services.topology import labels as L
 from app.services.topology.providers.tm.base import TMPrediction, TMProvider
+from app.services.topology.membrane import membrane_from_file
 from app.services.topology.residues import ResidueFrame, load_residue_frame
 
 # =============================================================================
@@ -759,16 +760,30 @@ class GeometryTMProvider(TMProvider):
 
         residues_data = frame.residues_data()
         weights = _membrane_weights(frame.names)
-        half = params.membrane_thickness / 2.0
-        classifications, d, membrane_score, axis, _ = _classify_by_slab(
-            frame.coords, weights, thickness=params.membrane_thickness)
+        labeler = self.LABELER
+        placed = membrane_from_file(frame)
+        if placed is not None:
+            # The file already carries the bilayer (OPM / PPM / memembed DUM atoms):
+            # use that placement instead of re-fitting a hydrophobic slab.
+            half = placed.half_thickness
+            d = placed.depth
+            inside = np.abs(d) <= half
+            classifications = ["Transmembrane" if ins else ("Side_A" if di > 0 else "Side_B")
+                               for ins, di in zip(inside, d)]
+            membrane_score = float(weights[inside].mean()) if inside.any() else 0.0
+            axis = placed.normal
+            labeler = f"{self.LABELER} (membrane from file)"
+        else:
+            half = params.membrane_thickness / 2.0
+            classifications, d, membrane_score, axis, _ = _classify_by_slab(
+                frame.coords, weights, thickness=params.membrane_thickness)
         normal = [round(float(a), 4) for a in axis]
 
         if membrane_score < params.min_membrane_score:
             labels = _apply_positive_inside_rule(_sides_by_sign(d), residues_data)
             return TMPrediction(
                 labels=labels, segments=[], membrane_score=membrane_score,
-                membrane_normal=normal, labeler=self.LABELER,
+                membrane_normal=normal, labeler=labeler,
                 warnings=[f"membrane_score {membrane_score:.2f} < {params.min_membrane_score} "
                           "- treated as soluble (no TM segments)"])
 
@@ -782,5 +797,5 @@ class GeometryTMProvider(TMProvider):
             segments=segments,
             membrane_normal=normal,
             membrane_score=membrane_score,
-            labeler=self.LABELER,
+            labeler=labeler,
         )

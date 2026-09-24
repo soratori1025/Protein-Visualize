@@ -1,0 +1,1611 @@
+﻿diff --git a/backend/app/schemas/topology.py b/backend/app/schemas/topology.py
+index e0af485..f231764 100644
+--- a/backend/app/schemas/topology.py
++++ b/backend/app/schemas/topology.py
+@@ -1,6 +1,8 @@
+ from dataclasses import dataclass
+ from typing import Optional
++
+ from pydantic import BaseModel, Field
++
+ from app.core.constants import (
+     MEMBRANE_THICKNESS,
+     MIN_MEMBRANE_SCORE,
+@@ -10,6 +12,7 @@ from app.core.constants import (
+     BROKEN_GAP_MAX,
+ )
+ 
++
+ @dataclass
+ class TMParams:
+     """All biology-dependent thresholds that affect TM detection."""
+@@ -19,6 +22,7 @@ class TMParams:
+     min_cross_span_frac: float = MIN_CROSS_SPAN_FRAC
+     full_cross_frac: float = FULL_CROSS_FRAC
+     broken_gap_max: int = BROKEN_GAP_MAX
++
+     def to_response_dict(self) -> dict:
+         return {
+             "membrane_thickness": self.membrane_thickness,
+@@ -29,6 +33,7 @@ class TMParams:
+             "min_membrane_score": self.min_membrane_score,
+         }
+ 
++
+ class TopologyRegion(BaseModel):
+     type: str
+     start: int                       # author residue number (first observed residue)
+@@ -40,6 +45,26 @@ class TopologyRegion(BaseModel):
+     # so existing clients that only read start/end keep working.
+     start_icode: Optional[str] = None
+     end_icode: Optional[str] = None
++    # 'high' | 'medium' | 'low': agreement of the TM block, the membrane geometry and
++    # DSSP/STRIDE over the region's residues (heuristic, not a calibrated probability).
++    confidence: Optional[str] = None
++
++
++class ResidueAnnotation(BaseModel):
++    """One row of the residue-level evidence matrix; regions are derived from these."""
++    index: int                          # position in the analysed chain (0-based)
++    residue_number: int
++    insertion_code: Optional[str] = None
++    aa: str
++    ss_raw: Optional[str] = None        # DSSP/STRIDE 8-state code (H G I E B T S C)
++    ss: Optional[str] = None            # coarse: H / E / C
++    tm_evidence: str                    # what the TM block said (Transmembrane, Cytoplasmic, ...)
++    depth: Optional[float] = None       # signed distance from the bilayer mid-plane (A)
++    zone: Optional[str] = None          # CORE / EDGE / OUT
++    plddt: Optional[float] = None       # predicted models only (B-factor column)
++    label: str                          # final label (same vocabulary as region descriptions)
++    confidence: Optional[str] = None
++
+ 
+ class TopologyResponse(BaseModel):
+     uniprot_id: str
+@@ -55,3 +80,8 @@ class TopologyResponse(BaseModel):
+     # (SS tool missing, residue numbering re-mapped, features outside the model ...).
+     chain_id: Optional[str] = None
+     warnings: list[str] = Field(default_factory=list)
++    # 'alpha_helical' | 'beta_barrel' | 'beta' | 'mixed' | 'irregular' | None
++    domain_type: Optional[str] = None
++    # {"source", "normal", "half_thickness"} of the membrane placement used
++    membrane: Optional[dict] = None
++    residues: Optional[list[ResidueAnnotation]] = None
+diff --git a/backend/app/services/topology/labels.py b/backend/app/services/topology/labels.py
+index 8054313..1414c98 100644
+--- a/backend/app/services/topology/labels.py
++++ b/backend/app/services/topology/labels.py
+@@ -23,7 +23,11 @@ KNOWN_SIDES = (CYTO, EXTRA)
+ GEOMETRIC_SIDES = (SIDE_A, SIDE_B)
+ 
+ TM_CLASS_LABEL = {"H": "Transmembrane Alpha Helix", "E": "Transmembrane Beta Strand",
++                  # in the membrane, but not one regular helix/strand (mixed elements,
++                  # no SS assignment, or SS and membrane evidence disagree)
++                  "I": "Transmembrane Irregular",
+                   "L": "Transmembrane Loop", None: TM}
++INTERFACIAL = "Interfacial Helix"
+ 
+ # UniProt "Topological domain" vocabulary -> which face it is topologically equivalent to.
+ # (Lumenal / periplasmic / intermembrane spaces are non-cytoplasmic = "outside".)
+@@ -138,7 +142,7 @@ def region_fields(desc: str) -> tuple[str, Optional[str], Optional[str]]:
+         rtype = "Topological domain"
+         side = CYTO if desc.startswith(CYTO) else EXTRA if desc.startswith(EXTRA) else None
+     ss = None
+-    for word in ("Helix", "Strand", "Loop", "Coil"):
++    for word in ("Irregular", "Helix", "Strand", "Loop", "Coil"):
+         if word in desc:
+             ss = word
+             break
+diff --git a/backend/app/services/topology/orchestrator.py b/backend/app/services/topology/orchestrator.py
+index 03d4862..0d35049 100644
+--- a/backend/app/services/topology/orchestrator.py
++++ b/backend/app/services/topology/orchestrator.py
+@@ -11,37 +11,56 @@ INDEXING CONTRACT
+   residue number and nothing is rebuilt with ``range(start, end + 1)``, so the two
+   blocks can never disagree about which residue is which.
+ 
+-FLOWS (each maps TM segments + SS codes -> final TM spans)
+-  tm_then_ss      TM boundaries are kept exactly; the majority SS class inside each
+-                  segment names it (Alpha Helix / Beta Strand / Loop).
+-  ss_then_tm      Each TM segment is snapped to the SS elements of its dominant class
+-                  that overlap it: trimmed where the ends are coil, extended along the
+-                  element by at most ``max_snap`` residues and never so far that the
+-                  loop to the neighbouring segment disappears.
+-  parallel_merge  Intersection: a segment keeps only the stretch from its first to its
+-                  last residue of the dominant SS class. A short interior break (a
+-                  proline kink, a pi-bulge read as 'T') stays inside - one crossing is
+-                  never split by a kink. A segment with no helix/strand residue is dropped.
+-
+-  In both SS-driven flows a segment that contains several elements (a slab or a
+-  hydropathy window over a helical hairpin) is split into one crossing per element
+-  group: elements stay together only across a short (<= ``params.broken_gap_max``),
+-  unbroken gap AND when the chain keeps its direction (kink / pi-bulge); antiparallel
+-  elements are separate crossings however short the turn. Pieces shorter than
+-  ``min_tm_core`` are not promoted to crossings.
++LAYERS (all per residue, on the frame)
++  TM evidence        the TM block (slab geometry, Kyte-Doolittle, UniProt ...)
++  SS evidence        DSSP / STRIDE, raw 8-state codes kept, coarse H/E/C for rules
++  Membrane geometry  where the bilayer is (membrane.py): file planes (OPM/PPM DUM
++                     atoms) > axes of the TM segments; depth + CORE/EDGE/OUT zone.
++  A DSSP boundary is never used as a membrane boundary: SS only describes the part
++  of a TM candidate that the geometry places in the bilayer.
++
++FLOWS (API value / alias)
++  tm_then_ss / tm_first
++      TM boundaries are kept. Each segment is classified from its SS content:
++      Alpha Helix / Beta Strand when one class dominates, Irregular when mixed or
++      unassigned (e.g. H + E elements, or coil only).
++  ss_then_tm / structure_guided
++      Bounded refinement. Candidate window = segment +- min(max_snap, half the loop
++      to the neighbour). SS elements inside the window are grouped into crossings:
++      elements stay together only across a short (<= broken_gap_max), unbroken gap
++      that stays inside the membrane AND when the chain keeps its direction; each
++      group is clipped to the membrane envelope. A group that crosses (span >=
++      min_cross_span_frac x thickness) is a TM crossing; one that dips into the core
++      without crossing is Intramembrane (re-entrant / half helix). A segment with no
++      SS support is kept as Irregular if the geometry puts it in the membrane,
++      otherwise dropped with a warning. Without coordinates: SS-only snapping.
++  parallel_merge / consensus
++      Residue-level agreement: TM evidence AND SS (dominant class) AND membrane
++      envelope. Kinks inside a crossing are tolerated, hairpins split. Disagreement
++      lowers confidence instead of deleting: a segment with no SS support stays as
++      Irregular (low confidence) unless the membrane geometry rejects it.
++
++After the flow: sides (provider first, else alternation + positive-inside),
++extramembrane SS, interfacial helices (helices lying in the interface band parallel
++to the membrane), per-residue evidence matrix + confidence, domain type and a
++topology validation that only warns.
+ 
+ Freed residues and loops without a side are resolved afterwards: the provider's own
+ side labels win; otherwise sides alternate across each crossing and the orientation
+ comes from the positive-inside rule.
+ """
+ from __future__ import annotations
++
+ from enum import Enum
+ from pathlib import Path
+ from typing import Optional, Sequence
++
+ import numpy as np
++
+ from app.core.constants import MAX_SNAP, MIN_TM_CORE, POSITIVE_RESIDUES
+-from app.schemas.topology import TMParams, TopologyRegion, TopologyResponse
++from app.schemas.topology import ResidueAnnotation, TMParams, TopologyRegion, TopologyResponse
+ from app.services.topology import labels as L
++from app.services.topology.membrane import EDGE_WIDTH, MembraneFrame, build_membrane
+ from app.services.topology.providers.ss.base import SSProvider
+ from app.services.topology.providers.tm.base import TMPrediction, TMProvider
+ from app.services.topology.residues import (
+@@ -52,30 +71,39 @@ from app.services.topology.residues import (
+ POSITIVE_INSIDE_FLANK = 15
+ MIN_SS_COVERAGE_WARN = 0.8
+ 
+-Span = tuple[int, int, Optional[str]]      # (start_pos, end_pos, 'H' | 'E' | 'L' | None)
++Span = tuple[int, int, Optional[str]]      # (start_pos, end_pos, 'H' | 'E' | 'I' | None)
+ 
+ 
+ class FlowType(str, Enum):
+-    TM_THEN_SS = "tm_then_ss"
+-    SS_THEN_TM = "ss_then_tm"
+-    PARALLEL_MERGE = "parallel_merge"
++    TM_THEN_SS = "tm_then_ss"          # a.k.a. tm_first
++    SS_THEN_TM = "ss_then_tm"          # a.k.a. structure_guided
++    PARALLEL_MERGE = "parallel_merge"  # a.k.a. consensus
++
++
++FLOW_ALIASES = {"tm_first": "tm_then_ss", "structure_guided": "ss_then_tm",
++                "consensus": "parallel_merge"}
++
++# Plausible lengths of one crossing (residues) - validation warnings only.
++TM_LENGTH_RANGE = {"H": (14, 40), "E": (5, 16)}
++INTERFACIAL_MIN_LEN = 6
+ 
+ 
+ class TopologyOrchestrator:
+     def __init__(self, tm_provider: TMProvider, ss_provider: Optional[SSProvider],
+                  flow_type: str, *, max_snap: int = MAX_SNAP, min_tm_core: int = MIN_TM_CORE,
+-                 annotate_extramembrane_ss: bool = True):
++                 annotate_extramembrane_ss: bool = True, include_residues: bool = True):
+         try:
+-            self.flow = FlowType(flow_type)
++            self.flow = FlowType(FLOW_ALIASES.get(flow_type, flow_type))
+         except ValueError:
+             raise ValueError(f"Unknown flow_type {flow_type!r}; expected one of "
+-                             f"{[f.value for f in FlowType]}") from None
++                             f"{[f.value for f in FlowType] + list(FLOW_ALIASES)}") from None
+         self.flow_type = self.flow.value
+         self.tm_provider = tm_provider
+         self.ss_provider = ss_provider
+         self.max_snap = max_snap
+         self.min_tm_core = min_tm_core
+         self.annotate_extramembrane_ss = annotate_extramembrane_ss
++        self.include_residues = include_residues
+ 
+     # ------------------------------------------------------------------ public
+     def execute(self, file_path: Path, params: Optional[TMParams] = None,
+@@ -98,39 +126,77 @@ class TopologyOrchestrator:
+                                   f"No transmembrane segments ({tm_pred.labeler or self._tm_name()})",
+                                   tm_pred.labeler or self._tm_name(), [], warns)
+ 
+-        # 2. SS block, on the same frame
+-        coarse, ss_name, ss_warns = self._ss_on_frame(file_path, frame)
++        # 2. SS block and membrane geometry, on the same frame
++        coarse, raw_ss, ss_name, ss_warns = self._ss_on_frame(file_path, frame)
+         warns.extend(ss_warns)
++        membrane = build_membrane(frame, segments, params.membrane_thickness / 2.0)
++        if membrane is None:
++            warns.append("no membrane geometry (coordinates missing): boundaries from TM/SS only")
++        elif coarse is not None:
++            # centre the estimated bilayer on the helices/strands that the TM block
++            # proposed (long SS elements overlapping a TM segment)
++            spanning = [(a, b) for a, b, _ in self._ss_elements(coarse, frame.chain_breaks())
++                        if b - a + 1 >= 8 and any(a <= e and b >= s for s, e in segments)
++                        and membrane.span(a, b) >= params.min_cross_span_frac * 2 * membrane.half_thickness]
++            membrane = membrane.recentered(spanning)
+         labeler = f"{tm_pred.labeler or self._tm_name()} + {ss_name} ({self.flow_type})"
+ 
+-        # 3. flow -> final TM spans (positions)
+-        # Convert to list to satisfy Sequence[bool] type hints, and since pure-Python indexing is faster
+-        breaks = frame.chain_breaks().tolist()
++        # 3. flow -> final TM spans (+ intramembrane pieces)
++        breaks = frame.chain_breaks()
++        intramembrane: list[Span] = []
+         if coarse is None:
+             spans: list[Span] = [(s, e, None) for s, e in segments]
+         elif self.flow is FlowType.TM_THEN_SS:
+             spans = self._flow_tm_then_ss(segments, coarse)
++            if membrane is not None:
++                spans, notes = self._flag_multi_crossing(spans, coarse, breaks, frame,
++                                                         membrane, params)
++                warns.extend(notes)
+         elif self.flow is FlowType.SS_THEN_TM:
+-            spans = self._flow_ss_then_tm(segments, coarse, breaks, params.broken_gap_max,
+-                                          frame.coords)
++            if membrane is not None:
++                spans, intramembrane, notes = self._flow_structure_guided(
++                    segments, coarse, breaks, frame.coords, membrane, params)
++                warns.extend(notes)
++            else:
++                spans = self._flow_ss_then_tm(segments, coarse, breaks, params.broken_gap_max,
++                                              frame.coords)
+         else:
+-            spans, dropped = self._flow_parallel_merge(segments, coarse, breaks,
+-                                                       params.broken_gap_max, frame.coords)
++            spans, kept_irregular, dropped = self._flow_parallel_merge(
++                segments, coarse, breaks, params.broken_gap_max, frame.coords, membrane)
++            if kept_irregular:
++                warns.append(f"consensus: {kept_irregular} TM segment(s) have no helix/strand "
++                             f"support in {ss_name}; kept as Transmembrane Irregular "
++                             "(confidence reduced, not deleted)")
+             if dropped:
+-                warns.append(f"parallel_merge: {dropped} TM segment(s) had no helix/strand "
+-                             f"residue in {ss_name} and were dropped")
++                warns.append(f"consensus: {dropped} TM segment(s) have neither SS support nor "
++                             "a place in the membrane geometry and were dropped")
+         if not spans:
+             return self._response(frame, params, tm_pred,
+-                                  "No transmembrane segment supported by secondary structure",
+-                                  labeler, [], warns)
++                                  "No transmembrane segment supported by the evidence",
++                                  labeler, [], warns, membrane=membrane)
+ 
+-        # 4. paint spans, resolve sides, annotate loops, emit regions
++        # 4. paint, sides, loop annotation
+         labels, groups = self._paint(base, spans)
++        for s0, e0, _ in intramembrane:
++            for k in range(s0, e0 + 1):
++                if not L.is_tm(labels[k]):
++                    labels[k] = L.INTRA
+         labels = self._resolve_sides(labels, spans, frame)
++        if coarse is not None and membrane is not None:
++            labels = self._mark_interfacial(labels, coarse, breaks, frame.coords, membrane)
+         if coarse is not None and self.annotate_extramembrane_ss:
+             labels = L.label_extramembrane_ss(labels, coarse, breaks=breaks)
++
++        # 5. evidence matrix, confidence, regions, validation
++        conf = self._confidence(labels, spans, base, coarse, membrane, frame)
+         regions = L.build_regions(frame, labels, groups)
+-        return self._response(frame, params, tm_pred, "Predicted Topology", labeler, regions, warns)
++        self._attach_region_confidence(regions, frame, conf)
++        warns.extend(self._validate(labels, spans, frame))
++        residues = (self._residue_matrix(frame, base, raw_ss, coarse, membrane, labels, conf)
++                    if self.include_residues else None)
++        return self._response(frame, params, tm_pred, "Predicted Topology", labeler, regions,
++                              warns, membrane=membrane, domain_type=self._domain_type(spans),
++                              residues=residues)
+ 
+     # ------------------------------------------------------- blocks -> frame
+     def _tm_name(self) -> str:
+@@ -145,7 +211,7 @@ class TopologyOrchestrator:
+         if tm_pred.labels is not None and labels_ok:
+             base = [L.normalize_base_label(x) for x in tm_pred.labels]
+         else:
+-            if not labels_ok and tm_pred.labels is not None:   # built on another residue list: positions are meaningless here
++            if not labels_ok:   # built on another residue list: positions are meaningless here
+                 warns.append(f"TM provider returned {len(tm_pred.labels)} labels for {n} "
+                              "residues; rebuilt from its regions")
+             base, painted_segments, outside = self._paint_regions(tm_pred.regions, frame)
+@@ -154,7 +220,7 @@ class TopologyOrchestrator:
+                              f"chain {frame.chain_id} and were ignored")
+ 
+         use_given = tm_pred.segments is not None and labels_ok
+-        raw_segments = tm_pred.segments if tm_pred.segments is not None and labels_ok else painted_segments
++        raw_segments = tm_pred.segments if use_given else painted_segments
+         segments = [(max(0, int(s)), min(n - 1, int(e))) for s, e in raw_segments
+                     if int(e) >= 0 and int(s) < n and int(s) <= int(e)]
+         if not segments:
+@@ -206,9 +272,10 @@ class TopologyOrchestrator:
+         return base, segments, outside
+ 
+     def _ss_on_frame(self, file_path: Path, frame: ResidueFrame):
+-        """-> (coarse 'H'/'E'/'C'/None per position, or None if unusable; name; warnings)."""
++        """-> (coarse 'H'/'E'/'C'/None per position or None, raw 8-state codes or None,
++        name, warnings)."""
+         if self.ss_provider is None:
+-            return None, "None", ["no SS provider: TM segments are reported without an SS class"]
++            return None, None, "None", ["no SS provider: TM segments are reported without an SS class"]
+         name = getattr(self.ss_provider, "name", None) or \
+             self.ss_provider.__class__.__name__.replace("Provider", "")
+         try:
+@@ -224,29 +291,43 @@ class TopologyOrchestrator:
+                 result = map_ss_records(frame, records, labeler=name)
+         except Exception as error:  # noqa: BLE001 - external binary may be missing
+             print(f"[topology] {name} failed: {error}")
+-            return None, f"{name} (unavailable)", [
++            return None, None, f"{name} (unavailable)", [
+                 f"{name} failed ({error}); TM segments are reported without an SS class"]
+ 
+         warns = list(result.warnings)
+         if result.matched == 0:
+             warns.append(f"{name}: no residue could be matched to chain {frame.chain_id}; "
+                          "SS ignored")
+-            return None, f"{name} (unmatched)", warns
++            return None, None, f"{name} (unmatched)", warns
+         if result.coverage < MIN_SS_COVERAGE_WARN:
+             warns.append(f"{name}: only {result.matched}/{len(frame)} residues have an SS "
+                          "assignment")
+-        return [L.coarse_ss(c) for c in result.codes], name, warns
++        return [L.coarse_ss(c) for c in result.codes], list(result.codes), name, warns
+ 
+     # ------------------------------------------------------------------ flows
+     @staticmethod
+     def _majority(codes: Sequence[Optional[str]]) -> str:
++        """Dominant regular class; 'I' when there is no helix/strand at all."""
+         h, e = codes.count("H"), codes.count("E")
+         if h == 0 and e == 0:
+-            return "L"
++            return "I"
+         return "H" if h >= e else "E"
+ 
++    @staticmethod
++    def _classify_segment(codes: Sequence[Optional[str]]) -> str:
++        """tm_first label for a whole segment: a class must cover at least half of the
++        segment and the other class less than a quarter; otherwise Irregular
++        (mixed H + E elements, or mostly coil)."""
++        n = max(1, len(codes))
++        h, e = codes.count("H") / n, codes.count("E") / n
++        if h >= 0.5 and e < 0.25:
++            return "H"
++        if e >= 0.5 and h < 0.25:
++            return "E"
++        return "I"
++
+     def _flow_tm_then_ss(self, segments, coarse) -> list[Span]:
+-        return [(s, e, self._majority(coarse[s:e + 1])) for s, e in segments]
++        return [(s, e, self._classify_segment(coarse[s:e + 1])) for s, e in segments]
+ 
+     def _flow_ss_then_tm(self, segments, coarse, breaks, gap_max, coords=None) -> list[Span]:
+         n = len(coarse)
+@@ -255,7 +336,7 @@ class TopologyOrchestrator:
+         for idx, (s0, e0) in enumerate(segments):
+             overlapping = [(a, b, c) for a, b, c in elements if a <= e0 and b >= s0]
+             if not overlapping:
+-                spans.append((s0, e0, "L"))
++                spans.append((s0, e0, "I"))
+                 continue
+             h = sum(min(b, e0) - max(a, s0) + 1 for a, b, c in overlapping if c == "H")
+             st = sum(min(b, e0) - max(a, s0) + 1 for a, b, c in overlapping if c == "E")
+@@ -284,25 +365,162 @@ class TopologyOrchestrator:
+                 spans.extend((a, b, cls) for a, b in pieces)
+         return spans
+ 
+-    def _flow_parallel_merge(self, segments, coarse, breaks, gap_max,
+-                             coords=None) -> tuple[list[Span], int]:
++    def _flow_parallel_merge(self, segments, coarse, breaks, gap_max, coords=None,
++                             membrane: Optional[MembraneFrame] = None):
++        """Consensus: residues where the TM block, the dominant SS class and (when
++        available) the membrane envelope agree. Returns (spans, kept_irregular, dropped)."""
+         spans: list[Span] = []
+-        dropped = 0
++        kept_irregular = dropped = 0
+         for s0, e0 in segments:
++            in_env = (lambda k: True) if membrane is None else membrane.in_envelope
+             cls = self._majority(coarse[s0:e0 + 1])
+-            if cls == "L":
+-                dropped += 1
++            support = []
++            if cls != "I":
++                support = [(a, b) for a, b, c in self._ss_elements(coarse[:e0 + 1], breaks)
++                           if c == cls and b >= s0]
++                support = [(max(a, s0), b) for a, b in support]
++                # keep only the part of each element inside the membrane envelope
++                clipped = []
++                for a, b in support:
++                    inside = [k for k in range(a, b + 1) if in_env(k)]
++                    if inside:
++                        clipped.append((inside[0], inside[-1]))
++                support = clipped
++            if not support:
++                # disagreement: SS says no helix/strand here. Keep the TM call as
++                # Irregular unless the membrane geometry also rejects it.
++                inside = [k for k in range(s0, e0 + 1) if in_env(k)]
++                if len(inside) >= max(1, (e0 - s0 + 1) // 2):
++                    spans.append((inside[0], inside[-1], "I"))
++                    kept_irregular += 1
++                else:
++                    dropped += 1
+                 continue
+-            support = [(a, b) for a, b, c in self._ss_elements(coarse[:e0 + 1], breaks)
+-                       if c == cls and b >= s0]
+-            support = [(max(a, s0), b) for a, b in support]
+             pieces = self._group_positions(support, gap_max, breaks, coords)
+             keep_len = min(self.min_tm_core, e0 - s0 + 1)
+             kept = [p for p in pieces if p[1] - p[0] + 1 >= keep_len]
+             if not kept:
+                 kept = [max(pieces, key=lambda p: p[1] - p[0])]
+             spans.extend((a, b, cls) for a, b in kept)
+-        return spans, dropped
++        return spans, kept_irregular, dropped
++
++    def _flag_multi_crossing(self, spans, coarse, breaks, frame, membrane, params):
++        """tm_first keeps the boundaries, but a segment that holds several separate
++        crossings (a hairpin under one hydropathy window / slab run) is not "one
++        alpha helix": relabel it Irregular and say how many crossings it contains."""
++        thickness = 2.0 * membrane.half_thickness
++        min_cross = params.min_cross_span_frac * thickness
++        out, notes = [], []
++        elements = self._ss_elements(coarse, breaks)
++        for i, (s0, e0, cls) in enumerate(spans, start=1):
++            cand = [(max(a, s0), min(b, e0), c) for a, b, c in elements if a <= e0 and b >= s0]
++            groups = self._group_elements(cand, coarse, breaks, frame.coords, membrane,
++                                          params.broken_gap_max, params.full_cross_frac * thickness)
++            n_cross = sum(1 for a, b in groups if membrane.span(a, b) >= min_cross)
++            if n_cross >= 2:
++                cls = "I"
++                notes.append(f"tm_first: TM{i} ({frame.residues[s0].label}-{frame.residues[e0].label}) "
++                             f"contains {n_cross} "
++                             "separate crossings - labelled Irregular; structure_guided splits it")
++            out.append((s0, e0, cls))
++        return out, notes
++
++    # ------------------------------------------------ structure-guided refinement
++    def _flow_structure_guided(self, segments, coarse, breaks, coords,
++                               membrane: MembraneFrame, params: TMParams):
++        """Bounded refinement: SS elements near each TM candidate are grouped into
++        crossings; boundaries come from the membrane envelope, never from where a
++        helix happens to end. Returns (crossings, intramembrane pieces, notes)."""
++        n = len(coarse)
++        thickness = 2.0 * membrane.half_thickness
++        min_cross = params.min_cross_span_frac * thickness
++        full_cross = params.full_cross_frac * thickness
++        elements = self._ss_elements(coarse, breaks)
++        crossings: list[Span] = []
++        intra: list[Span] = []
++        notes: list[str] = []
++        unsupported = rejected = 0
++
++        for idx, (s0, e0) in enumerate(segments):
++            prev_end = segments[idx - 1][1] if idx > 0 else -1
++            next_start = segments[idx + 1][0] if idx + 1 < len(segments) else n
++            left_gap, right_gap = s0 - prev_end - 1, next_start - e0 - 1
++            lo = s0 - max(0, min(self.max_snap, left_gap // 2 if idx == 0 else (left_gap - 1) // 2))
++            hi = e0 + max(0, min(self.max_snap, right_gap // 2 if idx + 1 == len(segments)
++                                 else (right_gap - 1) // 2))
++            cand = [(max(a, lo), min(b, hi), c) for a, b, c in elements if a <= hi and b >= lo]
++            groups = self._group_elements(cand, coarse, breaks, coords, membrane,
++                                          params.broken_gap_max, full_cross)
++            found = False
++            for a, b in groups:
++                inside = [k for k in range(a, b + 1) if membrane.in_envelope(k)]
++                if len(inside) < min(params.min_tm_element_in_slab, b - a + 1):
++                    continue                    # element does not reach the bilayer
++                a2, b2 = inside[0], inside[-1]
++                cls = self._majority(coarse[a2:b2 + 1])
++                if membrane.span(a2, b2) >= min_cross:
++                    crossings.append((a2, b2, cls))
++                    found = True
++                elif np.nanmin(np.abs(membrane.depth[a2:b2 + 1])) <= membrane.half_thickness - EDGE_WIDTH:
++                    intra.append((a2, b2, cls))  # dips into the core without crossing
++            if not found:
++                inside = [k for k in range(s0, e0 + 1) if membrane.in_envelope(k)]
++                if inside and membrane.span(inside[0], inside[-1]) >= min_cross:
++                    crossings.append((inside[0], inside[-1], "I"))
++                    unsupported += 1
++                else:
++                    rejected += 1
++        # a window can only produce disjoint pieces; drop intramembrane pieces that
++        # overlap a crossing from a neighbouring window
++        intra = [p for p in intra if not any(p[0] <= c[1] and p[1] >= c[0] for c in crossings)]
++        if unsupported:
++            notes.append(f"structure_guided: {unsupported} TM segment(s) cross the membrane but "
++                         "have no regular helix/strand - labelled Transmembrane Irregular")
++        if rejected:
++            notes.append(f"structure_guided: {rejected} TM segment(s) do not cross the membrane "
++                         f"({membrane.source}) and were not kept as crossings")
++        return sorted(crossings), sorted(intra), notes
++
++    def _group_elements(self, cand, coarse, breaks, coords, membrane: MembraneFrame,
++                        gap_max: int, full_cross: float) -> list[tuple[int, int]]:
++        """Consecutive SS elements form one crossing only if the gap between them is
++        short, unbroken and stays inside the membrane, the chain keeps its direction,
++        and neither element already spans the bilayer on its own."""
++        groups: list[list[tuple[int, int]]] = []
++
++        def direction(a, b):
++            if b - a < 3:
++                return None
++            v = coords[b] - coords[a]
++            norm = float(np.linalg.norm(v))
++            return v / norm if np.isfinite(norm) and norm > 0 else None
++
++        for a, b, _ in sorted(cand):
++            if groups:
++                pa, pb = groups[-1][-1]
++                gap = a - pb - 1
++                ok = gap <= gap_max and not any(breaks[k] for k in range(pb + 1, a + 1))
++                ok = ok and all(membrane.in_envelope(k) for k in range(pb + 1, a))
++                # direction ACROSS the membrane: one going in and the next coming back
++                # out is a hairpin (two crossings, or a re-entrant pair); a kink keeps
++                # going the same way. Falls back to the 3D direction when an element
++                # runs almost parallel to the membrane.
++                du = membrane.depth[pb] - membrane.depth[pa]
++                dv = membrane.depth[b] - membrane.depth[a]
++                if abs(du) > 3.0 and abs(dv) > 3.0:
++                    if ok and du * dv < 0:
++                        ok = False
++                else:
++                    u, v = direction(pa, pb), direction(a, b)
++                    if ok and u is not None and v is not None and float(u @ v) < 0.0:
++                        ok = False
++                if ok and membrane.span(pa, pb) >= full_cross and membrane.span(a, b) >= full_cross:
++                    ok = False                       # two full crossings
++                if ok:
++                    groups[-1].append((a, b))
++                    continue
++            groups.append([(a, b)])
++        return [(g[0][0], g[-1][1]) for g in groups]
+ 
+     @staticmethod
+     def _group_positions(intervals, gap_max, breaks, coords=None) -> list[tuple[int, int]]:
+@@ -327,7 +545,7 @@ class TopologyOrchestrator:
+                 ga, gb = groups[-1]
+                 gap = a - gb - 1
+                 joinable = gap <= gap_max and not any(breaks[k] for k in range(gb + 1, a + 1))
+-                if joinable and last is not None:
++                if joinable:
+                     u, v = direction(*last), direction(a, b)
+                     if u is not None and v is not None and float(u @ v) < 0.0:
+                         joinable = False                    # antiparallel -> hairpin
+@@ -439,9 +657,8 @@ class TopologyOrchestrator:
+                     continue
+                 a = min(anchors, key=lambda x: (abs(x - k), x > k))
+                 ref = exit_[a] if a < k else entry[a]
+-                if ref is not None:
+-                    flips = abs(crossings_before[k] - crossings_before[a])
+-                    inferred[k] = ref if flips % 2 == 0 else self._opposite(ref)
++                flips = abs(crossings_before[k] - crossings_before[a])
++                inferred[k] = ref if flips % 2 == 0 else self._opposite(ref)
+         else:
+             inferred = self._positive_inside_by_parity(loops, crossings_before, frame, labels)
+ 
+@@ -475,19 +692,162 @@ class TopologyOrchestrator:
+         return {k: (L.CYTO if crossings_before[k] % 2 == inside else L.EXTRA)
+                 for k in range(len(loops))}
+ 
+-    def _response(self, frame, params, tm_pred, name, labeler, regions, warns) -> TopologyResponse:
+-        normal = tm_pred.membrane_normal
++    # --------------------------------------------------- post-processing layers
++    def _mark_interfacial(self, labels, coarse, breaks, coords, membrane: MembraneFrame):
++        """Extramembrane helices that lie in the interface band, roughly parallel to the
++        membrane plane (amphipathic / interfacial helices, e.g. GPCR helix 8)."""
++        out = list(labels)
++        n = len(labels)
++        i = 0
++        while i < n:
++            if not (labels[i] in L.KNOWN_SIDES and coarse[i] == "H"):
++                i += 1
++                continue
++            j = i + 1
++            while j < n and labels[j] == labels[i] and coarse[j] == "H" and not breaks[j]:
++                j += 1
++            if j - i >= INTERFACIAL_MIN_LEN:
++                zones = [membrane.zone(k) for k in range(i, j)]
++                v = coords[j - 1] - coords[i]
++                norm = float(np.linalg.norm(v))
++                parallel = norm > 0 and abs(float(v @ membrane.normal)) / norm < 0.5
++                if parallel and zones.count("EDGE") >= 0.6 * (j - i):
++                    for k in range(i, j):
++                        out[k] = f"{labels[i]} {L.INTERFACIAL}"
++            i = j
++        return out
++
++    @staticmethod
++    def _level(score: float) -> str:
++        return "high" if score >= 0.85 else "medium" if score >= 0.6 else "low"
++
++    def _confidence(self, labels, spans, base, coarse, membrane, frame) -> list[Optional[float]]:
++        """Per-residue agreement score in [0, 1] across the available layers."""
++        n = len(labels)
++        span_class = [None] * n
++        for s0, e0, cls in spans:
++            for k in range(s0, e0 + 1):
++                span_class[k] = cls
++        scores: list[Optional[float]] = []
++        for k in range(n):
++            votes = []
++            is_tm = L.is_tm(labels[k])
++            votes.append(1.0 if (base[k] == L.TM) == is_tm else 0.0)
++            if coarse is not None and coarse[k] is not None:
++                if is_tm:
++                    want = span_class[k]
++                    votes.append(1.0 if want in ("H", "E") and coarse[k] == want else
++                                 0.5 if want in ("H", "E") and coarse[k] in ("H", "E") else 0.0)
++            if membrane is not None and np.isfinite(membrane.depth[k]):
++                inside = membrane.in_envelope(k)
++                votes.append(1.0 if inside == is_tm or (not is_tm and membrane.zone(k) != "CORE") else 0.0)
++            score = sum(votes) / len(votes)
++            if frame.predicted_model and frame.b_factors is not None and frame.b_factors[k] < 50:
++                score *= 0.7                     # very low pLDDT: the geometry itself is uncertain
++            scores.append(score)
++        return scores
++
++    def _attach_region_confidence(self, regions, frame, scores) -> None:
++        pos = 0
++        for region in regions:
++            a = frame.position(region.start, region.start_icode or "")
++            b = frame.position(region.end, region.end_icode or "")
++            if a is None or b is None:
++                continue
++            a = max(a, pos)
++            vals = [scores[k] for k in range(a, b + 1) if scores[k] is not None]
++            if vals:
++                region.confidence = self._level(float(np.mean(vals)))
++            pos = b + 1
++
++    def _residue_matrix(self, frame, base, raw_ss, coarse, membrane, labels, scores):
++        rows = []
++        for k, res in enumerate(frame.residues):
++            depth = membrane.depth[k] if membrane is not None else None
++            rows.append(ResidueAnnotation(
++                index=k, residue_number=res.resseq, insertion_code=res.icode or None, aa=res.one,
++                ss_raw=raw_ss[k] if raw_ss is not None else None,
++                ss=coarse[k] if coarse is not None else None,
++                tm_evidence=base[k],
++                depth=round(float(depth), 2) if depth is not None and np.isfinite(depth) else None,
++                zone=membrane.zone(k) if membrane is not None else None,
++                plddt=(round(float(frame.b_factors[k]), 1)
++                       if frame.predicted_model and frame.b_factors is not None else None),
++                label=labels[k],
++                confidence=self._level(scores[k]) if scores[k] is not None else None,
++            ))
++        return rows
++
++    @staticmethod
++    def _domain_type(spans) -> Optional[str]:
++        classes = [c for _, _, c in spans]
++        h, e = classes.count("H"), classes.count("E")
++        if not spans:
++            return None
++        if h and not e:
++            return "alpha_helical"
++        if e and not h:
++            return "beta_barrel" if e >= 8 else "beta"
++        if h and e:
++            return "mixed"
++        return "irregular"
++
++    def _validate(self, labels, spans, frame) -> list[str]:
++        """Topology checks. They only report - they never change the annotation."""
++        notes = []
++        for i, (s0, e0, cls) in enumerate(spans, start=1):
++            rng = TM_LENGTH_RANGE.get(cls)
++            length = e0 - s0 + 1
++            if rng and not rng[0] <= length <= rng[1]:
++                kind = "helix" if cls == "H" else "strand"
++                notes.append(f"validation: TM{i} ({frame.residues[s0].label}-{frame.residues[e0].label}) "
++                             f"is {length} residues, outside the usual {rng[0]}-{rng[1]} for a TM {kind}")
++        # sides must alternate across every crossing
++        sides = []
++        for (s0, e0, _), nxt in zip(spans, spans[1:] + [None]):
++            stop = nxt[0] if nxt else len(labels)
++            loop = [lab.split()[0] for lab in labels[e0 + 1:stop] if lab.split()[0] in L.KNOWN_SIDES]
++            sides.append(loop[0] if loop else None)
++        before = [lab.split()[0] for lab in labels[:spans[0][0]] if lab.split()[0] in L.KNOWN_SIDES]
++        seq = [before[-1] if before else None] + sides
++        for i in range(len(seq) - 1):
++            if seq[i] and seq[i + 1] and seq[i] == seq[i + 1]:
++                notes.append(f"validation: both sides of TM{i + 1} are {seq[i]} "
++                             "(re-entrant segment, or a crossing missed next to it)")
++        # positive-inside agreement on membrane-flanking loop residues
++        names = frame.names
++        count = {L.CYTO: [0, 0], L.EXTRA: [0, 0]}
++        for s0, e0, _ in spans:
++            for k in list(range(max(0, s0 - POSITIVE_INSIDE_FLANK), s0)) + \
++                    list(range(e0 + 1, min(len(labels), e0 + 1 + POSITIVE_INSIDE_FLANK))):
++                side = labels[k].split()[0]
++                if side in count:
++                    count[side][0] += names[k] in POSITIVE_RESIDUES
++                    count[side][1] += 1
++        dens = {side: (c[0] / c[1] if c[1] else None) for side, c in count.items()}
++        if dens[L.CYTO] is not None and dens[L.EXTRA] is not None and dens[L.EXTRA] > dens[L.CYTO]:
++            notes.append("validation: membrane-flanking Lys/Arg are denser on the Extracellular "
++                         f"side ({dens[L.EXTRA]:.2f} vs {dens[L.CYTO]:.2f}) - orientation "
++                         "disagrees with the positive-inside rule")
++        return notes
++
++    def _response(self, frame, params, tm_pred, name, labeler, regions, warns, membrane=None,
++                  domain_type=None, residues=None) -> TopologyResponse:
++        normal = membrane.normal if membrane is not None else tm_pred.membrane_normal
+         return TopologyResponse(
+             uniprot_id="CALCULATED",
+             protein_name=name,
+             gene_name="",
+             organism="Computed",
+             membrane_score=round(float(tm_pred.membrane_score or 0.0), 3),
+-            membrane_normal=[round(float(x), 4) for x in normal] if normal else None,
++            membrane_normal=[round(float(x), 4) for x in normal] if normal is not None else None,
+             labeler=labeler,
+             parameters_used={**params.to_response_dict(), "flow": self.flow_type,
+                              "max_snap": self.max_snap},
+             regions=regions,
+             chain_id=frame.chain_id,
+             warnings=list(dict.fromkeys(warns)),
++            domain_type=domain_type,
++            membrane=membrane.as_dict() if membrane is not None else None,
++            residues=residues,
+         )
+diff --git a/backend/app/services/topology/residues.py b/backend/app/services/topology/residues.py
+index 48b85b9..a1d687f 100644
+--- a/backend/app/services/topology/residues.py
++++ b/backend/app/services/topology/residues.py
+@@ -63,7 +63,7 @@ PARENT_RESIDUE = {
+     "OCS": "CYS", "CME": "CYS", "SEC": "CYS", "PYL": "LYS", "HIC": "HIS", "MLE": "LEU",
+     "NLE": "LEU", "CGU": "GLU", "PCA": "GLU", "HSD": "HIS", "HSE": "HIS", "HSP": "HIS",
+     "HID": "HIS", "HIE": "HIS", "HIP": "HIS", "CYX": "CYS", "CYM": "CYS", "ASH": "ASP",
+-    "GLH": "GLU", "LYN": "LYS",
++    "GLH": "GLU", "LYN": "LYS", "FME": "MET",
+ }
+ 
+ 
+@@ -100,8 +100,14 @@ class ResidueFrame:
+     """Ordered observed residues of ONE chain; positions 0..n-1 are the shared index."""
+ 
+     def __init__(self, chain_id: str, residues: Sequence[Residue],
+-                 coords: Optional[np.ndarray] = None):
++                 coords: Optional[np.ndarray] = None, b_factors: Optional[np.ndarray] = None,
++                 predicted_model: bool = False, source_path: Optional[Path] = None):
+         self.chain_id = chain_id
++        # CA B-factors. In predicted models (AlphaFold, ESMFold ...) this column holds
++        # pLDDT (0-100), a per-residue structure confidence; `predicted_model` says so.
++        self.b_factors = None if b_factors is None else np.asarray(b_factors, dtype=float)
++        self.predicted_model = predicted_model
++        self.source_path = source_path
+         self.residues: list[Residue] = list(residues)
+         n = len(self.residues)
+         if coords is None:
+@@ -218,7 +224,7 @@ def load_residue_frame(file_path: Path, chain_id: Optional[str] = None) -> Resid
+         raise ValueError(f"{file_path.name}: no model/coordinates found")
+     chain = _pick_chain(model, chain_id)
+ 
+-    residues, coords = [], []
++    residues, coords, bfac = [], [], []
+     for residue in chain:
+         hetflag, resseq, icode = residue.get_id()
+         raw = residue.get_resname().strip().upper()
+@@ -229,7 +235,28 @@ def load_residue_frame(file_path: Path, chain_id: Optional[str] = None) -> Resid
+             continue  # free amino acid ligand (HETATM) - not part of the chain
+         residues.append(Residue(chain.id, int(resseq), (icode or "").strip(), name, one_letter(name)))
+         coords.append(residue["CA"].get_coord())
+-    return ResidueFrame(chain.id, residues, np.array(coords, dtype=float) if coords else None)
++        bfac.append(float(residue["CA"].get_bfactor()))
++    return ResidueFrame(chain.id, residues, np.array(coords, dtype=float) if coords else None,
++                        b_factors=np.array(bfac) if bfac else None,
++                        predicted_model=_looks_predicted(file_path), source_path=file_path)
++
++
++_PREDICTED_MARKERS = ("ALPHAFOLD", "ESMFOLD", "COLABFOLD", "_MA_QA_METRIC", "ROSETTAFOLD", "OPENFOLD")
++
++
++def _looks_predicted(file_path: Path, max_lines: int = 400) -> bool:
++    """True for predicted models whose B-factor column is pLDDT (header markers)."""
++    try:
++        with open(file_path, errors="replace") as fh:
++            for i, line in enumerate(fh):
++                if i >= max_lines:
++                    break
++                upper = line.upper()
++                if any(m in upper for m in _PREDICTED_MARKERS):
++                    return True
++    except OSError:
++        pass
++    return False
+ 
+ 
+ # =============================================================================
+@@ -404,9 +431,6 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
+             duplicates += 1
+         else:
+             first_idx[key] = j
+-    if duplicates:
+-        warns.append(f"{source}: {duplicates} duplicated residue numbers (several chains?) - "
+-                     "first occurrence used")
+ 
+     need = min(n, m)
+     best: Optional[ReferenceMapping] = None
+@@ -423,6 +447,9 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
+                 return cand
+         elif matched == need:
+             # unverifiable: accept only a complete match of the smaller side
++            if duplicates:
++                cand.warnings.append(f"{source}: {duplicates} residue number(s) occur twice - "
++                                     "first occurrence used (no residue names to disambiguate)")
+             return cand
+         if best is None or matched > best.matched:
+             best = cand
+@@ -443,7 +470,11 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
+             else:
+                 method = "sequence alignment"
+             if note_remap:
+-                if best is not None and best.matched:
++                if duplicates:
++                    warns.append(f"{source}: {duplicates} residue number(s) occur twice (insertion "
++                                 "codes not reported, or several chains without chain IDs); "
++                                 f"mapped by {method}")
++                elif best is not None and best.matched:
+                     warns.append(f"{source}: residue numbers did not match the structure "
+                                  f"(identity {best.identity or 0:.0%}); re-mapped by {method}")
+                 else:
+@@ -454,6 +485,9 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
+         return ReferenceMapping([None] * n, "unmapped", 0, ident, warns)
+ 
+     # No residue names: numbering cannot be verified.
++    if duplicates:
++        warns.append(f"{source}: {duplicates} residue number(s) occur twice - first occurrence "
++                     "used (no residue names to disambiguate)")
+     if allow_order_fallback and m == n:
+         warns.append(f"{source}: residue numbers do not match; mapped by ORDER (same count, "
+                      "unverified - expose residue names in the tool output to verify)")
+diff --git a/backend/app/services/topology/topology_predictor.py b/backend/app/services/topology/topology_predictor.py
+index a8e9784..9e1fded 100644
+--- a/backend/app/services/topology/topology_predictor.py
++++ b/backend/app/services/topology/topology_predictor.py
+@@ -65,6 +65,7 @@ from app.core.constants import (
+ from app.schemas.topology import TMParams
+ from app.services.topology import labels as L
+ from app.services.topology.providers.tm.base import TMPrediction, TMProvider
++from app.services.topology.membrane import membrane_from_file
+ from app.services.topology.residues import ResidueFrame, load_residue_frame
+ 
+ # =============================================================================
+@@ -759,16 +760,30 @@ class GeometryTMProvider(TMProvider):
+ 
+         residues_data = frame.residues_data()
+         weights = _membrane_weights(frame.names)
+-        half = params.membrane_thickness / 2.0
+-        classifications, d, membrane_score, axis, _ = _classify_by_slab(
+-            frame.coords, weights, thickness=params.membrane_thickness)
++        labeler = self.LABELER
++        placed = membrane_from_file(frame)
++        if placed is not None:
++            # The file already carries the bilayer (OPM / PPM / memembed DUM atoms):
++            # use that placement instead of re-fitting a hydrophobic slab.
++            half = placed.half_thickness
++            d = placed.depth
++            inside = np.abs(d) <= half
++            classifications = ["Transmembrane" if ins else ("Side_A" if di > 0 else "Side_B")
++                               for ins, di in zip(inside, d)]
++            membrane_score = float(weights[inside].mean()) if inside.any() else 0.0
++            axis = placed.normal
++            labeler = f"{self.LABELER} (membrane from file)"
++        else:
++            half = params.membrane_thickness / 2.0
++            classifications, d, membrane_score, axis, _ = _classify_by_slab(
++                frame.coords, weights, thickness=params.membrane_thickness)
+         normal = [round(float(a), 4) for a in axis]
+ 
+         if membrane_score < params.min_membrane_score:
+             labels = _apply_positive_inside_rule(_sides_by_sign(d), residues_data)
+             return TMPrediction(
+                 labels=labels, segments=[], membrane_score=membrane_score,
+-                membrane_normal=normal, labeler=self.LABELER,
++                membrane_normal=normal, labeler=labeler,
+                 warnings=[f"membrane_score {membrane_score:.2f} < {params.min_membrane_score} "
+                           "- treated as soluble (no TM segments)"])
+ 
+@@ -782,5 +797,5 @@ class GeometryTMProvider(TMProvider):
+             segments=segments,
+             membrane_normal=normal,
+             membrane_score=membrane_score,
+-            labeler=self.LABELER,
++            labeler=labeler,
+         )
+diff --git a/frontend/src/components/topology/TransmembraneTopologyDiagram.tsx b/frontend/src/components/topology/TransmembraneTopologyDiagram.tsx
+index 7c659ea..31dc4b2 100644
+--- a/frontend/src/components/topology/TransmembraneTopologyDiagram.tsx
++++ b/frontend/src/components/topology/TransmembraneTopologyDiagram.tsx
+@@ -1,12 +1,13 @@
+ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+ import type { Chain } from '../../types/protein';
+-import type {
+-  CalculatedTopologyData,
+-  SecondaryStructureResult,
+-  UniProtTopologyData,
+-  UniProtTopologyRegion,
++import {
++  type CalculatedTopologyData,
++  type SecondaryStructureResult,
++  type UniProtTopologyData,
++  type UniProtTopologyRegion,
++  compareResidues,
++  isCalculatedTopology,
+ } from '../../types/secondaryStructure';
+-import { compareResidues, isCalculatedTopology } from '../../types/secondaryStructure';
+ import { exportSvgAsImage } from '../structure/exportDiagram';
+ import { API_URL, runSecondaryStructure } from '../../services/api';
+ import './TransmembraneTopologyDiagram.css';
+@@ -147,8 +148,9 @@ interface RawTM {
+   end: number;
+   name?: string;
+   description?: string;
+-  /** 'Helix' | 'Strand' | 'Loop' from the calculated endpoint. */
++  /** 'Helix' | 'Strand' | 'Irregular' from the calculated endpoint. */
+   ss?: string | null;
++  confidence?: string | null;
+ }
+ 
+ function mentionsDiscontinuity(tm: RawTM): boolean {
+@@ -239,6 +241,9 @@ export interface TMHelix {
+   description?: string;
+   /** ╬▓-strand crossing (drawn as an arrow) rather than an ╬▒-helix. */
+   isBeta?: boolean;
++  /** Drawn dashed: irregular membrane segment or low-confidence call. */
++  uncertain?: boolean;
++  confidence?: string | null;
+   /** Side of the membrane where this segment's N-terminal end sits. */
+   entrySide: MembraneSide;
+   /** Side of the membrane where this segment's C-terminal end sits. */
+@@ -322,8 +327,6 @@ export function getExtraFeatures(
+   secondaryResult: SecondaryStructureResult | null | undefined,
+   chainId: string | undefined
+ ): ExtraFeature[] | undefined {
+-  return undefined; // Tß║ím thß╗¥i ß║⌐n c├íc cß║Ñu tr├║c phß╗Ñ ngo├ái m├áng
+-  /*
+   if (lEnd < lStart) return undefined;
+ 
+   const found: ExtraFeature[] = [];
+@@ -363,7 +366,7 @@ export function getExtraFeatures(
+         startRes: region.start,
+         endRes: region.end,
+         type: ss, // 'Helix' | 'Strand'
+-        label: ss === 'Helix' ? '╬▒-helix' : '╬▓-strand',
++        label: region.description.includes('Interfacial') ? 'interf. ╬▒' : ss === 'Helix' ? '╬▒-helix' : '╬▓-strand',
+       });
+     }
+   }
+@@ -411,7 +414,6 @@ export function getExtraFeatures(
+     ...sh,
+     offsetFactor: kept.length > 1 ? idx - (kept.length - 1) / 2 : 0,
+   }));
+-  */
+ }
+ 
+ /* ------------------------------------------------------------------ *
+@@ -455,7 +457,14 @@ export function buildTopologyModel({
+     usingAnnotation = true;
+     rawTMs = (activeTopologyData.regions ?? [])
+       .filter((r) => r.type === 'Transmembrane')
+-      .map((r) => ({ start: r.start, end: r.end, name: r.name, description: r.description, ss: r.ss }))
++      .map((r) => ({
++        start: r.start,
++        end: r.end,
++        name: r.name,
++        description: r.description,
++        ss: r.ss,
++        confidence: r.confidence,
++      }))
+       .sort((a, b) => a.start - b.start);
+     domainRegions = activeTopologyData.regions
+       .filter((r) => r.type === 'Topological domain')
+@@ -530,6 +539,7 @@ export function buildTopologyModel({
+     const shouldSplit =
+       preSplit || mentionsDiscontinuity(first) || (!trustSegments && spanLen >= LONG_TM_RESIDUES);
+     const isBeta = isBetaSegment(first);
++    const uncertain = first.ss === 'Irregular' || first.confidence === 'low';
+ 
+     if (!shouldSplit) {
+       const subLabel = `${hNum}`;
+@@ -544,6 +554,8 @@ export function buildTopologyModel({
+         isSplit: false,
+         description: first.description,
+         isBeta,
++        uncertain,
++        confidence: first.confidence,
+         entrySide,
+         exitSide,
+         column: gi,
+@@ -578,6 +590,8 @@ export function buildTopologyModel({
+         partIndex: idx,
+         description: half.description,
+         isBeta,
++        uncertain,
++        confidence: first.confidence,
+         // Part a runs from the entry side inwards; part b carries on to the exit side.
+         entrySide: idx === 0 ? entrySide : entrySide,
+         exitSide: idx === 0 ? entrySide : exitSide,
+@@ -759,11 +773,15 @@ export function TransmembraneTopologyDiagram({
+         const value = integer ? parseInt(raw, 10) : parseFloat(raw);
+         if (!isNaN(value)) qp.set(key, String(value));
+       };
+-      // Read by the TM x SS flows. (min_tm_element / min_cross_span / full_cross_frac
+-      // are only read by the SS-element-first predictor, so they are not sent.)
+       setNumber('thickness', tmThickness);
+       setNumber('broken_gap_max', tmBrokenGapMax, true);
+       setNumber('min_membrane_score', tmMinMembraneScore);
++      // crossing geometry: read only by the structure-guided flow
++      if (flow === 'ss_then_tm') {
++        setNumber('min_tm_element', tmMinElement, true);
++        setNumber('min_cross_span', tmMinCrossSpan);
++        setNumber('full_cross_frac', tmFullCrossFrac);
++      }
+ 
+       const response = await fetch(
+         `${API_URL}/api/secondary-structure/predict-topology/${encodeURIComponent(filenameToFetch.trim())}?${qp.toString()}`
+@@ -779,7 +797,7 @@ export function TransmembraneTopologyDiagram({
+     } finally {
+       setLoadingCalculated(false);
+     }
+-  }, [tmThickness, tmBrokenGapMax, tmMinMembraneScore]);
++  }, [tmThickness, tmBrokenGapMax, tmMinMembraneScore, tmMinElement, tmMinCrossSpan, tmFullCrossFrac]);
+ 
+   useEffect(() => {
+     if (uniprotId) {
+@@ -940,7 +958,8 @@ export function TransmembraneTopologyDiagram({
+ 
+   const isPub = figureTheme === 'publication';
+   const slabParamsActive = tmAlgorithm === '3d_slab_geom';
+-  const gapParamActive = flowType !== 'tm_then_ss' && ssAlgorithm !== 'none';
++  const gapParamActive = ssAlgorithm !== 'none';
++  const crossParamsActive = flowType === 'ss_then_tm' && ssAlgorithm !== 'none';
+   const usedParam = (key: string): string => {
+     const value = calculatedData?.parameters_used?.[key];
+     return value === undefined || value === null ? 'default' : String(value);
+@@ -1036,9 +1055,11 @@ export function TransmembraneTopologyDiagram({
+           <h2>Transmembrane secondary structure map</h2>
+           <p className="panel-subtitle">
+             {isCalculatedTopology(activeTopologyData)
+-              ? `${activeTopologyData.labeler} ┬╖ chain ${activeTopologyData.chain_id ?? '?'} ┬╖ membrane score ${
+-                  (activeTopologyData.membrane_score ?? 0).toFixed(2)
+-                } ┬╖ ${helixCount} crossings, ${loops.length} loops`
++              ? `${activeTopologyData.labeler} ┬╖ chain ${activeTopologyData.chain_id ?? '?'} ┬╖ ${helixCount} crossings, ${
++                  loops.length
++                } loops${activeTopologyData.domain_type ? ` ┬╖ ${activeTopologyData.domain_type.replace('_', ' ')}` : ''}${
++                  activeTopologyData.membrane ? ` ┬╖ membrane: ${activeTopologyData.membrane.source}` : ''
++                }`
+               : activeTopologyData
+               ? `${activeTopologyData.protein_name}${
+                   activeTopologyData.gene_name ? ` (${activeTopologyData.gene_name})` : ''
+@@ -1196,9 +1217,9 @@ export function TransmembraneTopologyDiagram({
+                     onChange={(e) => setFlowType(e.target.value)}
+                     style={{ padding: '4px 8px' }}
+                   >
+-                    <option value="ss_then_tm">Filter TM by SS (Recommended)</option>
+-                    <option value="tm_then_ss">Filter SS by TM</option>
+-                    <option value="parallel_merge">Parallel Merge (Strict Intersection)</option>
++                    <option value="ss_then_tm">Structure-guided (Recommended)</option>
++                    <option value="tm_then_ss">TM first (keep TM boundaries)</option>
++                    <option value="parallel_merge">Consensus (residue-level agreement)</option>
+                   </select>
+                 </div>
+                 
+@@ -1255,25 +1276,23 @@ export function TransmembraneTopologyDiagram({
+                       onChange={e => setTmBrokenGapMax(e.target.value)}
+                       className="tm-input-field" style={{ width: '50px', marginLeft: 4 }} />
+                   </label>
+-                  {/* Only read by the SS-element-first predictor (predict_topology_ss_first),
+-                      not by the TM x SS flows used here - shown for reference, not sent. */}
+-                  <label title="SS-first predictor only ΓÇö not used by the TM ├ù SS flows." style={{ opacity: 0.45 }}>
++                  <label title="Min residues of a helix/strand inside the membrane envelope to count as a crossing. Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
+                     Min element in slab
+-                    <input type="number" value={tmMinElement} disabled
++                    <input type="number" step="1" min="1" max="40" value={tmMinElement} disabled={!crossParamsActive}
+                       placeholder={usedParam('min_tm_element_in_slab')}
+                       onChange={e => setTmMinElement(e.target.value)}
+                       className="tm-input-field" style={{ width: '50px', marginLeft: 4 }} />
+                   </label>
+-                  <label title="SS-first predictor only ΓÇö not used by the TM ├ù SS flows." style={{ opacity: 0.45 }}>
++                  <label title="Min fraction of the thickness a group must span along the membrane normal to be a crossing; shallower groups that reach the core become Intramembrane (re-entrant). Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
+                     Min cross span
+-                    <input type="number" value={tmMinCrossSpan} disabled
++                    <input type="number" step="0.05" min="0.05" max="1" value={tmMinCrossSpan} disabled={!crossParamsActive}
+                       placeholder={usedParam('min_cross_span_frac')}
+                       onChange={e => setTmMinCrossSpan(e.target.value)}
+                       className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
+                   </label>
+-                  <label title="SS-first predictor only ΓÇö not used by the TM ├ù SS flows." style={{ opacity: 0.45 }}>
++                  <label title="An element spanning this fraction of the thickness is a full crossing on its own and is never fused with a neighbour. Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
+                     Full cross frac
+-                    <input type="number" value={tmFullCrossFrac} disabled
++                    <input type="number" step="0.05" min="0.1" max="1.5" value={tmFullCrossFrac} disabled={!crossParamsActive}
+                       placeholder={usedParam('full_cross_frac')}
+                       onChange={e => setTmFullCrossFrac(e.target.value)}
+                       className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
+@@ -1833,9 +1852,14 @@ export function TransmembraneTopologyDiagram({
+                       title: `${isBeta ? 'Beta Strand' : 'Helix'} TM${h.subLabel}`,
+                       range: `Residues ${h.startRes}ΓÇô${h.endRes}`,
+                       length: h.length,
+-                      details: h.isSplit
+-                        ? `Discontinuous segment, part ${h.partIndex === 0 ? '1' : '2'}`
+-                        : h.description || `Transmembrane ${isBeta ? 'beta strand' : 'alpha helix'}`,
++                      details: [
++                        h.isSplit
++                          ? `Discontinuous segment, part ${h.partIndex === 0 ? '1' : '2'}`
++                          : h.description || `Transmembrane ${isBeta ? 'beta strand' : 'alpha helix'}`,
++                        h.confidence ? `confidence: ${h.confidence}` : '',
++                      ]
++                        .filter(Boolean)
++                        .join(' ┬╖ '),
+                     })
+                   }
+                   onMouseLeave={() => setHoveredElement(null)}
+@@ -1874,7 +1898,8 @@ export function TransmembraneTopologyDiagram({
+                         height={Math.max(0, cylHeight - 12)}
+                         fill="none"
+                         stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
+-                        strokeWidth={isSelected ? 2.5 : 0.8}
++                        strokeWidth={isSelected ? 2.5 : h.uncertain ? 1.6 : 0.8}
++                        strokeDasharray={h.uncertain ? '5 3' : undefined}
+                       />
+                     </>
+                   ) : (
+@@ -1883,6 +1908,7 @@ export function TransmembraneTopologyDiagram({
+                       fill={`url(#cyl-${h.id})`}
+                       stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
+                       strokeWidth={isSelected ? 2.5 : 1.2}
++                      strokeDasharray={h.uncertain ? '5 3' : undefined}
+                     />
+                   )}
+ 
+diff --git a/frontend/src/types/secondaryStructure.ts b/frontend/src/types/secondaryStructure.ts
+index 317c54e..eb0f03a 100644
+--- a/frontend/src/types/secondaryStructure.ts
++++ b/frontend/src/types/secondaryStructure.ts
+@@ -27,7 +27,10 @@ export type TopologyRegionType =
+   | (string & {});
+ 
+ export type TopologySide = 'membrane' | 'Cytoplasmic' | 'Extracellular';
+-export type TopologySS = 'Helix' | 'Strand' | 'Loop' | 'Coil';
++/** 'Irregular' = in the membrane but not one regular helix/strand (mixed elements,
++ *  no SS, or SS and membrane evidence disagree). */
++export type TopologySS = 'Helix' | 'Strand' | 'Irregular' | 'Loop' | 'Coil';
++export type Confidence = 'high' | 'medium' | 'low';
+ 
+ export interface UniProtTopologyRegion {
+   type: TopologyRegionType;
+@@ -43,6 +46,31 @@ export interface UniProtTopologyRegion {
+   ss?: TopologySS | null;
+   start_icode?: string | null;
+   end_icode?: string | null;
++  /** Agreement of TM block, membrane geometry and DSSP/STRIDE (heuristic). */
++  confidence?: Confidence | null;
++}
++
++/** One row of the backend's residue-level evidence matrix. */
++export interface ResidueAnnotation {
++  index: number;
++  residue_number: number;
++  insertion_code?: string | null;
++  aa: string;
++  ss_raw?: string | null;
++  ss?: 'H' | 'E' | 'C' | null;
++  tm_evidence: string;
++  /** Signed distance from the bilayer mid-plane (├à). */
++  depth?: number | null;
++  zone?: 'CORE' | 'EDGE' | 'OUT' | null;
++  plddt?: number | null;
++  label: string;
++  confidence?: Confidence | null;
++}
++
++export interface MembranePlacement {
++  source: string;
++  normal: number[];
++  half_thickness: number;
+ }
+ 
+ export interface UniProtTopologyData {
+@@ -63,6 +91,9 @@ export interface CalculatedTopologyData extends UniProtTopologyData {
+   chain_id?: string | null;
+   /** Things to show the user: SS tool missing, numbering re-mapped, features skippedΓÇª */
+   warnings?: string[];
++  domain_type?: 'alpha_helical' | 'beta_barrel' | 'beta' | 'mixed' | 'irregular' | null;
++  membrane?: MembranePlacement | null;
++  residues?: ResidueAnnotation[] | null;
+ }
+ 
+ export type TopologyData = UniProtTopologyData | CalculatedTopologyData;
+diff --git a/protein_engine/secondary_structure/dssp.py b/protein_engine/secondary_structure/dssp.py
+index 9e2dfea..ec664c1 100644
+--- a/protein_engine/secondary_structure/dssp.py
++++ b/protein_engine/secondary_structure/dssp.py
+@@ -1,21 +1,41 @@
+ import os
++import re
++import subprocess
+ import tempfile
+ from pathlib import Path
+ from shutil import which
++
+ from Bio.PDB import MMCIFParser, PDBParser
+-from Bio.PDB.DSSP import DSSP
++from Bio.PDB.DSSP import DSSP, dssp_dict_from_pdb_file, residue_max_acc
++from Bio.PDB.PDBExceptions import PDBException
++
+ from protein_engine.secondary_structure.base import SecondaryStructureMethod
+ from protein_engine.secondary_structure.result import (
+     ResidueSecondaryStructure,
+     SecondaryStructureResult,
++    clean_angle,
++    clean_float,
+ )
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+ TOOLS_BIN = ROOT / "tools" / "bin"
+ TOOLS_SHARE = ROOT / "tools" / "share" / "libcifpp"
+ 
++CIF_SUFFIXES = {".cif", ".mmcif"}
++# mkdssp 4.x refuses some PDB files that have no CRYST1 record; a unit cell of 1 A
++# is the conventional placeholder for non-crystallographic models.
++DUMMY_CRYST1 = "CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1"
++
++_ONE_TO_THREE = {
++    "A": "ALA", "R": "ARG", "N": "ASN", "D": "ASP", "C": "CYS", "Q": "GLN", "E": "GLU",
++    "G": "GLY", "H": "HIS", "I": "ILE", "L": "LEU", "K": "LYS", "M": "MET", "F": "PHE",
++    "P": "PRO", "S": "SER", "T": "THR", "W": "TRP", "Y": "TYR", "V": "VAL",
++}
++
++
+ class DSSPMethod(SecondaryStructureMethod):
+     name = "DSSP"
++
+     def __init__(self, executable: str = "mkdssp", asa_scale: str = "Sander"):
+         if TOOLS_BIN.is_dir() and str(TOOLS_BIN) not in os.environ.get("PATH", ""):
+             os.environ["PATH"] = f"{TOOLS_BIN}{os.pathsep}{os.environ.get('PATH', '')}"
+@@ -29,38 +49,93 @@ class DSSPMethod(SecondaryStructureMethod):
+         self.executable = resolved or executable
+         self.asa_scale = asa_scale
+ 
++    # ------------------------------------------------------------------ public
+     def assign(self, structure_path: Path, model_id: int = 0) -> SecondaryStructureResult:
+-        working_path = structure_path
++        structure_path = Path(structure_path)
++        is_cif = structure_path.suffix.lower() in CIF_SUFFIXES
+         temp_dir_obj = None
+-        if structure_path.suffix.lower() == ".pdb":
+-            content = structure_path.read_text(encoding="utf-8", errors="ignore")
+-            lines = content.splitlines()
+-            if any(line.startswith("REMARK") and not line[6:10].strip().isdigit() for line in lines):
++        working_path = structure_path
++        if not is_cif:
++            cleaned = self._clean_pdb_lines(structure_path)
++            if cleaned is not None:
+                 temp_dir_obj = tempfile.TemporaryDirectory(prefix="proteinlab-dssp-")
+-                clean_lines = [
+-                    line for line in lines
+-                    if not (line.startswith("REMARK") and not line[6:10].strip().isdigit())
+-                ]
+-                clean_file = Path(temp_dir_obj.name) / structure_path.name
+-                clean_file.write_text("\n".join(clean_lines), encoding="utf-8")
+-                working_path = clean_file
++                # keep a .pdb suffix whatever the original was (.ent, .pdb1 ...)
++                working_path = Path(temp_dir_obj.name) / f"{structure_path.stem}.pdb"
++                working_path.write_text("\n".join(cleaned) + "\n", encoding="utf-8")
+         try:
+-            parser = MMCIFParser(QUIET=True) if working_path.suffix.lower() in {".cif", ".mmcif"} else PDBParser(QUIET=True)
+-            structure = parser.get_structure(working_path.stem, working_path)
+-            dssp = DSSP(structure[model_id], str(working_path), dssp=self.executable, acc_array=self.asa_scale)
+-            residues = []
+-            for key in dssp.keys():
+-                value = dssp[key]
+-                residues.append(ResidueSecondaryStructure(
+-                    chain_id=key[0],
+-                    residue_number=key[1][1],
+-                    residue_name=value[1],
+-                    code=value[2],
+-                    phi=value[4],
+-                    psi=value[5],
+-                    asa=value[3],
+-                ))
++            try:
++                residues = self._via_biopython(working_path, is_cif, model_id)
++            except (PDBException, KeyError) as error:
++                # Bio.PDB.DSSP cross-checks every residue against the structure and aborts
++                # the WHOLE run on one disagreement (e.g. MSE printed as 'M' by mkdssp).
++                # The raw DSSP table does not need that check.
++                print(f"[DSSP] Bio.PDB.DSSP mapping failed ({error}); using raw DSSP output")
++                residues = self._via_raw_output(working_path)
+             return SecondaryStructureResult(method=self.name, residues=residues)
+         finally:
+             if temp_dir_obj:
+                 temp_dir_obj.cleanup()
++
++    # ----------------------------------------------------------------- helpers
++    @staticmethod
++    def _clean_pdb_lines(path: Path):
++        """Lines of a cleaned copy, or None when the file can be used as is.
++        Drops malformed REMARK lines and adds a CRYST1 record when missing."""
++        lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
++        bad_remark = [line.startswith("REMARK") and not line[6:10].strip().isdigit() for line in lines]
++        has_cryst1 = any(line.startswith("CRYST1") for line in lines)
++        needs_suffix = path.suffix.lower() != ".pdb"
++        if not any(bad_remark) and has_cryst1 and not needs_suffix:
++            return None
++        cleaned = [line for line, bad in zip(lines, bad_remark) if not bad]
++        if not has_cryst1:
++            insert_at = next((i for i, line in enumerate(cleaned)
++                              if line.startswith(("ATOM", "HETATM", "MODEL"))), 0)
++            cleaned.insert(insert_at, DUMMY_CRYST1)
++        return cleaned
++
++    def _via_biopython(self, working_path: Path, is_cif: bool, model_id: int):
++        parser = MMCIFParser(QUIET=True) if is_cif else PDBParser(QUIET=True)
++        structure = parser.get_structure(working_path.stem, str(working_path))
++        dssp = DSSP(structure[model_id], str(working_path), dssp=self.executable,
++                    acc_array=self.asa_scale, file_type="MMCIF" if is_cif else "PDB")
++        residues = []
++        for key in dssp.keys():
++            chain_id, (_, resseq, icode) = key
++            value = dssp[key]
++            residues.append(ResidueSecondaryStructure(
++                chain_id=chain_id,
++                residue_number=int(resseq),
++                residue_name=value[1],
++                code=value[2],
++                phi=clean_angle(value[4]),
++                psi=clean_angle(value[5]),
++                asa=clean_float(value[3]),              # 'NA' for non-standard residues
++                insertion_code=(icode or "").strip(),
++            ))
++        return residues
++
++    def _via_raw_output(self, working_path: Path):
++        version_text = subprocess.check_output([self.executable, "--version"], text=True)
++        match = re.search(r"\s*([\d.]+)", version_text)
++        table, keys = dssp_dict_from_pdb_file(str(working_path), self.executable,
++                                              match.group(1) if match else "4.0.0")
++        max_acc = residue_max_acc[self.asa_scale]
++        residues = []
++        for key in keys:
++            chain_id, (_, resseq, icode) = key
++            aa, ss, acc, phi, psi = table[key][:5]
++            aa = "C" if aa.islower() else aa                     # a..z = bridged Cys
++            three = _ONE_TO_THREE.get(aa)
++            rel = min(1.0, acc / max_acc[three]) if three in max_acc else None
++            residues.append(ResidueSecondaryStructure(
++                chain_id=chain_id,
++                residue_number=int(resseq),
++                residue_name=aa,
++                code=ss,
++                phi=clean_angle(phi),
++                psi=clean_angle(psi),
++                asa=clean_float(rel),
++                insertion_code=(icode or "").strip(),
++            ))
++        return residues
+diff --git a/protein_engine/secondary_structure/result.py b/protein_engine/secondary_structure/result.py
+index 913c158..45acc76 100644
+--- a/protein_engine/secondary_structure/result.py
++++ b/protein_engine/secondary_structure/result.py
+@@ -1,5 +1,7 @@
++import math
+ from dataclasses import asdict, dataclass
+-from typing import Optional
++from typing import Any, Optional
++
+ 
+ @dataclass
+ class ResidueSecondaryStructure:
+@@ -9,14 +11,34 @@ class ResidueSecondaryStructure:
+     code: str
+     phi: Optional[float] = None
+     psi: Optional[float] = None
+-    asa: Optional[float] = None
++    asa: Optional[float] = None          # RELATIVE accessibility 0..1 (same scale for DSSP and STRIDE)
++    # PDB insertion code ("A" in residue 100A); "" when blank. Without it 100 and
++    # 100A collapse onto the same residue_number and cannot be told apart downstream.
++    insertion_code: str = ""
++
+ 
+ @dataclass
+ class SecondaryStructureResult:
+     method: str
+     residues: list[ResidueSecondaryStructure]
++
+     def to_dict(self) -> dict:
+         return {
+             "method": self.method,
+             "residues": [asdict(residue) for residue in self.residues],
+-        }
+\ No newline at end of file
++        }
++
++
++def clean_float(value: Any) -> Optional[float]:
++    """None for missing / non-numeric values ('NA', '', NaN) - keeps the JSON typed."""
++    try:
++        number = float(value)
++    except (TypeError, ValueError):
++        return None
++    return number if math.isfinite(number) else None
++
++
++def clean_angle(value: Any) -> Optional[float]:
++    """DSSP and STRIDE print 360.0 for an undefined phi/psi (chain ends, breaks)."""
++    number = clean_float(value)
++    return None if number is None or abs(number) >= 360.0 else number
+diff --git a/protein_engine/secondary_structure/stride.py b/protein_engine/secondary_structure/stride.py
+index 3297bfd..093a3ee 100644
+--- a/protein_engine/secondary_structure/stride.py
++++ b/protein_engine/secondary_structure/stride.py
+@@ -1,23 +1,35 @@
+ import os
++import re
+ import subprocess
+ import tempfile
+ from pathlib import Path
+ from shutil import which
+ 
+ from Bio.PDB import MMCIFParser, PDBIO, PDBParser
++from Bio.PDB.DSSP import residue_max_acc
++
+ from protein_engine.secondary_structure.base import SecondaryStructureMethod
+ from protein_engine.secondary_structure.result import (
+     ResidueSecondaryStructure,
+     SecondaryStructureResult,
++    clean_angle,
++    clean_float,
+ )
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+ TOOLS_BIN = ROOT / "tools" / "bin"
+ 
++CIF_SUFFIXES = {".cif", ".mmcif"}
++STRIDE_TIMEOUT_S = 300
++# PDB residue field as STRIDE prints it: number plus optional insertion code ("100A")
++_RESNUM_RE = re.compile(r"^(-?\d+)([A-Za-z]?)$")
++_SINGLE_CHAIN_IDS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
++
++
+ class STRIDEMethod(SecondaryStructureMethod):
+     name = "STRIDE"
+ 
+-    def __init__(self, executable: str = "stride"):
++    def __init__(self, executable: str = "stride", asa_scale: str = "Sander"):
+         if TOOLS_BIN.is_dir() and str(TOOLS_BIN) not in os.environ.get("PATH", ""):
+             os.environ["PATH"] = f"{TOOLS_BIN}{os.pathsep}{os.environ.get('PATH', '')}"
+ 
+@@ -28,49 +40,91 @@ class STRIDEMethod(SecondaryStructureMethod):
+             resolved = str(TOOLS_BIN / executable)
+ 
+         self.executable = resolved or executable
++        self.asa_scale = asa_scale
+ 
+     def assign(self, structure_path: Path, model_id: int = 0) -> SecondaryStructureResult:
+-
+-        if structure_path.suffix.lower() in {".cif", ".mmcif"}:
++        structure_path = Path(structure_path)
++        chain_names: dict[str, str] = {}
++        is_cif = structure_path.suffix.lower() in CIF_SUFFIXES
++        # STRIDE reads PDB only. mmCIF (and a non-first model) is written out as PDB first.
++        if is_cif or model_id != 0:
+             with tempfile.TemporaryDirectory(prefix="proteinlab-stride-") as temporary_dir:
+                 pdb_path = Path(temporary_dir) / f"{structure_path.stem}.pdb"
+-                self._convert_to_pdb(structure_path, pdb_path, model_id)
++                chain_names = self._convert_to_pdb(structure_path, pdb_path, model_id, is_cif)
+                 completed = self._run_stride(pdb_path)
+         else:
+             completed = self._run_stride(structure_path)
++        return SecondaryStructureResult(
++            method=self.name, residues=self._parse_asg(completed.stdout, chain_names))
+ 
++    # ----------------------------------------------------------------- parsing
++    def _parse_asg(self, stdout: str, chain_names: dict[str, str]):
++        """ASG  ALA A  100A   57    H    AlphaHelix    -62.1    -41.3      12.0      ~~~~
++        fields: resname, chain ('-' = blank), PDB number (+ insertion code),
++        STRIDE ordinal, code, name, phi, psi, area (A^2)."""
++        max_acc = residue_max_acc[self.asa_scale]
+         residues = []
+-        for line in completed.stdout.splitlines():
++        for line in stdout.splitlines():
+             if not line.startswith("ASG"):
+                 continue
+             parts = line.split()
+             if len(parts) < 6:
+                 continue
+-            try:
+-                res_num = int(parts[3])
+-            except ValueError:
+-                res_num = int(parts[4]) if parts[4].isdigit() else 0
+-
++            match = _RESNUM_RE.match(parts[3])
++            if not match:
++                # never fall back to the STRIDE ordinal (parts[4]): it is a different
++                # numbering and silently shifts the residue onto another one
++                continue
++            chain = " " if parts[2] == "-" else parts[2]          # STRIDE prints blank chain as '-'
++            resname = parts[1].upper()
++            area = clean_float(parts[9]) if len(parts) > 9 else None
++            rel = min(1.0, area / max_acc[resname]) if area is not None and resname in max_acc else None
+             residues.append(ResidueSecondaryStructure(
+-                chain_id=parts[2],
+-                residue_number=res_num,
+-                residue_name=parts[1],
++                chain_id=chain_names.get(chain, chain),
++                residue_number=int(match.group(1)),
++                residue_name=resname,
+                 code=parts[5],
++                phi=clean_angle(parts[7]) if len(parts) > 7 else None,
++                psi=clean_angle(parts[8]) if len(parts) > 8 else None,
++                asa=clean_float(rel),
++                insertion_code=match.group(2),
+             ))
+-        return SecondaryStructureResult(method=self.name, residues=residues)
++        return residues
+ 
++    # --------------------------------------------------------------- execution
+     def _run_stride(self, structure_path: Path) -> subprocess.CompletedProcess[str]:
+-        return subprocess.run(
+-            [self.executable, str(structure_path)],
+-            check=True,
+-            capture_output=True,
+-            text=True,
+-        )
++        try:
++            return subprocess.run(
++                [self.executable, str(structure_path)],
++                check=True,
++                capture_output=True,
++                text=True,
++                timeout=STRIDE_TIMEOUT_S,
++            )
++        except subprocess.CalledProcessError as error:
++            tail = (error.stderr or error.stdout or "").strip().splitlines()[-3:]
++            raise RuntimeError(f"STRIDE failed (exit {error.returncode}): {' | '.join(tail)}") from error
+ 
+     @staticmethod
+-    def _convert_to_pdb(structure_path: Path, output_path: Path, model_id: int) -> None:
+-        parser = MMCIFParser(QUIET=True)
++    def _convert_to_pdb(structure_path: Path, output_path: Path, model_id: int,
++                        is_cif: bool) -> dict[str, str]:
++        """Write one model as PDB. PDB allows 1-character chain IDs only, so longer
++        mmCIF chain IDs are renamed to free single characters; the returned map
++        {temporary_id: original_id} is used to put the original IDs back."""
++        parser = MMCIFParser(QUIET=True) if is_cif else PDBParser(QUIET=True)
+         structure = parser.get_structure(structure_path.stem, str(structure_path))
++        model = structure[model_id]
++        used = {chain.id for chain in model if len(chain.id) == 1}
++        free = (c for c in _SINGLE_CHAIN_IDS if c not in used)
++        renamed: dict[str, str] = {}
++        for chain in list(model):
++            if len(chain.id) != 1:
++                new_id = next(free, None)
++                if new_id is None:
++                    raise RuntimeError("Too many chains to convert to PDB format for STRIDE")
++                renamed[new_id] = chain.id
++                chain.id = new_id
+         io = PDBIO()
+-        io.set_structure(structure[model_id])
+-        io.save(str(output_path))
+\ No newline at end of file
++        io.set_structure(model)
++        io.save(str(output_path))
++        return renamed

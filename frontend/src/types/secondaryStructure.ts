@@ -27,7 +27,10 @@ export type TopologyRegionType =
   | (string & {});
 
 export type TopologySide = 'membrane' | 'Cytoplasmic' | 'Extracellular';
-export type TopologySS = 'Helix' | 'Strand' | 'Loop' | 'Coil';
+/** 'Irregular' = in the membrane but not one regular helix/strand (mixed elements,
+ *  no SS, or SS and membrane evidence disagree). */
+export type TopologySS = 'Helix' | 'Strand' | 'Irregular' | 'Loop' | 'Coil';
+export type Confidence = 'high' | 'medium' | 'low';
 
 export interface UniProtTopologyRegion {
   type: TopologyRegionType;
@@ -43,6 +46,65 @@ export interface UniProtTopologyRegion {
   ss?: TopologySS | null;
   start_icode?: string | null;
   end_icode?: string | null;
+  /** Agreement of TM block, membrane geometry and DSSP/STRIDE (heuristic). */
+  confidence?: Confidence | null;
+  /** Transmembrane regions of the calculated endpoint: 1-based crossing number.
+   *  A discontinuous crossing (TM1a/1b …) comes as several regions sharing it:
+   *  part 'a', the unwound stretch (part null, "Transmembrane Unwound"), part 'b'. */
+  crossing?: number | null;
+  part?: 'a' | 'b' | null;
+  /** Membrane role, separate from secondary structure (`ss`). */
+  membrane_role?:
+    | 'TM_CROSSING'
+    | 'BROKEN_TM'
+    | 'UNWOUND'
+    | 'REENTRANT'
+    | 'INTERFACIAL'
+    | 'EXTRAMEMBRANE'
+    | 'SIGNAL'
+    | null;
+  /** TM1, TM1a, TM1 unwound, EL2, EL3a, IL1, N-term, C-term, RE1 … */
+  topology_label?: string | null;
+  parent_tm?: string | null;
+  /** Evidence for each fragment junction inside a crossing (why it is / is not a/b). */
+  transitions?: TransitionEvidence[] | null;
+}
+
+export interface TransitionEvidence {
+  classification: 'CONTINUOUS' | 'BROKEN_TM' | 'AMBIGUOUS' | 'TWO_TM' | 'REENTRANT' | 'SEPARATE';
+  gap_residues: number;
+  gap_in_membrane: boolean;
+  gap_in_core: boolean;
+  same_orientation: boolean;
+  a_tilt_deg?: number | null;
+  b_tilt_deg?: number | null;
+  single_crossing: boolean;
+  a_full_cross: boolean;
+  b_full_cross: boolean;
+  reason: string;
+}
+
+/** One row of the backend's residue-level evidence matrix. */
+export interface ResidueAnnotation {
+  index: number;
+  residue_number: number;
+  insertion_code?: string | null;
+  aa: string;
+  ss_raw?: string | null;
+  ss?: 'H' | 'E' | 'C' | null;
+  tm_evidence: string;
+  /** Signed distance from the bilayer mid-plane (Å). */
+  depth?: number | null;
+  zone?: 'CORE' | 'EDGE' | 'OUT' | null;
+  plddt?: number | null;
+  label: string;
+  confidence?: Confidence | null;
+}
+
+export interface MembranePlacement {
+  source: string;
+  normal: number[];
+  half_thickness: number;
 }
 
 export interface UniProtTopologyData {
@@ -63,6 +125,9 @@ export interface CalculatedTopologyData extends UniProtTopologyData {
   chain_id?: string | null;
   /** Things to show the user: SS tool missing, numbering re-mapped, features skipped… */
   warnings?: string[];
+  domain_type?: 'alpha_helical' | 'beta_barrel' | 'beta' | 'mixed' | 'irregular' | null;
+  membrane?: MembranePlacement | null;
+  residues?: ResidueAnnotation[] | null;
 }
 
 export type TopologyData = UniProtTopologyData | CalculatedTopologyData;
