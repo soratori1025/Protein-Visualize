@@ -80,6 +80,19 @@ class ResidueAnnotation(BaseModel):
     confidence: Optional[str] = None
 
 
+class ConsensusResidue(BaseModel):
+    """One entry of the consensus residue map (flow parallel_merge / consensus).
+    Only residues whose SS flag is on (helix; strand in a beta TM segment) appear."""
+    index: int                          # position in the analysed chain (0-based)
+    residue_number: int
+    insertion_code: Optional[str] = None
+    aa: str
+    label: str                          # TM_in | TM_C (cytoplasmic side) | TM_E (extracellular side)
+    ss_raw: str                         # DSSP/STRIDE code (H, G, I, or E)
+    tm_segment: Optional[int] = None    # TM_in: 1-based TM segment of the TM block (UniProt TM feature)
+    crossing: Optional[int] = None      # TM_in: 1-based crossing it is drawn in (None = not drawn)
+
+
 class TopologyResponse(BaseModel):
     uniprot_id: str
     protein_name: str
@@ -99,3 +112,5 @@ class TopologyResponse(BaseModel):
     # {"source", "normal", "half_thickness"} of the membrane placement used
     membrane: Optional[dict] = None
     residues: Optional[list[ResidueAnnotation]] = None
+    # consensus flow only: residue map TM_in / TM_C / TM_E (see ConsensusResidue)
+    consensus_map: Optional[list[ConsensusResidue]] = None

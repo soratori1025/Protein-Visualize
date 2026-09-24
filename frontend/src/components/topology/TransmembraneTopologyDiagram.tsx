@@ -10,6 +10,7 @@ import { compareResidues, isCalculatedTopology } from '../../types/secondaryStru
 import { exportSvgAsImage } from '../structure/exportDiagram';
 import { API_URL, runSecondaryStructure } from '../../services/api';
 import './TransmembraneTopologyDiagram.css';
+import { ConsensusAnalysisMap } from './ConsensusAnalysisMap';
 
 type FigureTheme = 'publication' | 'lab';
 type TopologySource = 'uniprot' | 'calculated';
@@ -1880,7 +1881,19 @@ export function TransmembraneTopologyDiagram({
                   key={h.id}
                   className={`helix-group ${isSelected ? 'selected' : ''}`}
                   transform={`translate(${pos.x}, ${pos.topY}) rotate(${pos.angle}, ${cx}, ${cy})`}
-                  onMouseEnter={() =>
+                  onMouseEnter={() => {
+                    let startIdx = -1;
+                    let endIdx = -1;
+                    if (secondaryResult?.residues && chain?.id) {
+                      // Filter by chain first to get correct array indices that match the backend's per-chain arrays
+                      const chainResidues = secondaryResult.residues.filter(r => r.chain_id === chain.id);
+                      startIdx = chainResidues.findIndex(r => r.residue_number === h.startRes);
+                      endIdx = chainResidues.findIndex(r => r.residue_number === h.endRes);
+                    } else if (chain?.residues) {
+                      startIdx = chain.residues.findIndex(r => r.id === h.startRes);
+                      endIdx = chain.residues.findIndex(r => r.id === h.endRes);
+                    }
+
                     setHoveredElement({
                       title: `${isBeta ? 'Beta Strand' : 'Helix'} TM${h.subLabel}`,
                       range: `Residues ${h.startRes}–${h.endRes}`,
@@ -1890,11 +1903,12 @@ export function TransmembraneTopologyDiagram({
                           ? `Discontinuous segment, part ${h.partIndex === 0 ? '1' : '2'}`
                           : h.description || `Transmembrane ${isBeta ? 'beta strand' : 'alpha helix'}`,
                         h.confidence ? `confidence: ${h.confidence}` : '',
+                        startIdx !== -1 && endIdx !== -1 ? `Array Index: [${startIdx} - ${endIdx}]` : ''
                       ]
                         .filter(Boolean)
                         .join(' · '),
-                    })
-                  }
+                    });
+                  }}
                   onMouseLeave={() => setHoveredElement(null)}
                   onClick={() => selectResidue?.(h.startRes)}
                 >
@@ -2012,6 +2026,33 @@ export function TransmembraneTopologyDiagram({
                   >
                     {h.startRes}–{h.endRes}
                   </text>
+                  {(() => {
+                    let startIdx = -1;
+                    let endIdx = -1;
+                    if (secondaryResult?.residues && chain?.id) {
+                      const chainResidues = secondaryResult.residues.filter(r => r.chain_id === chain.id);
+                      startIdx = chainResidues.findIndex(r => r.residue_number === h.startRes);
+                      endIdx = chainResidues.findIndex(r => r.residue_number === h.endRes);
+                    } else if (chain?.residues) {
+                      startIdx = chain.residues.findIndex(r => r.id === h.startRes);
+                      endIdx = chain.residues.findIndex(r => r.id === h.endRes);
+                    }
+                    if (startIdx !== -1 && endIdx !== -1) {
+                      return (
+                        <text
+                          x={cx}
+                          y={cy + 24}
+                          className="helix-debug-text"
+                          textAnchor="middle"
+                          transform={`rotate(${-pos.angle}, ${cx}, ${cy})`}
+                          style={{ fill: labelColor, opacity: 0.65, fontSize: '8px', fontWeight: 600 }}
+                        >
+                          [{startIdx}-{endIdx}]
+                        </text>
+                      );
+                    }
+                    return null;
+                  })()}
                 </g>
               );
             })}
@@ -2035,6 +2076,10 @@ export function TransmembraneTopologyDiagram({
           </div>
         )}
       </div>
+
+      {isCalculatedTopology(activeTopologyData) && activeTopologyData.consensus_map && (
+        <ConsensusAnalysisMap consensusMap={activeTopologyData.consensus_map} />
+      )}
     </div>
   );
 }

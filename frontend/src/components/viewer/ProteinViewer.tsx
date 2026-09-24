@@ -4,6 +4,7 @@ import type { Chain } from '../../types/protein';
 import type { ColorScheme, RepresentationStyle } from '../../types/viewer';
 import { generateRibbonSpline, getHydropathyColor } from '../../utils/ribbonSpline';
 import { API_URL } from '../../services/api';
+import type { ConsensusResidue } from '../../types/secondaryStructure';
 
 interface Props {
   chain: Chain | undefined;
@@ -13,6 +14,8 @@ interface Props {
   focusChainId?: string;
   selectedResidue: number | null;
   onSelectResidue: (id: number) => void;
+  consensusMap?: ConsensusResidue[];
+  defaultColorScheme?: ColorScheme;
 }
 
 const chainColors = [
@@ -20,11 +23,11 @@ const chainColors = [
   '#8ab17d', '#e9c46a', '#ef8354', '#00b4d8', '#c77dff', '#90be6d',
 ];
 
-export function ProteinViewer({ chain, chains, filename, variant = 'interactive', focusChainId, selectedResidue, onSelectResidue }: Props) {
+export function ProteinViewer({ chain, chains, filename, variant = 'interactive', focusChainId, selectedResidue, onSelectResidue, consensusMap, defaultColorScheme }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<$3Dmol.Viewer>();
   const [style, setStyle] = useState<RepresentationStyle>('ribbon');
-  const [colorScheme, setColorScheme] = useState<ColorScheme>('chain');
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(defaultColorScheme || 'chain');
 
   useEffect(() => {
     if (!containerRef.current || !filename) return;
@@ -40,7 +43,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       viewer.setBackgroundColor('#0b151e');
       viewer.addModel(structure, filename.toLowerCase().endsWith('.pdb') || filename.toLowerCase().endsWith('.ent') ? 'pdb' : 'cif');
 
-      applyStyles(viewer, chains, focusChainId, style, colorScheme, chain);
+      applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap);
 
       if (variant === 'interactive') {
         viewer.setClickable({}, true, (atom) => {
@@ -68,7 +71,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer) return;
-    applyStyles(viewer, chains, focusChainId, style, colorScheme, chain);
+    applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap);
 
     if (variant === 'interactive' && selectedResidue !== null) {
       viewer.setStyle({ chain: chain?.id, resi: selectedResidue }, {
@@ -78,7 +81,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       });
     }
     viewer.render();
-  }, [chain, chains, focusChainId, selectedResidue, style, colorScheme, variant]);
+  }, [chain, chains, focusChainId, selectedResidue, style, colorScheme, variant, consensusMap]);
 
   if (!chain) return <div className="empty-state">Upload a PDB/mmCIF structure to begin.</div>;
 
@@ -113,6 +116,14 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
             >
               Secondary Structure
             </button>
+            {consensusMap && (
+              <button
+                className={colorScheme === 'consensus' ? 'toolbar-btn active' : 'toolbar-btn'}
+                onClick={() => setColorScheme('consensus')}
+              >
+                Consensus
+              </button>
+            )}
             <button
               className={colorScheme === 'hydropathy' ? 'toolbar-btn active' : 'toolbar-btn'}
               onClick={() => setColorScheme('hydropathy')}
@@ -192,7 +203,8 @@ function applyStyles(
   focusChainId: string | undefined,
   style: RepresentationStyle,
   colorScheme: ColorScheme,
-  selectedChain?: Chain
+  selectedChain?: Chain,
+  consensusMap?: ConsensusResidue[]
 ) {
   (viewer as any).removeAllShapes();
   viewer.setStyle({}, { cartoon: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
@@ -234,6 +246,41 @@ function applyStyles(
         viewer.setStyle(sel, { sphere: { color, scale: 0.75 } });
       } else if (style === 'stick') {
         viewer.setStyle(sel, { stick: { color, radius: 0.22 } });
+      }
+    });
+  }
+
+  // Apply consensus colors if selected
+  if (colorScheme === 'consensus' && selectedChain && consensusMap) {
+    // Default color for residues not in the membrane
+    const defaultColor = '#64748b';
+    const selAll = { chain: selectedChain.id };
+    
+    if (style === 'ribbon') {
+      viewer.setStyle(selAll, { cartoon: { color: defaultColor, opacity: 1 } });
+    } else if (style === 'sphere') {
+      viewer.setStyle(selAll, { sphere: { color: defaultColor, scale: 0.75 } });
+    } else if (style === 'stick') {
+      viewer.setStyle(selAll, { stick: { color: defaultColor, radius: 0.22 } });
+    } else if (style === 'line') {
+      viewer.setStyle(selAll, { line: { color: defaultColor, linewidth: 1.5 } });
+    }
+    
+    consensusMap.forEach((res) => {
+      let color = defaultColor;
+      if (res.label === 'TM_E') color = '#ff9f43';
+      if (res.label === 'TM_in') color = '#00d2d3';
+      if (res.label === 'TM_C') color = '#5f27cd';
+      
+      const sel = { chain: selectedChain.id, resi: res.residue_number };
+      if (style === 'ribbon') {
+        viewer.setStyle(sel, { cartoon: { color, opacity: 1 } });
+      } else if (style === 'sphere') {
+        viewer.setStyle(sel, { sphere: { color, scale: 0.75 } });
+      } else if (style === 'stick') {
+        viewer.setStyle(sel, { stick: { color, radius: 0.22 } });
+      } else if (style === 'line') {
+        viewer.setStyle(sel, { line: { color, linewidth: 1.5 } });
       }
     });
   }
