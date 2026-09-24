@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Chain } from '../../types/protein';
 import type {
   CalculatedTopologyData,
@@ -45,6 +45,45 @@ function mixHex(a: string, b: string, amount: number): string {
 
 const lighten = (hex: string, amount: number) => mixHex(hex, '#ffffff', amount);
 const darken = (hex: string, amount: number) => mixHex(hex, '#000000', amount);
+
+const renderRibbon = (width: number, hSpan: number, baseColor: string, id: string, yStart: number) => {
+  const pitch = 18; // Smaller pitch for more turns
+  const turns = Math.max(1, Math.floor(hSpan / pitch));
+  const actualPitch = hSpan / turns;
+  
+  const backFaces = [];
+  const frontFaces = [];
+  const thickness = width * 0.22; // Thinner ribbon!
+  
+  // To keep the rounded caps strictly inside the visual bounds (optional but looks cleaner)
+  const pad = thickness / 2;
+  const w = width - pad * 2;
+  const xOffset = pad;
+  
+  for (let i = 0; i < turns; i++) {
+    const y0 = yStart + i * actualPitch;
+    const yMid = y0 + actualPitch * 0.5;
+    const yEnd = y0 + actualPitch;
+    
+    // Zero-derivative at the edges creates a mathematically perfect 2D projection of a 3D helix
+    backFaces.push(
+      <path key={`back-${i}`} d={`M ${xOffset + w} ${y0} C ${xOffset + w * 0.5} ${y0}, ${xOffset + w * 0.5} ${yMid}, ${xOffset} ${yMid}`} 
+            fill="none" stroke={darken(baseColor, 0.55)} strokeWidth={thickness} strokeLinecap="round" />
+    );
+    
+    frontFaces.push(
+      <path key={`front-${i}`} d={`M ${xOffset} ${yMid} C ${xOffset + w * 0.5} ${yMid}, ${xOffset + w * 0.5} ${yEnd}, ${xOffset + w} ${yEnd}`} 
+            fill="none" stroke={`url(#cyl-${id})`} strokeWidth={thickness} strokeLinecap="round" />
+    );
+  }
+  
+  return (
+    <React.Fragment key={`ribbon-${yStart}`}>
+      <g className="ribbon-back">{backFaces}</g>
+      <g className="ribbon-front">{frontFaces}</g>
+    </React.Fragment>
+  );
+};
 
 /** WCAG relative luminance — decides whether a label should be white or near-black. */
 function relativeLuminance(hex: string): number {
@@ -154,6 +193,7 @@ interface RawTM {
   /** Calculated endpoint: crossing number + 'a'/'b' part of a broken crossing. */
   crossing?: number | null;
   part?: string | null;
+  observedSpans?: { start: number; end: number }[];
 }
 
 function mentionsDiscontinuity(tm: RawTM): boolean {
@@ -247,6 +287,7 @@ export interface TMHelix {
   /** Drawn dashed: irregular membrane segment or low-confidence call. */
   uncertain?: boolean;
   confidence?: string | null;
+  observedSpans?: { start: number; end: number }[];
   /** Side of the membrane where this segment's N-terminal end sits. */
   entrySide: MembraneSide;
   /** Side of the membrane where this segment's C-terminal end sits. */
@@ -476,24 +517,105 @@ export function buildTopologyModel({
   // topology at all are candidate helices derived from the SS assignment.
   if (activeTopologyData) {
     usingAnnotation = true;
-    rawTMs = (activeTopologyData.regions ?? [])
-      // the unwound stretch between the two halves of a broken crossing is drawn as
-      // the connector between them, not as a helix of its own
-      .filter((r) => r.type === 'Transmembrane' && !(r.description ?? '').includes('Unwound'))
-      .map((r) => ({
-        start: r.start,
-        end: r.end,
-        name: r.name,
-        description: r.description,
-        ss: r.ss,
-        confidence: r.confidence,
-        crossing: r.crossing,
-        part: r.part,
-      }))
-      .sort((a, b) => a.start - b.start);
-    domainRegions = activeTopologyData.regions
-      .filter((r) => r.type === 'Topological domain')
-      .map((r) => ({ start: r.start, end: r.end, description: r.description ?? '' }));
+
+    if (isCalculatedTopology(activeTopologyData) && activeTopologyData.consensus_map) {
+      // Synchronize strictly with the Consensus Merge Analysis map
+      const tmInMap = new Map<number, typeof activeTopologyData.consensus_map>();
+      activeTopologyData.consensus_map.forEach((r) => {
+        if (r.label === 'TM_in' && r.tm_segment != null) {
+          if (!tmInMap.has(r.tm_segment)) tmInMap.set(r.tm_segment, []);
+          tmInMap.get(r.tm_segment)!.push(r);
+        }
+      });
+
+      const segments: (typeof activeTopologyData.consensus_map)[] = [];
+      const observedSpansMap = new Map<number, { start: number; end: number }[]>();
+
+      for (const residues of tmInMap.values()) {
+        if (residues.length === 0) continue;
+        
+        let currentSubSeg = [residues[0]];
+        const observedSpans: { start: number; end: number }[] = [];
+        
+        for (let i = 1; i < residues.length; i++) {
+          if (residues[i].index === residues[i - 1].index + 1) {
+            currentSubSeg.push(residues[i]);
+          } else {
+            observedSpans.push({
+              start: currentSubSeg[0].residue_number,
+              end: currentSubSeg[currentSubSeg.length - 1].residue_number,
+            });
+            currentSubSeg = [residues[i]];
+          }
+        }
+        observedSpans.push({
+          start: currentSubSeg[0].residue_number,
+          end: currentSubSeg[currentSubSeg.length - 1].residue_number,
+        });
+
+        segments.push([...residues]);
+        observedSpansMap.set(residues[0].index, observedSpans);
+      }
+
+      segments.sort((a, b) => a[0].index - b[0].index);
+      
+      const crossingCounts = new Map<number, number>();
+      for (const seg of segments) {
+        if (seg[0].crossing != null) {
+          crossingCounts.set(seg[0].crossing, (crossingCounts.get(seg[0].crossing) || 0) + 1);
+        }
+      }
+
+      const crossingSeen = new Map<number, number>();
+      rawTMs = segments.map((seg) => {
+        const start = seg[0].residue_number;
+        const end = seg[seg.length - 1].residue_number;
+        const crossing = seg[0].crossing;
+        const observedSpans = observedSpansMap.get(seg[0].index);
+        
+        let part: string | null = null;
+        if (crossing != null && crossingCounts.get(crossing)! > 1) {
+          const seen = crossingSeen.get(crossing) || 0;
+          part = String.fromCharCode(97 + seen); // 'a', 'b', 'c', etc.
+          crossingSeen.set(crossing, seen + 1);
+        }
+
+        return {
+          start,
+          end,
+          name: part ? `TM${crossing || ''}${part}` : `TM${crossing || ''}`,
+          description: part ? 'Transmembrane Unwound' : 'Transmembrane', // Helps shouldSplit
+          ss: seg[0].ss_raw === 'E' ? 'Strand' : 'Helix',
+          confidence: 'high',
+          crossing,
+          part,
+          observedSpans,
+        };
+      });
+
+      domainRegions = activeTopologyData.regions
+        .filter((r) => r.type === 'Topological domain')
+        .map((r) => ({ start: r.start, end: r.end, description: r.description ?? '' }));
+    } else {
+      rawTMs = (activeTopologyData.regions ?? [])
+        // the unwound stretch between the two halves of a broken crossing is drawn as
+        // the connector between them, not as a helix of its own
+        .filter((r) => r.type === 'Transmembrane' && !(r.description ?? '').includes('Unwound'))
+        .map((r) => ({
+          start: r.start,
+          end: r.end,
+          name: r.name,
+          description: r.description,
+          ss: r.ss,
+          confidence: r.confidence,
+          crossing: r.crossing,
+          part: r.part,
+        }))
+        .sort((a, b) => a.start - b.start);
+      domainRegions = activeTopologyData.regions
+        .filter((r) => r.type === 'Topological domain')
+        .map((r) => ({ start: r.start, end: r.end, description: r.description ?? '' }));
+    }
   } else {
     // Fallback: derive candidate TM segments from the assigned secondary structure.
     const ssResidues = (secondaryResult?.residues ?? [])
@@ -593,20 +715,21 @@ export function buildTopologyModel({
         entrySide,
         exitSide,
         column: gi,
+        observedSpans: first.observedSpans,
       });
       return;
     }
 
     const halves = preSplit
       ? [
-          { start: first.start, end: first.end, description: first.description },
-          { start: last.start, end: last.end, description: last.description },
+          { start: first.start, end: first.end, description: first.description, observedSpans: first.observedSpans },
+          { start: last.start, end: last.end, description: last.description, observedSpans: last.observedSpans },
         ]
       : (() => {
           const mid = Math.floor((first.start + last.end) / 2);
           return [
-            { start: first.start, end: mid, description: first.description },
-            { start: mid + 1, end: last.end, description: first.description },
+            { start: first.start, end: mid, description: first.description, observedSpans: first.observedSpans },
+            { start: mid + 1, end: last.end, description: first.description, observedSpans: first.observedSpans },
           ];
         })();
 
@@ -630,6 +753,7 @@ export function buildTopologyModel({
         entrySide: idx === 0 ? entrySide : entrySide,
         exitSide: idx === 0 ? entrySide : exitSide,
         column: gi,
+        observedSpans: half.observedSpans,
       });
     });
   });
@@ -741,9 +865,11 @@ export function TransmembraneTopologyDiagram({
   const [tmFullCrossFrac, setTmFullCrossFrac] = useState<string>('');
   const [tmBrokenGapMax, setTmBrokenGapMax] = useState<string>('');
   const [tmMinMembraneScore, setTmMinMembraneScore] = useState<string>('');
+  const [tmTreatTurnAsHelix, setTmTreatTurnAsHelix] = useState<boolean>(false);
 
   const [colorDrawerOpen, setColorDrawerOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'preset' | 'helices' | 'residues' | 'effects'>('preset');
+  const [visualStyle, setVisualStyle] = useState<'cylinder' | 'ribbon' | 'wire' | 'flat' | 'beads'>('cylinder');
   const [selectedPaletteKey, setSelectedPaletteKey] = useState<string>('PAPER_DEFAULT');
   const [customHelixColors, setCustomHelixColors] = useState<Record<string, string>>({});
   const [customResidueRules, setCustomResidueRules] = useState<CustomResidueColorRule[]>([]);
@@ -810,6 +936,9 @@ export function TransmembraneTopologyDiagram({
       setNumber('thickness', tmThickness);
       setNumber('broken_gap_max', tmBrokenGapMax, true);
       setNumber('min_membrane_score', tmMinMembraneScore);
+      if (tmTreatTurnAsHelix) {
+        qp.set('treat_turn_as_helix', 'true');
+      }
       // crossing geometry: read only by the structure-guided flow
       if (flow === 'ss_then_tm') {
         setNumber('min_tm_element', tmMinElement, true);
@@ -831,7 +960,7 @@ export function TransmembraneTopologyDiagram({
     } finally {
       setLoadingCalculated(false);
     }
-  }, [tmThickness, tmBrokenGapMax, tmMinMembraneScore, tmMinElement, tmMinCrossSpan, tmFullCrossFrac]);
+  }, [tmThickness, tmBrokenGapMax, tmMinMembraneScore, tmTreatTurnAsHelix, tmMinElement, tmMinCrossSpan, tmFullCrossFrac]);
 
   useEffect(() => {
     if (uniprotId) {
@@ -1331,6 +1460,11 @@ export function TransmembraneTopologyDiagram({
                       onChange={e => setTmFullCrossFrac(e.target.value)}
                       className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
                   </label>
+                  <label title="Treat Turn (T) and Bend (S) secondary structures as Alpha Helix (H). This prevents the algorithm from splitting TM crossings on turns/bends." style={{ opacity: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <input type="checkbox" checked={tmTreatTurnAsHelix}
+                      onChange={e => setTmTreatTurnAsHelix(e.target.checked)} />
+                    Treat Turn/Bend as Helix
+                  </label>
                   <div style={{ gridColumn: '1 / -1', marginTop: 4, opacity: 0.65, fontSize: '0.9em' }}>
                     Empty fields use the backend defaults (shown greyed, as last used by the server).
                     Defaults are literature-derived (Kyte–Doolittle 1982; Mitra 2004; OPM/PDBTM).
@@ -1395,6 +1529,25 @@ export function TransmembraneTopologyDiagram({
 
           {activeTab === 'effects' && (
             <div className="tm-effects-section" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>TM Helix Style</span>
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '4px' }}>
+                  {[
+                    { id: 'cylinder', label: 'Cylinder' },
+                    { id: 'ribbon', label: 'Ribbon' },
+                    { id: 'wire', label: 'Wire / Trace' },
+                    { id: 'flat', label: 'Flat Block' },
+                    { id: 'beads', label: 'Beads' },
+                  ].map((style) => (
+                    <label key={style.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: isPub ? '#334155' : '#cbd5e1', cursor: 'pointer' }}>
+                      <input type="radio" name="visualStyle" checked={visualStyle === style.id} onChange={() => setVisualStyle(style.id as any)} />
+                      {style.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
                   <span>Hover Brightness</span>
@@ -1914,40 +2067,97 @@ export function TransmembraneTopologyDiagram({
                 >
                   {isAlpha ? (
                     <>
-                      <rect
-                        x="0"
-                        y="6"
-                        width={helixWidth}
-                        height={Math.max(0, cylHeight - 12)}
-                        fill={`url(#cyl-${h.id})`}
-                        className="cylinder-body"
-                      />
-                      <ellipse
-                        cx={cx}
-                        cy={cylHeight - 6}
-                        rx={helixWidth / 2}
-                        ry="6"
-                        fill={darken(baseColor, 0.28)}
-                      />
-                      <ellipse
-                        cx={cx}
-                        cy="6"
-                        rx={helixWidth / 2}
-                        ry="6"
-                        fill={lighten(baseColor, 0.28)}
-                        stroke={darken(baseColor, 0.25)}
-                        strokeWidth="0.8"
-                      />
-                      <rect
-                        x="0"
-                        y="6"
-                        width={helixWidth}
-                        height={Math.max(0, cylHeight - 12)}
-                        fill="none"
-                        stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
-                        strokeWidth={isSelected ? 2.5 : h.uncertain ? 1.6 : 0.8}
-                        strokeDasharray={h.uncertain ? '5 3' : undefined}
-                      />
+                      {/* Base dashed line that shows through gaps */}
+                      {h.observedSpans && h.observedSpans.length > 1 && (
+                        <line x1={cx} y1={6} x2={cx} y2={cylHeight - 6} stroke={darken(baseColor, 0.3)} strokeWidth={2} strokeDasharray="4 4" />
+                      )}
+                      
+                      {h.observedSpans && h.observedSpans.length > 1 ? (
+                        h.observedSpans.map((span, idx) => {
+                          const nAtBottom = pos.nEndY > pos.cEndY;
+                          const fStart = (span.start - h.startRes) / Math.max(1, h.endRes - h.startRes);
+                          const fEnd = (span.end - h.startRes) / Math.max(1, h.endRes - h.startRes);
+                          
+                          let yStart = nAtBottom ? (1 - fStart) * cylHeight : fStart * cylHeight;
+                          let yEnd = nAtBottom ? (1 - fEnd) * cylHeight : fEnd * cylHeight;
+                          if (yStart > yEnd) { const t = yStart; yStart = yEnd; yEnd = t; }
+                          
+                          yStart = Math.max(6, yStart);
+                          yEnd = Math.min(cylHeight - 6, yEnd);
+                          const hSpan = Math.max(0, yEnd - yStart);
+                          
+                          if (hSpan === 0) return null;
+                          
+                          const renderSpan = () => {
+                            if (visualStyle === 'ribbon') return renderRibbon(helixWidth, hSpan, baseColor, h.id, yStart);
+                            if (visualStyle === 'wire') return <line x1={cx} y1={yStart} x2={cx} y2={yStart + hSpan} stroke={baseColor} strokeWidth={6} strokeLinecap="round" />;
+                            if (visualStyle === 'flat') return <rect x="0" y={yStart} width={helixWidth} height={hSpan} fill={baseColor} stroke={darken(baseColor, 0.4)} strokeWidth={2} rx={2} />;
+                            if (visualStyle === 'beads') {
+                              const nRes = span.end - span.start + 1;
+                              const beads = [];
+                              const dy = hSpan / Math.max(1, nRes);
+                              for (let j = 0; j < nRes; j++) {
+                                beads.push(<circle key={j} cx={cx} cy={yStart + dy * (j + 0.5)} r={Math.min(helixWidth * 0.45, dy * 0.45)} fill={baseColor} stroke={darken(baseColor, 0.4)} strokeWidth={1.2} />);
+                              }
+                              return <>{beads}</>;
+                            }
+                            // Default: Cylinder
+                            return (
+                              <>
+                                <rect x="0" y={yStart} width={helixWidth} height={hSpan} fill={`url(#cyl-${h.id})`} className="cylinder-body" />
+                                <rect x="0" y={yStart} width={helixWidth} height={hSpan} fill="none" stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)} strokeWidth={isSelected ? 2.5 : h.uncertain ? 1.6 : 0.8} strokeDasharray={h.uncertain ? '5 3' : undefined} />
+                              </>
+                            );
+                          };
+                          
+                          return <React.Fragment key={`span-${idx}`}>{renderSpan()}</React.Fragment>;
+                        })
+                      ) : (
+                        (() => {
+                          const hSpanFull = Math.max(0, cylHeight - 12);
+                          const yStartFull = 6;
+                          if (visualStyle === 'ribbon') return renderRibbon(helixWidth, hSpanFull, baseColor, h.id, yStartFull);
+                          if (visualStyle === 'wire') return <line x1={cx} y1={yStartFull} x2={cx} y2={yStartFull + hSpanFull} stroke={baseColor} strokeWidth={6} strokeLinecap="round" />;
+                          if (visualStyle === 'flat') return <rect x="0" y={yStartFull} width={helixWidth} height={hSpanFull} fill={baseColor} stroke={darken(baseColor, 0.4)} strokeWidth={2} rx={2} />;
+                          if (visualStyle === 'beads') {
+                            const nRes = h.endRes - h.startRes + 1;
+                            const beads = [];
+                            const dy = hSpanFull / Math.max(1, nRes);
+                            for (let j = 0; j < nRes; j++) {
+                              beads.push(<circle key={j} cx={cx} cy={yStartFull + dy * (j + 0.5)} r={Math.min(helixWidth * 0.45, dy * 0.45)} fill={baseColor} stroke={darken(baseColor, 0.4)} strokeWidth={1.2} />);
+                            }
+                            return <>{beads}</>;
+                          }
+                          // Default Cylinder
+                          return (
+                            <>
+                              <rect x="0" y="6" width={helixWidth} height={hSpanFull} fill={`url(#cyl-${h.id})`} className="cylinder-body" />
+                              <rect x="0" y="6" width={helixWidth} height={hSpanFull} fill="none" stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)} strokeWidth={isSelected ? 2.5 : h.uncertain ? 1.6 : 0.8} strokeDasharray={h.uncertain ? '5 3' : undefined} />
+                            </>
+                          );
+                        })()
+                      )}
+                      
+                      {visualStyle === 'cylinder' && (
+                        <>
+                          <ellipse
+                            cx={cx}
+                            cy={cylHeight - 6}
+                            rx={helixWidth / 2}
+                            ry="6"
+                            fill={darken(baseColor, 0.28)}
+                          />
+                          <ellipse
+                            cx={cx}
+                            cy="6"
+                            rx={helixWidth / 2}
+                            ry="6"
+                            fill={lighten(baseColor, 0.28)}
+                            stroke={darken(baseColor, 0.25)}
+                            strokeWidth="0.8"
+                          />
+                        </>
+                      )}
                     </>
                   ) : (
                     <path

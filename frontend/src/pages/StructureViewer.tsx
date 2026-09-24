@@ -9,9 +9,8 @@ import { useProtein } from '../contexts/ProteinContext';
 import { Header } from '../components/layout/Header';
 
 export function StructureViewer() {
-  const { protein, chainId, setChainId, selectedResidue, setSelectedResidue, status, setStatus, health } = useProtein();
+  const { protein, chainId, setChainId, selectedResidue, setSelectedResidue, status, setStatus, health, chainAnalysis, setChainAnalysis } = useProtein();
   const [sequenceOpen, setSequenceOpen] = useState(false);
-  const [analysis, setAnalysis] = useState<ChainAnalysis | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
   const chain = protein?.models[0]?.chains.find((item) => item.id === chainId) ?? protein?.models[0]?.chains[0];
@@ -25,7 +24,7 @@ export function StructureViewer() {
     }
     setAnalysisLoading(true);
     try {
-      setAnalysis(await analyzeChain(protein.filename, chain.id));
+      setChainAnalysis(await analyzeChain(protein.filename, chain.id));
       setStatus(`Analysis complete for chain ${chain.id}`);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Analysis failed');
@@ -49,7 +48,7 @@ export function StructureViewer() {
 
       <section className="spread-section panel">
         <div className="panel-heading"><div><span className="section-kicker">EXPANDED ARCHITECTURE</span><h2>Spread protein map</h2><p className="panel-subtitle">Compounds are separated into readable lanes while the external ribbons preserve their assembly relationships.</p></div></div>
-        <ExpandedProteinMap chains={chains} selectedChain={chain?.id} onSelectChain={(nextChain) => { setChainId(nextChain); setSelectedResidue(null); setAnalysis(null); }} />
+        <ExpandedProteinMap chains={chains} selectedChain={chain?.id} onSelectChain={(nextChain) => { setChainId(nextChain); setSelectedResidue(null); setChainAnalysis(null); }} />
       </section>
 
       <section className="focused-workspace panel">
@@ -76,7 +75,7 @@ export function StructureViewer() {
         </div>
       </section>
 
-      <section className="analysis-section panel"><AnalysisPanel analysis={analysis} loading={analysisLoading} onRun={runChainAnalysis} /></section>
+      <section className="analysis-section panel"><AnalysisPanel analysis={chainAnalysis} loading={analysisLoading} onRun={runChainAnalysis} /></section>
 
       <footer className="status-bar"><span><b className="status-dot" />{status}</span><span>{health}</span><span>{selectedResidue ? `Selected residue ${chain?.id}:${selectedResidue}` : 'No residue selected'}</span></footer>
     </main>

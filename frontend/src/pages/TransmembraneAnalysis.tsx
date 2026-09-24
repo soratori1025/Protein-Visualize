@@ -10,14 +10,12 @@ import { Header } from '../components/layout/Header';
 type Method = 'DSSP' | 'STRIDE';
 
 export function TransmembraneAnalysis() {
-  const { protein, chainId, setChainId, selectedResidue, setSelectedResidue, status, setStatus, health } = useProtein();
+  const { protein, chainId, setChainId, selectedResidue, setSelectedResidue, status, setStatus, health, secondaryResult, setSecondaryResult, activeTopologyData, setActiveTopologyData } = useProtein();
   const [method, setMethod] = useState<Method>('DSSP');
   const [secondaryCapabilities, setSecondaryCapabilities] = useState<Record<string, { available: boolean; executable: string }>>({});
-  const [secondaryResult, setSecondaryResult] = useState<SecondaryStructureResult | null>(null);
   const [secondaryError, setSecondaryError] = useState<string | null>(null);
   const [tmAlgorithm, setTmAlgorithm] = useState<string>('3d_slab_geom');
   const [topologySource, setTopologySource] = useState<'uniprot' | 'calculated'>('uniprot');
-  const [activeTopologyData, setActiveTopologyData] = useState<UniProtTopologyData | null>(null);
   const [triggerTmRecalc, setTriggerTmRecalc] = useState(0);
   
   const chain = useMemo(() => protein?.models[0]?.chains.find((item) => item.id === chainId) ?? protein?.models[0]?.chains[0], [protein, chainId]);

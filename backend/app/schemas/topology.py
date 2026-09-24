@@ -22,6 +22,7 @@ class TMParams:
     min_cross_span_frac: float = MIN_CROSS_SPAN_FRAC
     full_cross_frac: float = FULL_CROSS_FRAC
     broken_gap_max: int = BROKEN_GAP_MAX
+    treat_turn_as_helix: bool = False
 
     def to_response_dict(self) -> dict:
         return {
@@ -31,6 +32,7 @@ class TMParams:
             "full_cross_frac": self.full_cross_frac,
             "broken_gap_max": self.broken_gap_max,
             "min_membrane_score": self.min_membrane_score,
+            "treat_turn_as_helix": self.treat_turn_as_helix,
         }
 
 

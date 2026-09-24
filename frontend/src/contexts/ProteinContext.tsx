@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { uploadStructure, getHealth } from '../services/api';
 import type { ProteinUpload } from '../types/protein';
+import type { SecondaryStructureResult, UniProtTopologyData } from '../types/secondaryStructure';
+import type { ChainAnalysis } from '../types/analysis';
 
 interface ProteinContextType {
   protein: ProteinUpload | null;
@@ -14,6 +16,13 @@ interface ProteinContextType {
   isUploading: boolean;
   handleUpload: (file: File) => Promise<void>;
   checkHealth: () => Promise<void>;
+  
+  secondaryResult: SecondaryStructureResult | null;
+  setSecondaryResult: (res: SecondaryStructureResult | null) => void;
+  activeTopologyData: UniProtTopologyData | null;
+  setActiveTopologyData: (data: UniProtTopologyData | null) => void;
+  chainAnalysis: ChainAnalysis | null;
+  setChainAnalysis: (data: ChainAnalysis | null) => void;
 }
 
 const ProteinContext = createContext<ProteinContextType | undefined>(undefined);
@@ -25,6 +34,10 @@ export function ProteinProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState('Ready for a structure file');
   const [health, setHealth] = useState('API status unknown');
   const [isUploading, setIsUploading] = useState(false);
+  
+  const [secondaryResult, setSecondaryResult] = useState<SecondaryStructureResult | null>(null);
+  const [activeTopologyData, setActiveTopologyData] = useState<UniProtTopologyData | null>(null);
+  const [chainAnalysis, setChainAnalysis] = useState<ChainAnalysis | null>(null);
 
   const checkHealth = async () => {
     try {
@@ -35,8 +48,22 @@ export function ProteinProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Restore protein from cache on initial load
   useEffect(() => {
     void checkHealth();
+    
+    const cachedProtein = localStorage.getItem('protein-cache');
+    if (cachedProtein) {
+      try {
+        const parsed = JSON.parse(cachedProtein) as ProteinUpload;
+        setProtein(parsed);
+        setChainId(parsed.models[0]?.chains[0]?.id ?? null);
+        setStatus(`Restored ${parsed.filename} from cache`);
+      } catch (e) {
+        console.error('Failed to parse cached protein:', e);
+        localStorage.removeItem('protein-cache');
+      }
+    }
   }, []);
 
   const handleUpload = async (file: File) => {
@@ -47,7 +74,16 @@ export function ProteinProvider({ children }: { children: React.ReactNode }) {
       setProtein(result);
       setChainId(result.models[0]?.chains[0]?.id ?? null);
       setSelectedResidue(null);
+      setSecondaryResult(null);
+      setActiveTopologyData(null);
+      setChainAnalysis(null);
       setStatus(`${file.name} loaded`);
+      
+      try {
+        localStorage.setItem('protein-cache', JSON.stringify(result));
+      } catch (e) {
+        console.warn('Protein too large to cache in localStorage');
+      }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Upload failed');
     } finally {
@@ -69,6 +105,12 @@ export function ProteinProvider({ children }: { children: React.ReactNode }) {
         isUploading,
         handleUpload,
         checkHealth,
+        secondaryResult,
+        setSecondaryResult,
+        activeTopologyData,
+        setActiveTopologyData,
+        chainAnalysis,
+        setChainAnalysis,
       }}
     >
       {children}

@@ -69,7 +69,7 @@ from app.schemas.topology import (
 )
 from app.services.topology import labels as L
 from app.services.topology.consensus import (
-    TM_IN, build_consensus_map, drop_short_fragments, join_kinks, tm_in_runs,
+    TM_IN, build_consensus_map, drop_short_fragments, join_kinks, tm_in_runs, ConsensusEntry
 )
 from app.services.topology.membrane import EDGE_WIDTH, MembraneFrame, build_membrane
 from app.services.topology.transitions import (
@@ -146,6 +146,10 @@ class TopologyOrchestrator:
 
         # 2. SS block and membrane geometry, on the same frame
         coarse, raw_ss, ss_name, ss_warns = self._ss_on_frame(file_path, frame)
+        if coarse is not None and raw_ss is not None and getattr(params, 'treat_turn_as_helix', False):
+            # Treat Turn (T) and Bend (S) as Helix (H)
+            raw_ss = ["H" if c in ("T", "S") else c for c in raw_ss]
+            coarse = [L.coarse_ss(c) for c in raw_ss]
         warns.extend(ss_warns)
         membrane = build_membrane(frame, segments, params.membrane_thickness / 2.0)
         if membrane is None:
@@ -510,6 +514,26 @@ class TopologyOrchestrator:
         otherwise) -> response rows + notes."""
         cmap, skipped = build_consensus_map(base, raw_ss, sides=labels, tm_segments=segments,
                                             strand_segments=strand)
+        
+        # User condition: if a TM_in run has only 1 residue, merge it with the nearest TM_E/TM_C
+        runs_dict = tm_in_runs(cmap, len(frame))
+        for _, r_list in runs_dict.items():
+            for (start, end) in r_list:
+                if start == end:
+                    i = start
+                    closest_side = None
+                    min_dist = float('inf')
+                    for j, lab in enumerate(labels):
+                        if lab in (L.CYTO, L.EXTRA):
+                            dist = abs(i - j)
+                            if dist < min_dist:
+                                min_dist = dist
+                                closest_side = lab
+                    if closest_side == L.CYTO:
+                        cmap[i] = ConsensusEntry("TM_C", cmap[i].ss_raw, None)
+                    elif closest_side == L.EXTRA:
+                        cmap[i] = ConsensusEntry("TM_E", cmap[i].ss_raw, None)
+
         rows = []
         for i in sorted(cmap):
             entry, res = cmap[i], frame.residues[i]
@@ -517,7 +541,7 @@ class TopologyOrchestrator:
                 index=i, residue_number=res.resseq, insertion_code=res.icode or None, aa=res.one,
                 label=entry.label, ss_raw=entry.ss_raw,
                 tm_segment=entry.tm_segment + 1 if entry.tm_segment is not None else None,
-                crossing=groups[i] + 1 if entry.label == TM_IN and groups[i] >= 0 else None,
+                crossing=groups[i] + 1 if entry.label == "TM_in" and groups[i] >= 0 else None,
             ))
         notes = []
         if skipped:
