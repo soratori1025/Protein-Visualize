@@ -1,5 +1,6 @@
 import type { Chain } from '../../types/protein';
 import type { SecondaryStructureResult } from '../../types/secondaryStructure';
+import { residueLabel } from '../../types/secondaryStructure';
 
 export interface SSElement {
   id: string;
@@ -8,6 +9,10 @@ export interface SSElement {
   label: string;
   startRes: number;
   endRes: number;
+  /** "100A"-style labels (insertion codes kept). */
+  startLabel: string;
+  endLabel: string;
+  /** Number of assigned residues in the element (not end - start + 1). */
   length: number;
 }
 
@@ -18,120 +23,75 @@ interface Props {
   onSelectChain: (chainId: string) => void;
 }
 
+/**
+ * Group consecutive residues of one chain into helix / strand / coil elements.
+ *
+ * A new element starts whenever the class changes OR the residue numbering jumps
+ * (unresolved residues): residues on both sides of a gap are not covalently
+ * connected, so helix 10–30 and helix 41–60 around a missing loop are two helices,
+ * not one 10–60 helix. With no assignment the result is empty — nothing is invented.
+ */
 export function extractSSElements(
   chainId: string,
-  chainResiduesCount: number,
+  _chainResiduesCount: number,
   secondaryResult?: SecondaryStructureResult | null
 ): SSElement[] {
   const chainResidues = secondaryResult?.residues?.filter((r) => r.chain_id === chainId) ?? [];
+  if (!chainResidues.length) return [];
 
-  if (!chainResidues.length) {
-    const elements: SSElement[] = [];
-    let current = 1;
-    let helixIdx = 1;
-    let strandIdx = 1;
-
-    while (current <= chainResiduesCount) {
-      const loopLen = Math.min(8, chainResiduesCount - current + 1);
-      if (loopLen > 0) {
-        elements.push({
-          id: `loop-${current}`,
-          type: 'coil',
-          code: 'C',
-          label: 'Loop',
-          startRes: current,
-          endRes: current + loopLen - 1,
-          length: loopLen,
-        });
-        current += loopLen;
-      }
-      if (current > chainResiduesCount) break;
-
-      const isHelix = elements.length % 4 !== 3;
-      if (isHelix) {
-        const hLen = Math.min(20, chainResiduesCount - current + 1);
-        if (hLen >= 4) {
-          elements.push({
-            id: `helix-${current}`,
-            type: 'helix',
-            code: 'H',
-            label: `α${helixIdx++}`,
-            startRes: current,
-            endRes: current + hLen - 1,
-            length: hLen,
-          });
-          current += hLen;
-        }
-      } else {
-        const sLen = Math.min(8, chainResiduesCount - current + 1);
-        if (sLen >= 3) {
-          elements.push({
-            id: `strand-${current}`,
-            type: 'strand',
-            code: 'E',
-            label: `β${strandIdx++}`,
-            startRes: current,
-            endRes: current + sLen - 1,
-            length: sLen,
-          });
-          current += sLen;
-        }
-      }
-    }
-    return elements;
-  }
-
+  type Group = {
+    type: 'helix' | 'strand' | 'coil';
+    code: string;
+    start: number;
+    startIcode: string;
+    end: number;
+    endIcode: string;
+    count: number;
+  };
   const elements: SSElement[] = [];
-  let currentGroup: { type: 'helix' | 'strand' | 'coil'; code: string; start: number; end: number } | null = null;
+  let current: Group | null = null;
   let helixCount = 1;
   let strandCount = 1;
 
+  const flush = (g: Group) => {
+    let label = 'Loop';
+    if (g.type === 'helix') label = `α${helixCount++}`;
+    else if (g.type === 'strand') label = `β${strandCount++}`;
+    elements.push({
+      id: `${g.type}-${residueLabel(g.start, g.startIcode)}`,
+      type: g.type,
+      code: g.code,
+      label,
+      startRes: g.start,
+      endRes: g.end,
+      startLabel: residueLabel(g.start, g.startIcode),
+      endLabel: residueLabel(g.end, g.endIcode),
+      length: g.count,
+    });
+  };
+
   for (const res of chainResidues) {
-    const code = res.code.toUpperCase();
-    let type: 'helix' | 'strand' | 'coil' = 'coil';
+    const code = (res.code ?? '').toUpperCase();
+    let type: Group['type'] = 'coil';
     if (['H', 'G', 'I'].includes(code)) type = 'helix';
     else if (['E', 'B'].includes(code)) type = 'strand';
+    const icode = res.insertion_code ?? '';
 
-    if (!currentGroup) {
-      currentGroup = { type, code, start: res.residue_number, end: res.residue_number };
-    } else if (currentGroup.type === type) {
-      currentGroup.end = res.residue_number;
+    // same number (insertion code) or +1 = contiguous; anything else is a gap
+    const contiguous =
+      current !== null &&
+      (res.residue_number === current.end || res.residue_number === current.end + 1);
+
+    if (current && current.type === type && contiguous) {
+      current.end = res.residue_number;
+      current.endIcode = icode;
+      current.count += 1;
     } else {
-      const len = currentGroup.end - currentGroup.start + 1;
-      let label = 'Loop';
-      if (currentGroup.type === 'helix') label = `α${helixCount++}`;
-      else if (currentGroup.type === 'strand') label = `β${strandCount++}`;
-
-      elements.push({
-        id: `${currentGroup.type}-${currentGroup.start}`,
-        type: currentGroup.type,
-        code: currentGroup.code,
-        label,
-        startRes: currentGroup.start,
-        endRes: currentGroup.end,
-        length: len,
-      });
-      currentGroup = { type, code, start: res.residue_number, end: res.residue_number };
+      if (current) flush(current);
+      current = { type, code, start: res.residue_number, startIcode: icode, end: res.residue_number, endIcode: icode, count: 1 };
     }
   }
-
-  if (currentGroup) {
-    const len = currentGroup.end - currentGroup.start + 1;
-    let label = 'Loop';
-    if (currentGroup.type === 'helix') label = `α${helixCount++}`;
-    else if (currentGroup.type === 'strand') label = `β${strandCount++}`;
-
-    elements.push({
-      id: `${currentGroup.type}-${currentGroup.start}`,
-      type: currentGroup.type,
-      code: currentGroup.code,
-      label,
-      startRes: currentGroup.start,
-      endRes: currentGroup.end,
-      length: len,
-    });
-  }
-
+  if (current) flush(current);
   return elements;
 }
 
@@ -180,12 +140,17 @@ export function ExpandedProteinMap({ chains, selectedChain, secondaryResult, onS
               <line className="inner-strip" x1={x + 18} y1="96" x2={x + laneWidth - 18} y2="96" />
 
               <g transform={`translate(${x + 12}, 106)`}>
+                {elements.length === 0 && (
+                  <text className="sse-more-text" x={(laneWidth - 24) / 2} y={20} textAnchor="middle">
+                    Run DSSP / STRIDE
+                  </text>
+                )}
                 {displayedElements.map((elem, idx) => {
                   const elemY = idx * 20;
                   const color = typeColors[elem.type];
                   return (
                     <g key={elem.id} className="sse-block-group">
-                      <title>{`${elem.label} (${elem.startRes}-${elem.endRes}): ${elem.length} residues`}</title>
+                      <title>{`${elem.label} (${elem.startLabel}-${elem.endLabel}): ${elem.length} residues`}</title>
                       {elem.type === 'helix' ? (
                         <rect className="sse-helix" x="0" y={elemY} width={laneWidth - 24} height="15" rx="7.5" fill={color} />
                       ) : elem.type === 'strand' ? (
@@ -195,7 +160,7 @@ export function ExpandedProteinMap({ chains, selectedChain, secondaryResult, onS
                       )}
                       {elem.type !== 'coil' && (
                         <text className="sse-block-text" x={(laneWidth - 24) / 2} y={elemY + 11} textAnchor="middle">
-                          {elem.label} ({elem.startRes}-{elem.endRes})
+                          {elem.label} ({elem.startLabel}-{elem.endLabel})
                         </text>
                       )}
                     </g>

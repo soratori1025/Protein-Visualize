@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ProteinViewer } from '../components/viewer/ProteinViewer';
 import { SequenceView } from '../components/sequence/SequenceView';
-import { ExpandedProteinMap } from '../components/topology/ExpandedProteinMap';
+import { ExpandedProteinMap } from '../components/structure/ExpandedProteinMap';
 import { AnalysisPanel } from '../components/analysis/AnalysisPanel';
 import { analyzeChain } from '../services/api';
 import type { ChainAnalysis } from '../types/analysis';
