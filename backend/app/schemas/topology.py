@@ -89,7 +89,7 @@ class ConsensusResidue(BaseModel):
     residue_number: int
     insertion_code: Optional[str] = None
     aa: str
-    label: str                          # TM_in | TM_C (cytoplasmic side) | TM_E (extracellular side)
+    label: str                          # TM_in | TM_C | TM_E | Turn_in | Turn_C | Turn_E
     ss_raw: str                         # DSSP/STRIDE code (H, G, I, or E)
     tm_segment: Optional[int] = None    # TM_in: 1-based TM segment of the TM block (UniProt TM feature)
     crossing: Optional[int] = None      # TM_in: 1-based crossing it is drawn in (None = not drawn)

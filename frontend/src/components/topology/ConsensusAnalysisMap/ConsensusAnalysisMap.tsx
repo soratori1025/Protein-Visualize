@@ -3,19 +3,27 @@ import { ConsensusResidue } from '../../../types/secondaryStructure';
 import { ProteinViewer } from '../../viewer/ProteinViewer';
 import { useProtein } from '../../../contexts/ProteinContext';
 import './ConsensusAnalysisMap.css';
-import './ConsensusAnalysisMap.css';
 
 const labelColors: Record<string, string> = {
-  TM_E: '#ff9f43', // Extracellular (Orange)
-  TM_in: '#00d2d3', // Membrane (Teal)
-  TM_C: '#5f27cd', // Cytoplasmic (Purple)
+  TM_E: '#ff9f43',   // Extracellular (Orange)
+  TM_in: '#00d2d3',  // Membrane (Teal)
+  TM_C: '#5f27cd',   // Cytoplasmic (Purple)
+  Turn_E: '#ff6b6b', // Turn Extracellular (Coral)
+  Turn_in: '#f368e0', // Turn Membrane (Pink)
+  Turn_C: '#c44569', // Turn Cytoplasmic (Magenta)
 };
 
 const labelY: Record<string, number> = {
   TM_E: 40,
   TM_in: 140,
   TM_C: 240,
+  Turn_E: 40,
+  Turn_in: 140,
+  Turn_C: 240,
 };
+
+// Turn labels use a diamond shape to visually distinguish from TM helix squares
+const TURN_LABELS = new Set(['Turn_in', 'Turn_E', 'Turn_C']);
 
 interface ConsensusAnalysisMapProps {
   consensusMap: ConsensusResidue[];
@@ -73,7 +81,7 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
       <div className="consensus-map-header">
         <h3 className="consensus-map-title">Consensus Merge Analysis</h3>
         <p className="consensus-map-subtitle">
-          Complete topology including extra-membrane helices (TM_C, TM_E) and intra-membrane (TM_in).
+          Complete topology including extra-membrane helices (TM_C, TM_E), intra-membrane (TM_in), and supported Turn/Bend residues (Turn_C, Turn_E, Turn_in).
           Showing exactly <b>{consensusMap.length} residues</b> as distinct nodes.
         </p>
       </div>
@@ -122,6 +130,8 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
             {nodes.map((node, i) => {
               const isHovered = hoveredRes === node;
               const color = labelColors[node.label] || '#94a3b8';
+              const isTurn = TURN_LABELS.has(node.label);
+              const isTopRow = node.label === 'TM_E' || node.label === 'Turn_E';
               return (
                 <g 
                   key={`node-${i}`} 
@@ -130,16 +140,28 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
                   onMouseLeave={() => setHoveredRes(null)}
                   style={{ cursor: 'crosshair' }}
                 >
-                  <rect
-                    x="-12"
-                    y="-12"
-                    width="24"
-                    height="24"
-                    rx="4"
-                    fill={color}
-                    stroke={isHovered ? '#ffffff' : color}
-                    strokeWidth={isHovered ? 2 : 0}
-                  />
+                  {isTurn ? (
+                    /* Diamond shape for Turn residues */
+                    <polygon
+                      points="0,-14 14,0 0,14 -14,0"
+                      fill={color}
+                      stroke={isHovered ? '#ffffff' : color}
+                      strokeWidth={isHovered ? 2 : 0}
+                      opacity={0.9}
+                    />
+                  ) : (
+                    /* Rounded square for TM helix residues */
+                    <rect
+                      x="-12"
+                      y="-12"
+                      width="24"
+                      height="24"
+                      rx="4"
+                      fill={color}
+                      stroke={isHovered ? '#ffffff' : color}
+                      strokeWidth={isHovered ? 2 : 0}
+                    />
+                  )}
                   <text
                     x="0"
                     y="4"
@@ -156,7 +178,7 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
                   {(isHovered || i === 0 || i === nodes.length - 1 || node.index % 10 === 0) && (
                     <text
                       x="0"
-                      y={node.label === 'TM_E' ? -18 : 26}
+                      y={isTopRow ? -18 : 26}
                       fill={isHovered ? '#f8fafc' : '#94a3b8'}
                       fontSize="10"
                       fontWeight={isHovered ? 'bold' : 'normal'}
@@ -174,7 +196,8 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
 
         {/* Legend & Inspector */}
         <div style={{ padding: '16px', display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', borderTop: '1px solid #1e293b' }}>
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            {/* TM Helix labels */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: labelColors.TM_E }} />
               <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Extracellular (TM_E)</span>
@@ -186,6 +209,19 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: labelColors.TM_C }} />
               <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Cytoplasmic (TM_C)</span>
+            </div>
+            {/* Turn labels — diamond swatch */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 12,6 6,12 0,6" fill={labelColors.Turn_E} /></svg>
+              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Turn Extra (Turn_E)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 12,6 6,12 0,6" fill={labelColors.Turn_in} /></svg>
+              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Turn Membrane (Turn_in)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 12,6 6,12 0,6" fill={labelColors.Turn_C} /></svg>
+              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Turn Cyto (Turn_C)</span>
             </div>
           </div>
 
@@ -227,7 +263,7 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
           <div className="consensus-map-header" style={{ padding: '16px', borderBottom: '1px solid #1e293b' }}>
             <h3 className="consensus-map-title">3D Consensus Validation</h3>
             <p className="consensus-map-subtitle">
-              Verify the structural separation of Extracellular, Intramembrane, and Cytoplasmic segments in 3D space.
+              Verify the structural separation of Extracellular, Intramembrane, Cytoplasmic segments, and Turn/Bend residues in 3D space.
             </p>
           </div>
           <div style={{ height: '400px', position: 'relative' }}>

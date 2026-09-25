@@ -37,6 +37,11 @@ TM_IN = "TM_in"
 TM_C = "TM_C"
 TM_E = "TM_E"
 
+# Turn labels: Turn/Bend residues adjacent to alpha helices (see orchestrator treat_turn_as_helix).
+TURN_IN = "Turn_in"
+TURN_C = "Turn_C"
+TURN_E = "Turn_E"
+
 # DSSP/STRIDE helix codes. H = alpha, G = 3-10, I = pi. G and I are kept on purpose:
 # TM helices often end in a 3-10 turn and carry pi-bulges in the middle, and DSSP >= 2.1
 # gives pi priority over alpha, so an H-only rule would cut a normal TM helix in two
@@ -82,6 +87,7 @@ def build_consensus_map(tm_labels: Sequence[str], ss_codes: Sequence[Optional[st
                         tm_segments: Optional[Sequence[tuple[int, int]]] = None,
                         strand_segments: frozenset[int] = frozenset(),
                         helix_codes: frozenset[str] = HELIX_CODES,
+                        turn_indices: Optional[frozenset[int]] = None,
                         ) -> tuple[dict[int, ConsensusEntry], Counter]:
     """The residue loop. Returns ({position: entry}, counts of skipped cases).
 
@@ -91,6 +97,8 @@ def build_consensus_map(tm_labels: Sequence[str], ss_codes: Sequence[Optional[st
                 default: the side written in tm_labels (UniProt topological domain)
     tm_segments (start, end) of each TM segment of the TM block (keeps touching TMs apart)
     strand_segments  TM segments that are beta strands (barrels): flag_ss uses E there
+    turn_indices  positions that are Turn/Bend residues promoted by treat_turn_as_helix;
+                  these use Turn_in/Turn_C/Turn_E labels instead of TM_in/TM_C/TM_E
     """
     n = len(tm_labels)
     if len(ss_codes) != n:
@@ -99,6 +107,7 @@ def build_consensus_map(tm_labels: Sequence[str], ss_codes: Sequence[Optional[st
     if sides is not None and len(sides) != n:
         raise IndexMismatchError(f"side array has {len(sides)} residues, expected {n}")
     seg = segment_ids(n, tm_labels, tm_segments)
+    _turn = turn_indices or frozenset()
 
     cmap: dict[int, ConsensusEntry] = {}
     skipped: Counter = Counter()
@@ -108,14 +117,15 @@ def build_consensus_map(tm_labels: Sequence[str], ss_codes: Sequence[Optional[st
         accepted = STRAND_CODES if flag_tm and seg[i] in strand_segments else helix_codes
         if code is None or code not in accepted:
             continue                                   # not a helix: not in the map
+        is_turn = i in _turn
         if flag_tm:
-            cmap[i] = ConsensusEntry(TM_IN, code, seg[i])
+            cmap[i] = ConsensusEntry(TURN_IN if is_turn else TM_IN, code, seg[i])
             continue
         side = _side(sides[i] if sides is not None else tm_labels[i])
         if side == L.CYTO:
-            cmap[i] = ConsensusEntry(TM_C, code, None)
+            cmap[i] = ConsensusEntry(TURN_C if is_turn else TM_C, code, None)
         elif side == L.EXTRA:
-            cmap[i] = ConsensusEntry(TM_E, code, None)
+            cmap[i] = ConsensusEntry(TURN_E if is_turn else TM_E, code, None)
         else:
             # helix outside the TM band whose side is unknown: Intramembrane (re-entrant
             # half helix, pore helix), Signal peptide, or no topology information

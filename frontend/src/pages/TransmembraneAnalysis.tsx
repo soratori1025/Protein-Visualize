@@ -17,6 +17,7 @@ export function TransmembraneAnalysis() {
   const [tmAlgorithm, setTmAlgorithm] = useState<string>('3d_slab_geom');
   const [topologySource, setTopologySource] = useState<'uniprot' | 'calculated'>('uniprot');
   const [triggerTmRecalc, setTriggerTmRecalc] = useState(0);
+  const [distinguishTurns, setDistinguishTurns] = useState(false);
   
   const chain = useMemo(() => protein?.models[0]?.chains.find((item) => item.id === chainId) ?? protein?.models[0]?.chains[0], [protein, chainId]);
   const chains = protein?.models[0]?.chains ?? [];
@@ -146,6 +147,7 @@ export function TransmembraneAnalysis() {
         </div>
 
         <div className="panel method-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+
           <button className="run-button" style={{ padding: '16px', fontSize: '16px' }} onClick={runTmAnalysis}>
             Run TM annotation
           </button>
@@ -177,6 +179,7 @@ export function TransmembraneAnalysis() {
           onTopologySourceChange={setTopologySource}
           onTopologyDataChange={setActiveTopologyData}
           triggerTmRecalc={triggerTmRecalc}
+          distinguishTurns={distinguishTurns}
         />
       </section>
 

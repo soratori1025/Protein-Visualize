@@ -96,7 +96,7 @@ export interface ConsensusResidue {
   residue_number: number;
   insertion_code?: string | null;
   aa: string;
-  label: 'TM_in' | 'TM_C' | 'TM_E';
+  label: 'TM_in' | 'TM_C' | 'TM_E' | 'Turn_in' | 'Turn_C' | 'Turn_E';
   ss_raw: string;
   /** TM_in: 1-based TM segment of the TM block (UniProt TM feature). */
   tm_segment?: number | null;
@@ -133,6 +133,7 @@ export interface UniProtTopologyData {
   gene_name: string;
   organism: string;
   regions: UniProtTopologyRegion[];
+  consensus_map?: ConsensusResidue[] | null;
 }
 
 /** Response of /api/secondary-structure/predict-topology/{filename}. */

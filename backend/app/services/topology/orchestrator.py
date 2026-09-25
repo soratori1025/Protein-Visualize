@@ -69,7 +69,7 @@ from app.schemas.topology import (
 )
 from app.services.topology import labels as L
 from app.services.topology.consensus import (
-    TM_IN, build_consensus_map, drop_short_fragments, join_kinks, tm_in_runs, ConsensusEntry
+    TM_IN, TURN_IN, build_consensus_map, drop_short_fragments, join_kinks, tm_in_runs, ConsensusEntry
 )
 from app.services.topology.membrane import EDGE_WIDTH, MembraneFrame, build_membrane
 from app.services.topology.transitions import (
@@ -146,10 +146,46 @@ class TopologyOrchestrator:
 
         # 2. SS block and membrane geometry, on the same frame
         coarse, raw_ss, ss_name, ss_warns = self._ss_on_frame(file_path, frame)
+        turn_indices: frozenset[int] = frozenset()
         if coarse is not None and raw_ss is not None and getattr(params, 'treat_turn_as_helix', False):
-            # Treat Turn (T) and Bend (S) as Helix (H)
-            raw_ss = ["H" if c in ("T", "S") else c for c in raw_ss]
+            # Treat Turn/Bend as Helix with context-aware promotion:
+            #   1) Group consecutive T/S residues into runs.
+            #   2) Check the residue immediately before and after each run.
+            #   3) Both flanks are alpha helix → promote the run to H (true helix).
+            #   4) One flank is alpha helix  → keep as Turn (Turn_in/Turn_C/Turn_E).
+            #   5) Neither flank is helix    → ignore, do not promote.
+            turn_codes = frozenset("TS")
+            helix_check = frozenset("HGI")
+            n_ss = len(raw_ss)
+            new_raw = list(raw_ss)
+            _turn_idx: set[int] = set()
+            i = 0
+            while i < n_ss:
+                if new_raw[i] not in turn_codes:
+                    i += 1
+                    continue
+                # find the end of this consecutive turn run
+                j = i
+                while j < n_ss and new_raw[j] in turn_codes:
+                    j += 1
+                # check flanking residues (immediately before i and after j-1)
+                left_helix = i > 0 and new_raw[i - 1] in helix_check
+                right_helix = j < n_ss and new_raw[j] in helix_check
+                if left_helix and right_helix:
+                    # Both ends are helix → promote Turn to H (true alpha helix)
+                    for k in range(i, j):
+                        new_raw[k] = "H"
+                elif left_helix or right_helix:
+                    # One end is helix → keep as Turn: promote to H for SS processing
+                    # but track the indices so consensus map labels them Turn_*
+                    for k in range(i, j):
+                        new_raw[k] = "H"
+                        _turn_idx.add(k)
+                # else: neither end is helix → leave original code, not promoted
+                i = j
+            raw_ss = new_raw
             coarse = [L.coarse_ss(c) for c in raw_ss]
+            turn_indices = frozenset(_turn_idx)
         warns.extend(ss_warns)
         membrane = build_membrane(frame, segments, params.membrane_thickness / 2.0)
         if membrane is None:
@@ -185,8 +221,9 @@ class TopologyOrchestrator:
                                               frame.coords)
         else:
             spans, c_broken, c_transitions, strand, notes = self._flow_consensus(
-                base, segments, raw_ss, coarse, breaks, frame, membrane, params, ss_name)
-            consensus_parts = (c_broken, c_transitions, strand)
+                base, segments, raw_ss, coarse, breaks, frame, membrane, params, ss_name,
+                turn_indices=turn_indices)
+            consensus_parts = (c_broken, c_transitions, strand, turn_indices)
             warns.extend(notes)
         if not spans:
             return self._response(frame, params, tm_pred,
@@ -196,7 +233,7 @@ class TopologyOrchestrator:
         # 4. paint, sides, loop annotation
         spans = sorted(spans)
         if consensus_parts is not None:     # consensus: parts come from the residue map
-            broken, transitions, _ = consensus_parts
+            broken, transitions, _, _ = consensus_parts
         else:
             broken, transitions = self._find_discontinuities(spans, coarse, breaks, frame,
                                                              membrane, params)
@@ -231,7 +268,8 @@ class TopologyOrchestrator:
         consensus_map = None
         if consensus_parts is not None:
             consensus_map, notes = self._consensus_map_rows(frame, base, raw_ss, labels, groups,
-                                                            segments, consensus_parts[2])
+                                                            segments, consensus_parts[2],
+                                                            turn_indices=consensus_parts[3])
             warns.extend(notes)
         return self._response(frame, params, tm_pred, "Predicted Topology", labeler, regions,
                               warns, membrane=membrane, domain_type=self._domain_type(spans),
@@ -405,7 +443,8 @@ class TopologyOrchestrator:
         return spans
 
     def _flow_consensus(self, base, segments, raw_ss, coarse, breaks, frame: ResidueFrame,
-                        membrane: Optional[MembraneFrame], params: TMParams, ss_name: str):
+                        membrane: Optional[MembraneFrame], params: TMParams, ss_name: str,
+                        turn_indices: frozenset[int] = frozenset()):
         """Consensus = residue map TM block x SS block (consensus.build_consensus_map).
         Crossings are drawn from TM_in residues only.
         Returns (spans, broken parts, transitions, strand segments, notes)."""
@@ -414,7 +453,8 @@ class TopologyOrchestrator:
         # beta-barrel TM segments: flag_ss must look for strands there, not helices
         strand = frozenset(k for k, (s, e) in enumerate(segments)
                            if self._majority(coarse[s:e + 1]) == "E")
-        cmap, _ = build_consensus_map(base, raw_ss, tm_segments=segments, strand_segments=strand)
+        cmap, _ = build_consensus_map(base, raw_ss, tm_segments=segments, strand_segments=strand,
+                                      turn_indices=turn_indices)
         runs = tm_in_runs(cmap, n, breaks)
         is_hairpin = None
         min_cross = 0.0
@@ -509,11 +549,12 @@ class TopologyOrchestrator:
         return spans, broken, transitions, strand, notes
 
     def _consensus_map_rows(self, frame: ResidueFrame, base, raw_ss, labels, groups,
-                            segments, strand):
+                            segments, strand,
+                            turn_indices: frozenset[int] = frozenset()):
         """Final residue map with the resolved sides (UniProt side first, inferred
         otherwise) -> response rows + notes."""
         cmap, skipped = build_consensus_map(base, raw_ss, sides=labels, tm_segments=segments,
-                                            strand_segments=strand)
+                                            strand_segments=strand, turn_indices=turn_indices)
         
         # User condition: if a TM_in run has only 1 residue, merge it with the nearest TM_E/TM_C
         runs_dict = tm_in_runs(cmap, len(frame))
@@ -537,11 +578,13 @@ class TopologyOrchestrator:
         rows = []
         for i in sorted(cmap):
             entry, res = cmap[i], frame.residues[i]
+            # TM_in and Turn_in both get crossing numbers
+            has_crossing = entry.label in (TM_IN, TURN_IN) and groups[i] >= 0
             rows.append(ConsensusResidue(
                 index=i, residue_number=res.resseq, insertion_code=res.icode or None, aa=res.one,
                 label=entry.label, ss_raw=entry.ss_raw,
                 tm_segment=entry.tm_segment + 1 if entry.tm_segment is not None else None,
-                crossing=groups[i] + 1 if entry.label == "TM_in" and groups[i] >= 0 else None,
+                crossing=groups[i] + 1 if has_crossing else None,
             ))
         notes = []
         if skipped:
