@@ -81,6 +81,8 @@ def coarse_ss(code: Optional[str]) -> Optional[str]:
 
 
 def ss_word(coarse: Optional[str]) -> str:
+    if coarse is None:
+        return "Coil"
     return {"H": "Helix", "E": "Strand"}.get(coarse, "Coil")
 
 

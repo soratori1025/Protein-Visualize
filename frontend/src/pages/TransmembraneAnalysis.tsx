@@ -18,6 +18,8 @@ export function TransmembraneAnalysis() {
   const [topologySource, setTopologySource] = useState<'uniprot' | 'calculated'>('uniprot');
   const [triggerTmRecalc, setTriggerTmRecalc] = useState(0);
   const [distinguishTurns, setDistinguishTurns] = useState(false);
+  const [isSSRunning, setIsSSRunning] = useState(false);
+  const [isTMRunning, setIsTMRunning] = useState(false);
   
   const chain = useMemo(() => protein?.models[0]?.chains.find((item) => item.id === chainId) ?? protein?.models[0]?.chains[0], [protein, chainId]);
   const chains = protein?.models[0]?.chains ?? [];
@@ -31,6 +33,7 @@ export function TransmembraneAnalysis() {
       setStatus('Upload a structure before running analysis');
       return;
     }
+    setIsSSRunning(true);
     try {
       const result = await runSecondaryStructure(protein.filename, method);
       setSecondaryResult(result);
@@ -39,6 +42,8 @@ export function TransmembraneAnalysis() {
     } catch (error) {
       setSecondaryError(error instanceof Error ? error.message : 'Secondary-structure analysis failed');
       setStatus(error instanceof Error ? error.message : 'Secondary-structure analysis failed');
+    } finally {
+      setIsSSRunning(false);
     }
   };
 
@@ -57,8 +62,6 @@ export function TransmembraneAnalysis() {
         title="Transmembrane Analysis" 
         subtitle="Inspect secondary structure and transmembrane topology annotations." 
       />
-
-
 
       <section className="lower-grid">
         <div className="panel method-selector-panel">
@@ -92,8 +95,8 @@ export function TransmembraneAnalysis() {
         </div>
 
         <div className="panel method-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <button className="run-button" style={{ padding: '16px', fontSize: '16px' }} onClick={runAnalysis}>
-            Run annotation
+          <button className="run-button" style={{ padding: '16px', fontSize: '16px' }} onClick={runAnalysis} disabled={isSSRunning}>
+            <span>{isSSRunning ? 'Running...' : 'Run SS Analysis'}</span>
           </button>
           {secondaryError && (
             <div className="tool-error">
@@ -148,8 +151,8 @@ export function TransmembraneAnalysis() {
 
         <div className="panel method-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 
-          <button className="run-button" style={{ padding: '16px', fontSize: '16px' }} onClick={runTmAnalysis}>
-            Run TM annotation
+          <button className="run-button" style={{ padding: '16px', fontSize: '16px' }} onClick={runTmAnalysis} disabled={isTMRunning}>
+            <span>{isTMRunning ? 'Running...' : 'Run TM Analysis'}</span>
           </button>
         </div>
       </section>
@@ -180,6 +183,7 @@ export function TransmembraneAnalysis() {
           onTopologyDataChange={setActiveTopologyData}
           triggerTmRecalc={triggerTmRecalc}
           distinguishTurns={distinguishTurns}
+          onLoadingChange={setIsTMRunning}
         />
       </section>
 

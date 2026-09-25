@@ -5,6 +5,7 @@ import type { ColorScheme, RepresentationStyle } from '../../types/viewer';
 import { generateRibbonSpline, getHydropathyColor } from '../../utils/ribbonSpline';
 import { API_URL } from '../../services/api';
 import type { ConsensusResidue } from '../../types/secondaryStructure';
+import { spreadStructure } from '../structure/spreadStructure';
 
 interface Props {
   chain: Chain | undefined;
@@ -28,7 +29,24 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
   const viewerRef = useRef<$3Dmol.Viewer>();
   const [style, setStyle] = useState<RepresentationStyle>('ribbon');
   const [colorScheme, setColorScheme] = useState<ColorScheme>(defaultColorScheme || 'chain');
+  const [showCustomColors, setShowCustomColors] = useState(false);
   const [layoutMode, setLayoutMode] = useState<'native' | 'spread'>('native');
+  const [orthographic, setOrthographic] = useState(false);
+  const [ssColors, setSsColors] = useState({
+    Helix: '#ff0080',
+    Strand: '#ffc107',
+    Coil: '#00d2d3'
+  });
+
+  const [consensusColors, setConsensusColors] = useState({
+    TM_E: '#ff9f43',
+    TM_in: '#00d2d3',
+    TM_C: '#5f27cd',
+    Turn_E: '#ff6b6b',
+    Turn_in: '#f368e0',
+    Turn_C: '#c44569',
+    Coil: '#64748b'
+  });
 
   useEffect(() => {
     if (!containerRef.current || !filename) return;
@@ -39,7 +57,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       const response = await fetch(`${API_URL}/api/structure/file/${encodeURIComponent(filename)}`);
       if (!response.ok || cancelled || !containerRef.current) return;
       let structure = await response.text();
-      
+
       if (layoutMode === 'spread' && consensusMap && consensusMap.length > 0) {
         structure = spreadStructure(structure, consensusMap);
       }
@@ -49,7 +67,11 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       viewer.setBackgroundColor('#0b151e');
       viewer.addModel(structure, filename.toLowerCase().endsWith('.pdb') || filename.toLowerCase().endsWith('.ent') ? 'pdb' : 'cif');
 
-      applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap);
+      if (typeof (viewer as any).setProjection === 'function') {
+        (viewer as any).setProjection(orthographic ? 'orthographic' : 'perspective');
+      }
+
+      applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap, consensusColors);
 
       if (variant === 'interactive') {
         viewer.setClickable({}, true, (atom) => {
@@ -71,13 +93,21 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       viewerRef.current = undefined;
       if (containerRef.current) containerRef.current.replaceChildren();
     };
-  }, [chains, filename, focusChainId, onSelectResidue, variant, layoutMode, consensusMap]);
+  }, [chains, filename, focusChainId, onSelectResidue, variant, layoutMode, consensusMap]); // Intentionally omitting orthographic here, handled in the next effect
+
+  // Handle orthographic toggle separately without reloading the model
+  useEffect(() => {
+    if (viewerRef.current && typeof (viewerRef.current as any).setProjection === 'function') {
+      (viewerRef.current as any).setProjection(orthographic ? 'orthographic' : 'perspective');
+      viewerRef.current.render();
+    }
+  }, [orthographic]);
 
   // Re-apply style when style, colorScheme, or selectedResidue changes
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer) return;
-    applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap);
+    applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap, consensusColors, ssColors);
 
     if (variant === 'interactive' && selectedResidue !== null) {
       viewer.setStyle({ chain: chain?.id, resi: selectedResidue }, {
@@ -87,7 +117,17 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       });
     }
     viewer.render();
-  }, [chain, chains, focusChainId, selectedResidue, style, colorScheme, variant, consensusMap]);
+  }, [chain, chains, focusChainId, selectedResidue, style, colorScheme, variant, consensusMap, consensusColors]);
+
+  const handleExportPNG = () => {
+    if (viewerRef.current) {
+      const imgURI = (viewerRef.current as any).pngURI();
+      const a = document.createElement('a');
+      a.href = imgURI;
+      a.download = `${filename || 'structure'}_snapshot.png`;
+      a.click();
+    }
+  };
 
   if (!chain) return <div className="empty-state">Upload a PDB/mmCIF structure to begin.</div>;
 
@@ -109,7 +149,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
           </div>
 
           <div className="toolbar-group">
-            <span className="toolbar-label">COLOR:</span>
+            <span className="toolbar-label">ANALYSIS METHOD:</span>
             <button
               className={colorScheme === 'chain' ? 'toolbar-btn active' : 'toolbar-btn'}
               onClick={() => setColorScheme('chain')}
@@ -127,7 +167,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
                 className={colorScheme === 'consensus' ? 'toolbar-btn active' : 'toolbar-btn'}
                 onClick={() => setColorScheme('consensus')}
               >
-                Consensus
+                TM & SS Mapping
               </button>
             )}
             <button
@@ -148,10 +188,78 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
               </button>
               <button
                 className={layoutMode === 'spread' ? 'toolbar-btn active' : 'toolbar-btn'}
-                onClick={() => setLayoutMode('spread')}
+                onClick={() => {
+                  setLayoutMode('spread');
+                  setOrthographic(true); // Default to orthographic for 2D look
+                }}
               >
                 Spread Out (2D-like)
               </button>
+            </div>
+          )}
+          <div className="toolbar-group">
+            <span className="toolbar-label">VIEW:</span>
+            <button
+              className={orthographic ? 'toolbar-btn active' : 'toolbar-btn'}
+              onClick={() => setOrthographic(!orthographic)}
+            >
+              2D Projection
+            </button>
+            <button className="toolbar-btn" onClick={handleExportPNG}>
+              Export PNG
+            </button>
+            <button
+              className={showCustomColors ? 'toolbar-btn active' : 'toolbar-btn'}
+              onClick={() => setShowCustomColors(!showCustomColors)}
+              style={{ marginLeft: '8px', border: '1px solid #78d8c1' }}
+            >
+              {showCustomColors ? 'Hide Colors' : 'Customize Colors'}
+            </button>
+          </div>
+
+          {showCustomColors && (
+            <div style={{ flexBasis: '100%', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(120, 216, 193, 0.3)' }}>
+              <span className="toolbar-label" style={{ color: '#78d8c1' }}>CUSTOM COLORS:</span>
+
+              {colorScheme === 'ss' && (
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  {Object.entries(ssColors).map(([key, value]) => (
+                    <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#e7edf4', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                      <input
+                        type="color"
+                        value={value}
+                        onChange={(e) => setSsColors({ ...ssColors, [key]: e.target.value })}
+                        style={{ border: 'none', padding: 0, width: '18px', height: '18px', cursor: 'pointer', background: 'transparent', borderRadius: '4px' }}
+                        title={`Color for ${key}`}
+                      />
+                      {key}
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {colorScheme === 'consensus' && (
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  {Object.entries(consensusColors).map(([key, value]) => (
+                    <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#e7edf4', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                      <input
+                        type="color"
+                        value={value}
+                        onChange={(e) => setConsensusColors({ ...consensusColors, [key]: e.target.value })}
+                        style={{ border: 'none', padding: 0, width: '18px', height: '18px', cursor: 'pointer', background: 'transparent', borderRadius: '4px' }}
+                        title={`Color for ${key}`}
+                      />
+                      {key.replace('_', ' ')}
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {(colorScheme === 'chain' || colorScheme === 'hydropathy') && (
+                <div style={{ color: '#829ba9', fontSize: '11px', fontStyle: 'italic' }}>
+                  Select <b>Secondary Structure</b> or <b>TM & SS Mapping</b> algorithm to customize structural colors.
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -227,7 +335,9 @@ function applyStyles(
   style: RepresentationStyle,
   colorScheme: ColorScheme,
   selectedChain?: Chain,
-  consensusMap?: ConsensusResidue[]
+  consensusMap?: ConsensusResidue[],
+  consensusColors?: Record<string, string>,
+  ssColors?: Record<string, string>
 ) {
   (viewer as any).removeAllShapes();
   viewer.setStyle({}, { cartoon: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
@@ -240,7 +350,12 @@ function applyStyles(
 
     if (style === 'ribbon') {
       if (colorScheme === 'ss') {
-        viewer.setStyle(selection, { cartoon: { colorscheme: 'ssPyMOL', opacity: 1 } });
+        const colorfunc = (atom: any) => {
+          if (atom.ss === 'h') return ssColors?.Helix || '#ff0080';
+          if (atom.ss === 's') return ssColors?.Strand || '#ffc107';
+          return ssColors?.Coil || '#00d2d3';
+        };
+        viewer.setStyle(selection, { cartoon: { colorfunc, opacity: 1 } });
       } else {
         viewer.setStyle(selection, { cartoon: { color: baseColor, opacity: 1 } });
       }
@@ -278,7 +393,7 @@ function applyStyles(
     // Default color for residues not in the membrane
     const defaultColor = '#64748b';
     const selAll = { chain: selectedChain.id };
-    
+
     if (style === 'ribbon') {
       viewer.setStyle(selAll, { cartoon: { color: defaultColor, opacity: 1 } });
     } else if (style === 'sphere') {
@@ -288,16 +403,16 @@ function applyStyles(
     } else if (style === 'line') {
       viewer.setStyle(selAll, { line: { color: defaultColor, linewidth: 1.5 } });
     }
-    
+
     consensusMap.forEach((res) => {
-      let color = defaultColor;
-      if (res.label === 'TM_E') color = '#ff9f43';
-      if (res.label === 'TM_in') color = '#00d2d3';
-      if (res.label === 'TM_C') color = '#5f27cd';
-      if (res.label === 'Turn_E') color = '#ff6b6b';
-      if (res.label === 'Turn_in') color = '#f368e0';
-      if (res.label === 'Turn_C') color = '#c44569';
-      
+      let color = consensusColors?.Coil || defaultColor;
+      if (res.label === 'TM_E') color = consensusColors?.TM_E || '#ff9f43';
+      if (res.label === 'TM_in') color = consensusColors?.TM_in || '#00d2d3';
+      if (res.label === 'TM_C') color = consensusColors?.TM_C || '#5f27cd';
+      if (res.label === 'Turn_E') color = consensusColors?.Turn_E || '#ff6b6b';
+      if (res.label === 'Turn_in') color = consensusColors?.Turn_in || '#f368e0';
+      if (res.label === 'Turn_C') color = consensusColors?.Turn_C || '#c44569';
+
       const sel = { chain: selectedChain.id, resi: res.residue_number };
       if (style === 'ribbon') {
         viewer.setStyle(sel, { cartoon: { color, opacity: 1 } });
@@ -315,252 +430,3 @@ function applyStyles(
   viewer.setStyle({ hetflag: true }, { stick: { colorscheme: 'Jmol', radius: 0.18 } });
 }
 
-
-function spreadStructure(pdbData: string, consensusMap: ConsensusResidue[]): string {
-  // 1. Group residues into TM segments
-  const tmSegments: { segment: number, start: number, end: number }[] = [];
-  let currentSeg: any = null;
-  
-  for (const res of consensusMap) {
-    if (res.tm_segment !== undefined && res.tm_segment !== null) {
-      if (!currentSeg || currentSeg.segment !== res.tm_segment) {
-        if (currentSeg) tmSegments.push(currentSeg);
-        currentSeg = { segment: res.tm_segment, start: res.residue_number, end: res.residue_number };
-      } else {
-        currentSeg.end = res.residue_number;
-      }
-    } else {
-      if (currentSeg) {
-        tmSegments.push(currentSeg);
-        currentSeg = null;
-      }
-    }
-  }
-  if (currentSeg) tmSegments.push(currentSeg);
-
-  if (tmSegments.length === 0) return pdbData;
-
-  // 2. Parse PDB atoms
-  const lines = pdbData.split('\n');
-  const atoms: any[] = [];
-  const residues = new Map<number, { ca: any, atoms: any[] }>();
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.startsWith('ATOM  ') || line.startsWith('HETATM')) {
-      const resSeq = parseInt(line.substring(22, 26).trim());
-      if (isNaN(resSeq)) continue;
-      
-      const name = line.substring(12, 16).trim();
-      const x = parseFloat(line.substring(30, 38));
-      const y = parseFloat(line.substring(38, 46));
-      const z = parseFloat(line.substring(46, 54));
-      
-      const atom = { index: i, line, resSeq, name, x, y, z, newX: x, newY: y, newZ: z };
-      atoms.push(atom);
-      
-      if (!residues.has(resSeq)) residues.set(resSeq, { ca: null, atoms: [] });
-      residues.get(resSeq)!.atoms.push(atom);
-      if (name === 'CA') residues.get(resSeq)!.ca = atom;
-    }
-  }
-
-  // Fallback CA if missing
-  for (const [resSeq, res] of residues.entries()) {
-    if (!res.ca && res.atoms.length > 0) res.ca = res.atoms[0];
-  }
-
-  // Math helpers
-  const normalize = (v: any) => {
-    const len = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-    return len > 0 ? {x: v.x/len, y: v.y/len, z: v.z/len} : {x:0,y:0,z:0};
-  };
-  const cross = (a: any, b: any) => ({
-    x: a.y*b.z - a.z*b.y,
-    y: a.z*b.x - a.x*b.z,
-    z: a.x*b.y - a.y*b.x
-  });
-  const dot = (a: any, b: any) => a.x*b.x + a.y*b.y + a.z*b.z;
-  const rotate = (p: any, R: any) => ({
-    x: p.x*R[0][0] + p.y*R[0][1] + p.z*R[0][2],
-    y: p.x*R[1][0] + p.y*R[1][1] + p.z*R[1][2],
-    z: p.x*R[2][0] + p.y*R[2][1] + p.z*R[2][2]
-  });
-
-  const getRotation = (a: any, b: any) => {
-    const v = cross(a, b);
-    const s = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-    const c = dot(a, b);
-    if (s < 1e-6) {
-      return c > 0 ? [[1,0,0],[0,1,0],[0,0,1]] : [[-1,0,0],[0,-1,0],[0,0,-1]];
-    }
-    const vx = [[0, -v.z, v.y], [v.z, 0, -v.x], [-v.y, v.x, 0]];
-    const factor = (1 - c) / (s * s);
-    const R = [[1,0,0],[0,1,0],[0,0,1]];
-    for (let i=0; i<3; i++) {
-      for (let j=0; j<3; j++) {
-        R[i][j] += vx[i][j];
-        let vx2 = 0;
-        for (let k=0; k<3; k++) vx2 += vx[i][k] * vx[k][j];
-        R[i][j] += vx2 * factor;
-      }
-    }
-    return R;
-  };
-
-  // 3. Process TM segments
-  const tmAnchors = new Map<number, { startCA: any, endCA: any }>();
-  let currentX = 0;
-
-  for (let i = 0; i < tmSegments.length; i++) {
-    const seg = tmSegments[i];
-    const firstRes = residues.get(seg.start);
-    const lastRes = residues.get(seg.end);
-    if (!firstRes || !lastRes) continue;
-
-    if (i > 0) {
-      const prevSeg = tmSegments[i-1];
-      const numRes = seg.start - prevSeg.end; // number of bonds in loop
-      const maxReach = numRes * 3.2; // tighter spacing to ensure no breaks
-      const spacingX = Math.min(30, maxReach); // Cap horizontal spacing
-      currentX += spacingX;
-    }
-
-    // Center of mass
-    let cx=0, cy=0, cz=0, count=0;
-    for (let r = seg.start; r <= seg.end; r++) {
-      const rr = residues.get(r);
-      if (rr) {
-        for (const a of rr.atoms) { cx+=a.x; cy+=a.y; cz+=a.z; count++; }
-      }
-    }
-    if(count > 0) { cx/=count; cy/=count; cz/=count; }
-
-    const vOrig = normalize({
-      x: lastRes.ca.x - firstRes.ca.x,
-      y: lastRes.ca.y - firstRes.ca.y,
-      z: lastRes.ca.z - firstRes.ca.z
-    });
-    
-    // Determine orientation based on membrane topology.
-    // We alternate. If first is IN->OUT, it points UP (0, 1, 0).
-    const vTarget = i % 2 === 0 ? {x: 0, y: 1, z: 0} : {x: 0, y: -1, z: 0};
-    const R = getRotation(vOrig, vTarget);
-    
-    for (let r = seg.start; r <= seg.end; r++) {
-      const rr = residues.get(r);
-      if (rr) {
-        for (const a of rr.atoms) {
-          const shifted = { x: a.x - cx, y: a.y - cy, z: a.z - cz };
-          const rotated = rotate(shifted, R);
-          a.newX = rotated.x + currentX;
-          a.newY = rotated.y;
-          a.newZ = rotated.z;
-        }
-      }
-    }
-    
-    tmAnchors.set(i, { 
-      startCA: { x: firstRes.ca.newX, y: firstRes.ca.newY, z: firstRes.ca.newZ },
-      endCA: { x: lastRes.ca.newX, y: lastRes.ca.newY, z: lastRes.ca.newZ }
-    });
-  }
-
-  // 4. Process loops
-  for (const [resSeq, res] of residues.entries()) {
-    // Check if in TM
-    let inTM = false;
-    for (const seg of tmSegments) {
-      if (resSeq >= seg.start && resSeq <= seg.end) {
-        inTM = true;
-        break;
-      }
-    }
-    if (inTM) continue;
-
-    // Find bounding TMs
-    let prevTM = -1, nextTM = -1;
-    for (let i = 0; i < tmSegments.length; i++) {
-      if (tmSegments[i].end < resSeq) prevTM = i;
-      if (tmSegments[i].start > resSeq && nextTM === -1) nextTM = i;
-    }
-
-    let targetCA = { x: res.ca.x, y: res.ca.y, z: res.ca.z };
-
-    if (prevTM !== -1 && nextTM !== -1) {
-      // Loop between TMs
-      const startRes = tmSegments[prevTM].end;
-      const endRes = tmSegments[nextTM].start;
-      const numRes = endRes - startRes; 
-      const f = (resSeq - startRes) / numRes;
-      
-      const p1 = tmAnchors.get(prevTM)!.endCA;
-      const p2 = tmAnchors.get(nextTM)!.startCA;
-      
-      const dist = Math.sqrt(Math.pow(p2.x-p1.x, 2) + Math.pow(p2.y-p1.y, 2) + Math.pow(p2.z-p1.z, 2));
-      const S = numRes * 3.7; // Target path length per bond is ~3.7A
-      
-      let H = 0;
-      if (S > dist) {
-        // Calculate bulge height to consume slack
-        H = Math.sqrt((4 * dist * (S - dist)) / (Math.PI * Math.PI));
-      }
-      
-      // Bulge in Y direction (Rainbow arch) so it's fully visible in 2D projection
-      const bulgeDir = prevTM % 2 === 0 ? 1 : -1;
-      const arcY = Math.sin(f * Math.PI) * H * bulgeDir;
-      
-      // Add a tiny spiral/wiggle in Z to keep the 3D aesthetic
-      const arcZ = Math.sin(f * Math.PI * 2) * (H * 0.15); 
-      
-      targetCA = {
-        x: p1.x + f * (p2.x - p1.x),
-        y: p1.y + f * (p2.y - p1.y) + arcY,
-        z: p1.z + f * (p2.z - p1.z) + arcZ
-      };
-    } else if (prevTM !== -1) {
-      // C-term tail
-      const p1 = tmAnchors.get(prevTM)!.endCA;
-      const step = resSeq - tmSegments[prevTM].end;
-      const bulgeDir = prevTM % 2 === 0 ? 1 : -1;
-      // Spiral outward and upwards/downwards
-      targetCA = { 
-        x: p1.x + step * 2.2, 
-        y: p1.y + step * 1.5 * bulgeDir + Math.sin(step * 0.6) * 6, 
-        z: p1.z + Math.cos(step * 0.6) * 6 
-      };
-    } else if (nextTM !== -1) {
-      // N-term tail
-      const p2 = tmAnchors.get(nextTM)!.startCA;
-      const step = tmSegments[nextTM].start - resSeq;
-      const startDir = nextTM % 2 === 0 ? -1 : 1; // If TM0 points UP, start is at BOTTOM (-1)
-      targetCA = { 
-        x: p2.x - step * 2.2, 
-        y: p2.y + step * 1.5 * startDir + Math.sin(step * 0.6) * 6, 
-        z: p2.z + Math.cos(step * 0.6) * 6 
-      };
-    }
-
-    // Apply translation to all atoms in this loop residue
-    const dx = targetCA.x - res.ca.x;
-    const dy = targetCA.y - res.ca.y;
-    const dz = targetCA.z - res.ca.z;
-    
-    for (const a of res.atoms) {
-      a.newX = a.x + dx;
-      a.newY = a.y + dy;
-      a.newZ = a.z + dz;
-    }
-  }
-
-  // 5. Rewrite PDB string
-  for (const a of atoms) {
-    const line = lines[a.index];
-    const newX = a.newX.toFixed(3).padStart(8, ' ');
-    const newY = a.newY.toFixed(3).padStart(8, ' ');
-    const newZ = a.newZ.toFixed(3).padStart(8, ' ');
-    lines[a.index] = line.substring(0, 30) + newX + newY + newZ + line.substring(54);
-  }
-
-  return lines.join('\n');
-}

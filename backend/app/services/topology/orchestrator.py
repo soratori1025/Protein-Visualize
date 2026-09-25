@@ -1,125 +1,109 @@
 """
-Topology orchestrator: runs one TM block and one SS block and merges them with one
-of three flows.
+Topology orchestrator - ONE flow (consensus).
+
+The TM block and the SS block run side by side (concurrently) on the same residue
+frame and are merged residue by residue. There are no other flows any more: the old
+tm_then_ss / ss_then_tm values are accepted for API compatibility, reported in the
+warnings, and run as consensus.
 
 INDEXING CONTRACT
   The structure is parsed ONCE into a ResidueFrame (residues.py). The TM provider
   returns one label per frame POSITION, the SS provider returns one code per frame
   POSITION (mapped by residue key, verified by residue identity, alignment fallback),
-  and every flow below works on those position arrays only. Author residue numbers
-  come back only when regions are emitted. Nothing is looked up by a bare int
-  residue number and nothing is rebuilt with ``range(start, end + 1)``, so the two
-  blocks can never disagree about which residue is which.
+  and everything below works on those position arrays only. Author residue numbers
+  come back only when regions are emitted, so the two blocks can never disagree about
+  which residue is which.
 
-LAYERS (all per residue, on the frame)
-  TM evidence        the TM block (slab geometry, Kyte-Doolittle, UniProt ...)
-  SS evidence        DSSP / STRIDE, raw 8-state codes kept, coarse H/E/C for rules
-  Membrane geometry  where the bilayer is (membrane.py): file planes (OPM/PPM DUM
-                     atoms) > axes of the TM segments; depth + CORE/EDGE/OUT zone.
-  A DSSP boundary is never used as a membrane boundary: SS only describes the part
-  of a TM candidate that the geometry places in the bilayer.
-
-FLOWS (API value / alias)
-  tm_then_ss / tm_first
-      TM boundaries are kept. Each segment is classified from its SS content:
-      Alpha Helix / Beta Strand when one class dominates, Irregular when mixed or
-      unassigned (e.g. H + E elements, or coil only).
-  ss_then_tm / structure_guided
-      Bounded refinement. Candidate window = segment +- min(max_snap, half the loop
-      to the neighbour). SS elements inside the window are grouped into crossings:
-      elements stay together only across a short (<= broken_gap_max), unbroken gap
-      that stays inside the membrane AND when the chain keeps its direction; each
-      group is clipped to the membrane envelope. A group that crosses (span >=
-      min_cross_span_frac x thickness) is a TM crossing; one that dips into the core
-      without crossing is Intramembrane (re-entrant / half helix). A segment with no
-      SS support is kept as Irregular if the geometry puts it in the membrane,
-      otherwise dropped with a warning. Without coordinates: SS-only snapping.
-  parallel_merge / consensus
-      Residue map (consensus.py): loop i = 0..N-1, flag_tm = residue i is in a TM
-      segment of the TM block (UniProt = the bilayer band), flag_ss = residue i is a
-      helix (H/G/I; E inside a beta TM segment). Both -> TM_in; helix outside the
-      band -> TM_C / TM_E by the side of the residue; no helix -> not in the map.
-      Only TM_in residues become crossings: runs inside one TM segment, 1-2 residue
-      kinks joined, >= 3 non-helical residues = unwound (TM1a / unwound / TM1b).
-      Geometry only guards one case: two TM_in runs of one segment that run
-      antiparallel (or both cross alone) are a hairpin -> two crossings. A TM segment
-      with no TM_in residue is not drawn (warning). The map is returned as
-      ``consensus_map``.
-
-After the flow: sides (provider first, else alternation + positive-inside),
-extramembrane SS, interfacial helices (helices lying in the interface band parallel
-to the membrane), per-residue evidence matrix + confidence, domain type and a
-topology validation that only warns.
-
-Freed residues and loops without a side are resolved afterwards: the provider's own
-side labels win; otherwise sides alternate across each crossing and the orientation
-comes from the positive-inside rule.
+THE FLOW
+  1. Parse the chain once -> ResidueFrame, positions 0..N-1.
+  2. TM block (UniProt / Kyte-Doolittle / 3D slab) and SS block (DSSP / STRIDE) run
+     at the same time; each reports one value per position.
+  3. Membrane geometry (membrane.py): file planes (OPM/PPM DUM atoms) > axes of the
+     TM segments. Used for depth / zone, the hairpin guard and interfacial helices -
+     it never moves a TM boundary.
+  4. Optional treat_turn_as_helix (see _promote_turns).
+  5. Residue map (consensus.build_consensus_map), loop i = 0..N-1:
+        flag_tm = residue i lies in a TM segment of the TM block (the bilayer band)
+        flag_ss = residue i is helix (H/G/I; E inside a beta TM segment)
+        flag_ss and flag_tm      -> TM_in
+        flag_ss and not flag_tm  -> TM_C / TM_E (side of the residue)
+        not flag_ss              -> not in the map
+  6. Crossings are drawn from TM_in only, per TM segment of the TM block:
+        - a TM_in run of ONE residue is not TM (relabelled TM_C / TM_E in the map)
+        - 1-2 non-helical residues inside a run = kink (joined), unless the chain
+          turns back (antiparallel along the normal = hairpin)
+        - fragments shorter than MIN_FRAGMENT_LEN are not drawn as their own part
+        - >= 3 non-helical residues between two runs of one segment:
+             antiparallel, or each run crosses the bilayer alone -> two crossings
+             otherwise -> one crossing drawn as TMa / TM unwound / TMb
+        - a chain break is never called "unwound"
+        - a TM segment without TM_in is not drawn (warning)
+  7. Sides (TM block first, else alternation + positive-inside), loop SS, interfacial
+     helices, confidence, regions, topology labels and a validation that only warns.
+  Without an SS result the TM block's segments are reported unchanged (warning).
 """
 from __future__ import annotations
 
-from enum import Enum
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from pathlib import Path
 from typing import Optional, Sequence, cast
 
 import numpy as np
 
-from app.core.constants import MAX_SNAP, MIN_TM_CORE, POSITIVE_RESIDUES
+from app.core.constants import POSITIVE_RESIDUES
 from app.schemas.topology import (
     ConsensusResidue, ResidueAnnotation, TMParams, TopologyRegion, TopologyResponse,
 )
 from app.services.topology import labels as L
 from app.services.topology.consensus import (
-    TM_IN, TURN_IN, build_consensus_map, drop_short_fragments, join_kinks, tm_in_runs, ConsensusEntry
+    HELIX_CODES, TM_C, TM_E, TM_IN, TURN_IN, ConsensusEntry, build_consensus_map,
+    drop_short_fragments, join_kinks, tm_in_runs,
 )
-from app.services.topology.membrane import EDGE_WIDTH, MembraneFrame, build_membrane
-from app.services.topology.transitions import (
-    MERGING, MIN_FRAGMENT_LEN, MIN_UNWOUND, TransitionEvidence, classify_membrane_transition,
-)
+from app.services.topology.membrane import MembraneFrame, build_membrane
 from app.services.topology.providers.ss.base import SSProvider
 from app.services.topology.providers.tm.base import TMPrediction, TMProvider
 from app.services.topology.residues import (
     ResidueFrame, SSAssignment, SSRecord, load_residue_frame, map_ss_records, parse_resnum,
 )
+from app.services.topology.transitions import (
+    MIN_FRAGMENT_LEN, TransitionEvidence, classify_membrane_transition,
+)
+
+# The only flow. Old flow names are still accepted (and reported) so existing clients
+# keep working; any other value is an error.
+FLOW = "consensus"
+CONSENSUS_NAMES = {"consensus", "parallel_merge"}
+REMOVED_FLOWS = {"tm_then_ss", "tm_first", "ss_then_tm", "structure_guided"}
 
 # Loop residues within this distance of a TM end vote in the positive-inside rule.
 POSITIVE_INSIDE_FLANK = 15
 MIN_SS_COVERAGE_WARN = 0.8
 
-Span = tuple[int, int, Optional[str]]      # (start_pos, end_pos, 'H' | 'E' | 'I' | None)
-
-
-class FlowType(str, Enum):
-    TM_THEN_SS = "tm_then_ss"          # a.k.a. tm_first
-    SS_THEN_TM = "ss_then_tm"          # a.k.a. structure_guided
-    PARALLEL_MERGE = "parallel_merge"  # a.k.a. consensus
-
-
-FLOW_ALIASES = {"tm_first": "tm_then_ss", "structure_guided": "ss_then_tm",
-                "consensus": "parallel_merge"}
+Span = tuple[int, int, Optional[str]]      # (start_pos, end_pos, 'H' | 'E' | None)
 
 # Plausible lengths of one crossing (residues) - validation warnings only.
 TM_LENGTH_RANGE = {"H": (14, 40), "E": (5, 16)}
-# Broken crossings (TM1a/1b ...) are decided by transitions.classify_membrane_transition.
 INTERFACIAL_MIN_LEN = 6
-# consensus hairpin guard: each fragment must travel at least this far along the
-# membrane normal (A) for its direction to count (a 5-residue helix ~ 7.5 A along its axis)
+# hairpin guard: each fragment must travel at least this far along the membrane
+# normal (A) for its direction to count (a 5-residue helix ~ 7.5 A along its axis)
 HAIRPIN_MIN_TRAVEL = 3.0
+# DSSP/STRIDE turn and bend codes (treat_turn_as_helix)
+TURN_CODES = frozenset("TS")
 
 
 class TopologyOrchestrator:
     def __init__(self, tm_provider: TMProvider, ss_provider: Optional[SSProvider],
-                 flow_type: str, *, max_snap: int = MAX_SNAP, min_tm_core: int = MIN_TM_CORE,
-                 annotate_extramembrane_ss: bool = True, include_residues: bool = True):
-        try:
-            self.flow = FlowType(FLOW_ALIASES.get(flow_type, flow_type))
-        except ValueError:
-            raise ValueError(f"Unknown flow_type {flow_type!r}; expected one of "
-                             f"{[f.value for f in FlowType] + list(FLOW_ALIASES)}") from None
-        self.flow_type = self.flow.value
+                 flow_type: Optional[str] = None, *, annotate_extramembrane_ss: bool = True,
+                 include_residues: bool = True):
+        name = (flow_type or FLOW).strip()
+        if name not in CONSENSUS_NAMES | REMOVED_FLOWS:
+            raise ValueError(f"Unknown flow_type {flow_type!r}; the only flow is {FLOW!r}")
+        self.flow_type = FLOW
+        self._flow_notes = ([] if name in CONSENSUS_NAMES else
+                            [f"flow_type '{name}' has been removed; the consensus flow was used"])
         self.tm_provider = tm_provider
         self.ss_provider = ss_provider
-        self.max_snap = max_snap
-        self.min_tm_core = min_tm_core
         self.annotate_extramembrane_ss = annotate_extramembrane_ss
         self.include_residues = include_residues
 
@@ -129,134 +113,77 @@ class TopologyOrchestrator:
         params = params if params is not None else TMParams()
         file_path = Path(file_path)
         frame = load_residue_frame(file_path, chain_id)
-        warns: list[str] = []
+        warns: list[str] = list(self._flow_notes)
         if len(frame) == 0:
             return self._response(frame, params, TMPrediction(), "No amino-acid residues",
-                                  self._tm_name(), [], ["no amino-acid residues in the chain"])
+                                  self._tm_name(), [], warns + ["no amino-acid residues in the chain"])
 
-        # 1. TM block, on the shared frame
-        tm_pred = self.tm_provider.predict_tm(file_path, params=params, frame=frame, **kwargs)
+        # 1. TM block and SS block, side by side on the same frame
+        tm_pred, (coarse, raw_ss, ss_name, ss_warns) = self._run_blocks(file_path, frame, params,
+                                                                        kwargs)
         warns.extend(tm_pred.warnings)
         base, segments, tm_warns = self._tm_on_frame(tm_pred, frame)
         warns.extend(tm_warns)
+        warns.extend(ss_warns)
         if not segments:
             return self._response(frame, params, tm_pred,
                                   f"No transmembrane segments ({tm_pred.labeler or self._tm_name()})",
                                   tm_pred.labeler or self._tm_name(), [], warns)
 
-        # 2. SS block and membrane geometry, on the same frame
-        coarse, raw_ss, ss_name, ss_warns = self._ss_on_frame(file_path, frame)
-        turn_indices: frozenset[int] = frozenset()
-        if coarse is not None and raw_ss is not None and getattr(params, 'treat_turn_as_helix', False):
-            # Treat Turn/Bend as Helix with context-aware promotion:
-            #   1) Group consecutive T/S residues into runs.
-            #   2) Check the residue immediately before and after each run.
-            #   3) Both flanks are alpha helix → promote the run to H (true helix).
-            #   4) One flank is alpha helix  → keep as Turn (Turn_in/Turn_C/Turn_E).
-            #   5) Neither flank is helix    → ignore, do not promote.
-            turn_codes = frozenset("TS")
-            helix_check = frozenset("HGI")
-            n_ss = len(raw_ss)
-            new_raw = list(raw_ss)
-            _turn_idx: set[int] = set()
-            i = 0
-            while i < n_ss:
-                if new_raw[i] not in turn_codes:
-                    i += 1
-                    continue
-                # find the end of this consecutive turn run
-                j = i
-                while j < n_ss and new_raw[j] in turn_codes:
-                    j += 1
-                # check flanking residues (immediately before i and after j-1)
-                left_helix = i > 0 and new_raw[i - 1] in helix_check
-                right_helix = j < n_ss and new_raw[j] in helix_check
-                if left_helix and right_helix:
-                    # Both ends are helix → promote Turn to H (true alpha helix)
-                    for k in range(i, j):
-                        new_raw[k] = "H"
-                elif left_helix or right_helix:
-                    # One end is helix → keep as Turn: promote to H for SS processing
-                    # but track the indices so consensus map labels them Turn_*
-                    for k in range(i, j):
-                        new_raw[k] = "H"
-                        _turn_idx.add(k)
-                # else: neither end is helix → leave original code, not promoted
-                i = j
-            raw_ss = new_raw
-            coarse = [L.coarse_ss(c) for c in raw_ss]
-            turn_indices = frozenset(_turn_idx)
-        warns.extend(ss_warns)
+        # 2. membrane geometry (depth / zone / hairpin guard - never boundaries)
+        breaks = frame.chain_breaks()
         membrane = build_membrane(frame, segments, params.membrane_thickness / 2.0)
         if membrane is None:
-            warns.append("no membrane geometry (coordinates missing): boundaries from TM/SS only")
+            warns.append("no membrane geometry (coordinates missing): hairpins inside one TM "
+                         "segment cannot be detected")
         elif coarse is not None:
-            # centre the estimated bilayer on the helices/strands that the TM block
-            # proposed (long SS elements overlapping a TM segment)
-            spanning = [(a, b) for a, b, _ in self._ss_elements(coarse, frame.chain_breaks())
+            # centre an estimated bilayer on the long helices/strands of the TM segments
+            spanning = [(a, b) for a, b, _ in self._ss_elements(coarse, breaks)
                         if b - a + 1 >= 8 and any(a <= e and b >= s for s, e in segments)
                         and membrane.span(a, b) >= params.min_cross_span_frac * 2 * membrane.half_thickness]
             membrane = membrane.recentered(spanning)
-        labeler = f"{tm_pred.labeler or self._tm_name()} + {ss_name} ({self.flow_type})"
+        labeler = f"{tm_pred.labeler or self._tm_name()} + {ss_name} ({FLOW})"
 
-        # 3. flow -> final TM spans (+ intramembrane pieces)
-        breaks = frame.chain_breaks()
-        intramembrane: list[Span] = []
-        consensus_parts = None             # (broken, transitions, strand segments)
-        if coarse is None:
+        # 3. residue map -> crossings
+        consensus = None                    # (codes used by the map, strand segments, turns)
+        broken: dict = {}
+        transitions: dict = {}
+        if coarse is None or raw_ss is None:
             spans: list[Span] = [(s, e, None) for s, e in segments]
-        elif self.flow is FlowType.TM_THEN_SS:
-            spans = self._flow_tm_then_ss(segments, coarse)
-            if membrane is not None:
-                spans, notes = self._flag_multi_crossing(spans, coarse, breaks, frame,
-                                                         membrane, params)
-                warns.extend(notes)
-        elif self.flow is FlowType.SS_THEN_TM:
-            if membrane is not None:
-                spans, intramembrane, notes = self._flow_structure_guided(
-                    segments, coarse, breaks, frame.coords, membrane, params)
-                warns.extend(notes)
-            else:
-                spans = self._flow_ss_then_tm(segments, coarse, breaks, params.broken_gap_max,
-                                              frame.coords)
+            warns.append("no SS result: the TM block's segments are reported without the "
+                         "residue-level consensus")
         else:
-            spans, c_broken, c_transitions, strand, notes = self._flow_consensus(
-                base, segments, raw_ss, coarse, breaks, frame, membrane, params, ss_name,
-                turn_indices=turn_indices)
-            consensus_parts = (c_broken, c_transitions, strand, turn_indices)
+            map_codes, turn_indices = list(raw_ss), frozenset()
+            if getattr(params, "treat_turn_as_helix", False):
+                map_codes, ss_codes, turn_indices = self._promote_turns(raw_ss, breaks, membrane)
+                coarse = [L.coarse_ss(c) for c in ss_codes]
+            spans, broken, transitions, strand, notes = self._flow_consensus(
+                base, segments, map_codes, coarse, breaks, frame, membrane, params, ss_name,
+                turn_indices)
             warns.extend(notes)
+            consensus = (map_codes, strand, turn_indices)
         if not spans:
             return self._response(frame, params, tm_pred,
                                   "No transmembrane segment supported by the evidence",
                                   labeler, [], warns, membrane=membrane)
 
         # 4. paint, sides, loop annotation
-        spans = sorted(spans)
-        if consensus_parts is not None:     # consensus: parts come from the residue map
-            broken, transitions, _, _ = consensus_parts
-        else:
-            broken, transitions = self._find_discontinuities(spans, coarse, breaks, frame,
-                                                             membrane, params)
         for idx, evs in transitions.items():
             if any(ev["classification"] == "AMBIGUOUS" for ev in evs):
                 warns.append(f"TM{idx + 1}: one fragment crosses the bilayer alone and the next "
-                             "only partly - drawn as one continuous crossing, confidence lowered")
+                             "only partly - drawn as one crossing, confidence lowered")
         labels, groups = self._paint(base, spans)
         for _, (u0, u1), _ in broken.values():
             for k in range(u0, u1 + 1):
                 labels[k] = L.UNWOUND
-        for s0, e0, _ in intramembrane:
-            for k in range(s0, e0 + 1):
-                if not L.is_tm(labels[k]):
-                    labels[k] = L.INTRA
         labels = self._resolve_sides(labels, spans, frame)
         if coarse is not None and membrane is not None:
             labels = self._mark_interfacial(labels, coarse, breaks, frame.coords, membrane)
         if coarse is not None and self.annotate_extramembrane_ss:
-            breaks_list = cast(Optional[Sequence[bool]], breaks.tolist() if hasattr(breaks, "tolist") else breaks)
+            breaks_list = cast(Sequence[bool], breaks.tolist())
             labels = L.label_extramembrane_ss(labels, coarse, breaks=breaks_list)
 
-        # 5. evidence matrix, confidence, regions, validation
+        # 5. evidence matrix, confidence, regions, validation, residue map
         conf = self._confidence(labels, spans, base, coarse, membrane, frame)
         regions = L.build_regions(frame, labels, groups)
         self._attach_region_confidence(regions, frame, conf)
@@ -266,16 +193,27 @@ class TopologyOrchestrator:
         residues = (self._residue_matrix(frame, base, raw_ss, coarse, membrane, labels, conf)
                     if self.include_residues else None)
         consensus_map = None
-        if consensus_parts is not None:
-            consensus_map, notes = self._consensus_map_rows(frame, base, raw_ss, labels, groups,
-                                                            segments, consensus_parts[2],
-                                                            turn_indices=consensus_parts[3])
+        if consensus is not None:
+            map_codes, strand, turn_indices = consensus
+            consensus_map, notes = self._consensus_map_rows(
+                frame, base, map_codes, raw_ss, labels, groups, segments, strand, turn_indices,
+                broken, breaks)
             warns.extend(notes)
         return self._response(frame, params, tm_pred, "Predicted Topology", labeler, regions,
                               warns, membrane=membrane, domain_type=self._domain_type(spans),
                               residues=residues, consensus_map=consensus_map)
 
     # ------------------------------------------------------- blocks -> frame
+    def _run_blocks(self, file_path: Path, frame: ResidueFrame, params: TMParams, kwargs):
+        """TM block and SS block at the same time (UniProt download and the DSSP/STRIDE
+        binary are both I/O bound). Both only READ the shared frame. An error of the TM
+        block propagates (HTTP 4xx/5xx from the provider); an SS failure is a warning."""
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            tm_future = pool.submit(self.tm_provider.predict_tm, file_path, params=params,
+                                    frame=frame, **kwargs)
+            ss_future = pool.submit(self._ss_on_frame, file_path, frame)
+            return tm_future.result(), ss_future.result()
+
     def _tm_name(self) -> str:
         return self.tm_provider.__class__.__name__.replace("Provider", "")
 
@@ -381,7 +319,7 @@ class TopologyOrchestrator:
                          "assignment")
         return [L.coarse_ss(c) for c in result.codes], list(result.codes), name, warns
 
-    # ------------------------------------------------------------------ flows
+    # --------------------------------------------------------- the one flow
     @staticmethod
     def _majority(codes: Sequence[Optional[str]]) -> str:
         """Dominant regular class; 'I' when there is no helix/strand at all."""
@@ -391,61 +329,67 @@ class TopologyOrchestrator:
         return "H" if h >= e else "E"
 
     @staticmethod
-    def _classify_segment(codes: Sequence[Optional[str]]) -> str:
-        """tm_first label for a whole segment: a class must cover at least half of the
-        segment and the other class less than a quarter; otherwise Irregular
-        (mixed H + E elements, or mostly coil)."""
-        n = max(1, len(codes))
-        h, e = codes.count("H") / n, codes.count("E") / n
-        if h >= 0.5 and e < 0.25:
-            return "H"
-        if e >= 0.5 and h < 0.25:
-            return "E"
-        return "I"
+    def _antiparallel(membrane: MembraneFrame, r1: tuple[int, int], r2: tuple[int, int]) -> bool:
+        """The chain runs back across the membrane: r1 and r2 travel in opposite
+        directions along the normal (both long enough to have a direction)."""
+        if min(r1[1] - r1[0], r2[1] - r2[0]) + 1 < MIN_FRAGMENT_LEN:
+            return False
+        d = membrane.depth
+        du, dv = d[r1[1]] - d[r1[0]], d[r2[1]] - d[r2[0]]
+        if not (np.isfinite(du) and np.isfinite(dv)):
+            return False
+        return bool(du * dv < 0 and min(abs(du), abs(dv)) >= HAIRPIN_MIN_TRAVEL)
 
-    def _flow_tm_then_ss(self, segments, coarse) -> list[Span]:
-        return [(s, e, self._classify_segment(coarse[s:e + 1])) for s, e in segments]
-
-    def _flow_ss_then_tm(self, segments, coarse, breaks, gap_max, coords=None) -> list[Span]:
-        n = len(coarse)
-        elements = self._ss_elements(coarse, breaks)
-        spans: list[Span] = []
-        for idx, (s0, e0) in enumerate(segments):
-            overlapping = [(a, b, c) for a, b, c in elements if a <= e0 and b >= s0]
-            if not overlapping:
-                spans.append((s0, e0, "I"))
+    def _promote_turns(self, raw: Sequence[Optional[str]], breaks,
+                       membrane: Optional[MembraneFrame]):
+        """treat_turn_as_helix. For every run of T/S residues (never across a chain break):
+             helix on BOTH sides  -> the run is helix (H) - a kink inside one helix;
+                                     but if the two flanking helices run antiparallel
+                                     across the membrane it is a real hairpin turn and
+                                     is handled as below instead
+             helix on ONE side    -> Turn (Turn_in / Turn_C / Turn_E in the map)
+             no helix beside it   -> unchanged
+        Returns (codes for the residue map, codes for SS everywhere else, turn positions).
+        Turn residues are 'H' only for the map (so they get a Turn_* entry); elsewhere
+        they keep T/S, so loop helices and crossings are not stretched by turns."""
+        n = len(raw)
+        for_map, for_ss = list(raw), list(raw)
+        turns: set[int] = set()
+        i = 0
+        while i < n:
+            if raw[i] not in TURN_CODES:
+                i += 1
                 continue
-            h = sum(min(b, e0) - max(a, s0) + 1 for a, b, c in overlapping if c == "H")
-            st = sum(min(b, e0) - max(a, s0) + 1 for a, b, c in overlapping if c == "E")
-            cls = "H" if h >= st else "E"
-            mine = [(a, b) for a, b, c in overlapping if c == cls]
+            j = i + 1
+            while j < n and raw[j] in TURN_CODES and not breaks[j]:
+                j += 1
+            left = right = None
+            if i > 0 and raw[i - 1] in HELIX_CODES and not breaks[i]:
+                a = i - 1
+                while a > 0 and raw[a - 1] in HELIX_CODES and not breaks[a]:
+                    a -= 1
+                left = (a, i - 1)
+            if j < n and raw[j] in HELIX_CODES and not breaks[j]:
+                b = j
+                while b + 1 < n and raw[b + 1] in HELIX_CODES and not breaks[b + 1]:
+                    b += 1
+                right = (j, b)
+            hairpin = (left is not None and right is not None and membrane is not None
+                       and self._antiparallel(membrane, left, right))
+            if left is not None and right is not None and not hairpin:
+                for k in range(i, j):
+                    for_map[k] = for_ss[k] = "H"
+            elif left is not None or right is not None:
+                for k in range(i, j):
+                    for_map[k] = "H"
+                    turns.add(k)
+            i = j
+        return for_map, for_ss, frozenset(turns)
 
-            prev_end = segments[idx - 1][1] if idx > 0 else -1
-            next_start = segments[idx + 1][0] if idx + 1 < len(segments) else n
-            left_gap, right_gap = s0 - prev_end - 1, next_start - e0 - 1
-            left_budget = max(0, min(self.max_snap,
-                                     left_gap // 2 if idx == 0 else (left_gap - 1) // 2))
-            right_budget = max(0, min(self.max_snap, right_gap // 2
-                                      if idx + 1 == len(segments) else (right_gap - 1) // 2))
-            lo_cap, hi_cap = s0 - left_budget, e0 + right_budget
-
-            # One TM segment may hold several elements (a coarse hydropathy call over two
-            # helices and their short loop): elements separated by more than `gap_max`
-            # coil residues become separate crossings; a shorter break (kink) does not.
-            pieces = [(max(a, lo_cap), min(b, hi_cap))
-                      for a, b in self._group_positions(mine, gap_max, breaks, coords)]
-            keep_len = min(self.min_tm_core, e0 - s0 + 1)
-            pieces = [(a, b) for a, b in pieces if b - a + 1 >= keep_len]
-            if not pieces:
-                spans.append((s0, e0, cls))       # SS support too thin to move the bounds
-            else:
-                spans.extend((a, b, cls) for a, b in pieces)
-        return spans
-
-    def _flow_consensus(self, base, segments, raw_ss, coarse, breaks, frame: ResidueFrame,
+    def _flow_consensus(self, base, segments, map_codes, coarse, breaks, frame: ResidueFrame,
                         membrane: Optional[MembraneFrame], params: TMParams, ss_name: str,
                         turn_indices: frozenset[int] = frozenset()):
-        """Consensus = residue map TM block x SS block (consensus.build_consensus_map).
+        """Residue map TM block x SS block (consensus.build_consensus_map) -> crossings.
         Crossings are drawn from TM_in residues only.
         Returns (spans, broken parts, transitions, strand segments, notes)."""
         n = len(base)
@@ -453,29 +397,18 @@ class TopologyOrchestrator:
         # beta-barrel TM segments: flag_ss must look for strands there, not helices
         strand = frozenset(k for k, (s, e) in enumerate(segments)
                            if self._majority(coarse[s:e + 1]) == "E")
-        cmap, _ = build_consensus_map(base, raw_ss, tm_segments=segments, strand_segments=strand,
-                                      turn_indices=turn_indices)
-        runs = tm_in_runs(cmap, n, breaks)
-        is_hairpin = None
-        min_cross = 0.0
-        full_cross = 0.0
+        cmap, _ = build_consensus_map(base, map_codes, tm_segments=segments,
+                                      strand_segments=strand, turn_indices=turn_indices)
+        # a TM_in run of a single residue is not TM (it becomes TM_C / TM_E in the map)
+        runs = {k: [r for r in rs if r[1] > r[0]] for k, rs in tm_in_runs(cmap, n, breaks).items()}
+        is_hairpin = partial(self._antiparallel, membrane) if membrane is not None else None
+        min_cross = full_cross = 0.0
         if membrane is not None:
             thickness = 2.0 * membrane.half_thickness
             min_cross = params.min_cross_span_frac * thickness
             full_cross = params.full_cross_frac * thickness
 
-            def is_hairpin(r1, r2) -> bool:
-                """The chain runs back across the membrane: r1 and r2 travel in opposite
-                directions along the normal (both long enough to have a direction)."""
-                if min(r1[1] - r1[0], r2[1] - r2[0]) + 1 < MIN_FRAGMENT_LEN:
-                    return False
-                d = membrane.depth
-                du, dv = d[r1[1]] - d[r1[0]], d[r2[1]] - d[r2[0]]
-                if not (np.isfinite(du) and np.isfinite(dv)):
-                    return False
-                return du * dv < 0 and min(abs(du), abs(dv)) >= HAIRPIN_MIN_TRAVEL
-
-        # crossings: (members, junctions, class); junction = ("unwound", evidence|None)
+        # crossings: (members, junctions, class); junction = ("unwound", evidence | None)
         # or ("chain_break", None)
         crossings = []
         for k, (s0, e0) in enumerate(segments):
@@ -484,7 +417,7 @@ class TopologyOrchestrator:
             seg_runs = drop_short_fragments(join_kinks(runs.get(k, []), breaks,
                                                        is_hairpin=is_hairpin))
             if not seg_runs:
-                notes.append(f"consensus: TM segment {tm_name} of the TM block has no "
+                notes.append(f"TM segment {tm_name} of the TM block has no "
                              f"{'strand' if cls == 'E' else 'helix'} residue in {ss_name} "
                              "(no TM_in) - not drawn")
                 continue
@@ -496,23 +429,20 @@ class TopologyOrchestrator:
                     # residues missing from the model: unresolved is not "unwound"
                     members.append(run)
                     junctions.append(("chain_break", None))
-                    notes.append(f"consensus: chain break inside TM segment {tm_name} - "
-                                 "drawn as one crossing, not evaluated as a broken helix")
+                    notes.append(f"chain break inside TM segment {tm_name} - drawn as one "
+                                 "crossing, not evaluated as a broken helix")
                     continue
                 ev = None
                 if membrane is not None:
                     ev = classify_membrane_transition((members[0][0], prev[1]), run, membrane,
                                                       frame.coords, breaks, min_cross, full_cross)
-                    antiparallel = False
-                    if is_hairpin is not None:
-                        antiparallel = is_hairpin(prev, run)
+                    antiparallel = self._antiparallel(membrane, prev, run)
                     if ev.classification == "TWO_TM" or antiparallel:
-                        # hairpin under one TM feature (typical of sequence-predicted
-                        # TM calls): two crossings, never TMa/TMb
+                        # two helices under one TM feature (typical of sequence-predicted
+                        # or slab-fit TM segments): two crossings, never TMa/TMb
                         crossings.append((members, junctions, cls))
-                        members = [run]
-                        junctions = []
-                        notes.append(f"consensus: TM segment {tm_name} holds two "
+                        members, junctions = [run], []
+                        notes.append(f"TM segment {tm_name} holds two "
                                      f"{'antiparallel ' if antiparallel else ''}helices "
                                      f"({ev.reason}) - drawn as two crossings")
                         continue
@@ -544,47 +474,51 @@ class TopologyOrchestrator:
             left_end, right_start = members[i][1], members[i + 1][0]
             broken[idx] = ((s, left_end), (left_end + 1, right_start - 1), (right_start, e))
             if len(cuts) > 1:
-                notes.append(f"consensus: TM{idx + 1} has {len(cuts)} unwound stretches; "
-                             "only the widest is drawn as the a/b break")
+                notes.append(f"TM{idx + 1} has {len(cuts)} unwound stretches; only the widest "
+                             "is drawn as the a/b break")
         return spans, broken, transitions, strand, notes
 
-    def _consensus_map_rows(self, frame: ResidueFrame, base, raw_ss, labels, groups,
-                            segments, strand,
-                            turn_indices: frozenset[int] = frozenset()):
-        """Final residue map with the resolved sides (UniProt side first, inferred
-        otherwise) -> response rows + notes."""
-        cmap, skipped = build_consensus_map(base, raw_ss, sides=labels, tm_segments=segments,
-                                            strand_segments=strand, turn_indices=turn_indices)
-        
-        # User condition: if a TM_in run has only 1 residue, merge it with the nearest TM_E/TM_C
-        runs_dict = tm_in_runs(cmap, len(frame))
-        for _, r_list in runs_dict.items():
-            for (start, end) in r_list:
-                if start == end:
-                    i = start
-                    closest_side = None
-                    min_dist = float('inf')
-                    for j, lab in enumerate(labels):
-                        if lab in (L.CYTO, L.EXTRA):
-                            dist = abs(i - j)
-                            if dist < min_dist:
-                                min_dist = dist
-                                closest_side = lab
-                    if closest_side == L.CYTO:
-                        cmap[i] = ConsensusEntry("TM_C", cmap[i].ss_raw, None)
-                    elif closest_side == L.EXTRA:
-                        cmap[i] = ConsensusEntry("TM_E", cmap[i].ss_raw, None)
+    @staticmethod
+    def _nearest_side(labels: Sequence[str], i: int) -> Optional[str]:
+        """Side (Cytoplasmic / Extracellular) of the nearest residue that has one;
+        on a tie the N-terminal neighbour wins. Labels may carry an SS suffix
+        ("Cytoplasmic Helix"), so only the first word is read."""
+        n = len(labels)
+        for step in range(1, n):
+            for k in (i - step, i + step):
+                if 0 <= k < n and labels[k].split()[0] in L.KNOWN_SIDES:
+                    return labels[k].split()[0]
+        return None
 
+    def _consensus_map_rows(self, frame: ResidueFrame, base, map_codes, raw_ss, labels, groups,
+                            segments, strand, turn_indices: frozenset[int], broken: dict, breaks):
+        """Final residue map with the resolved sides (TM block's side first, inferred
+        otherwise) -> response rows + notes."""
+        cmap, skipped = build_consensus_map(base, map_codes, sides=labels, tm_segments=segments,
+                                            strand_segments=strand, turn_indices=turn_indices)
+        # a TM_in run of ONE residue is not TM: it takes the side of the nearest residue
+        for rs in tm_in_runs(cmap, len(frame), breaks).values():
+            for s, e in rs:
+                if s == e:
+                    side = self._nearest_side(labels, s)
+                    if side is not None:
+                        cmap[s] = ConsensusEntry(TM_C if side == L.CYTO else TM_E,
+                                                 cmap[s].ss_raw, None)
         rows = []
         for i in sorted(cmap):
             entry, res = cmap[i], frame.residues[i]
-            # TM_in and Turn_in both get crossing numbers
-            has_crossing = entry.label in (TM_IN, TURN_IN) and groups[i] >= 0
+            g = groups[i]
+            crossing = g + 1 if entry.label in (TM_IN, TURN_IN) and g >= 0 else None
+            part = None
+            if crossing is not None and g in broken:
+                (_, a_end), _, (b_start, _) = broken[g]
+                part = "a" if i <= a_end else "b" if i >= b_start else None
             rows.append(ConsensusResidue(
                 index=i, residue_number=res.resseq, insertion_code=res.icode or None, aa=res.one,
-                label=entry.label, ss_raw=entry.ss_raw,
+                label=entry.label,
+                ss_raw=raw_ss[i] if raw_ss[i] is not None else entry.ss_raw,
                 tm_segment=entry.tm_segment + 1 if entry.tm_segment is not None else None,
-                crossing=groups[i] + 1 if has_crossing else None,
+                crossing=crossing, part=part,
             ))
         notes = []
         if skipped:
@@ -592,190 +526,6 @@ class TopologyOrchestrator:
             notes.append(f"consensus map: helix residues outside the TM band without a "
                          f"cytoplasmic/extracellular side get no TM_C/TM_E label ({what})")
         return rows, notes
-
-    # ------------------------------------------------ discontinuous crossings
-    def _find_discontinuities(self, spans, coarse, breaks, frame, membrane, params):
-        """Per crossing: the transitions between its SS fragments (evidence), and for
-        BROKEN_TM crossings the parts ((a-part), (unwound), (b-part)). The crossing
-        stays ONE crossing; parts only tell the diagram to draw it broken.
-        Returns (broken, transitions): {span index: parts}, {span index: [evidence]}."""
-        broken, transitions = {}, {}
-        if membrane is None or coarse is None:
-            return broken, transitions
-        thickness = 2.0 * membrane.half_thickness
-        elements = self._ss_elements(coarse, breaks)
-        for idx, (s0, e0, cls) in enumerate(spans):
-            if cls not in ("H", "E"):
-                continue
-            els = [(max(a, s0), min(b, e0), cls) for a, b, c in elements
-                   if c == cls and a <= e0 and b >= s0]
-            if len(els) < 2:
-                continue
-            groups, evidence = self._element_groups(
-                els, breaks, frame.coords, membrane,
-                max(params.broken_gap_max, MIN_UNWOUND), params.full_cross_frac * thickness,
-                params.min_cross_span_frac * thickness, with_evidence=True)
-            if len(groups) != 1:
-                continue                      # separate crossings (tm_first flags those)
-            members, evs = groups[0], evidence[0]
-            if evs:
-                transitions[idx] = [ev.as_dict() for ev in evs]
-            cut = [(ev.gap_residues, i) for i, ev in enumerate(evs) if ev.classification == "BROKEN_TM"]
-            if not cut:
-                continue
-            _, i = max(cut)
-            left_end, right_start = members[i][1], members[i + 1][0]
-            broken[idx] = ((s0, left_end), (left_end + 1, right_start - 1), (right_start, e0))
-        return broken, transitions
-
-    def _flag_multi_crossing(self, spans, coarse, breaks, frame, membrane, params):
-        """tm_first keeps the boundaries, but a segment that holds several separate
-        crossings (a hairpin under one hydropathy window / slab run) is not "one
-        alpha helix": relabel it Irregular and say how many crossings it contains."""
-        thickness = 2.0 * membrane.half_thickness
-        min_cross = params.min_cross_span_frac * thickness
-        out, notes = [], []
-        elements = self._ss_elements(coarse, breaks)
-        for i, (s0, e0, cls) in enumerate(spans, start=1):
-            cand = [(max(a, s0), min(b, e0), c) for a, b, c in elements if a <= e0 and b >= s0]
-            groups = self._group_elements(cand, coarse, breaks, frame.coords, membrane,
-                                          params.broken_gap_max, params.full_cross_frac * thickness)
-            n_cross = sum(1 for a, b in groups if membrane.span(a, b) >= min_cross)
-            if n_cross >= 2:
-                cls = "I"
-                notes.append(f"tm_first: TM{i} ({frame.residues[s0].label}-{frame.residues[e0].label}) "
-                             f"contains {n_cross} "
-                             "separate crossings - labelled Irregular; structure_guided splits it")
-            out.append((s0, e0, cls))
-        return out, notes
-
-    # ------------------------------------------------ structure-guided refinement
-    def _flow_structure_guided(self, segments, coarse, breaks, coords,
-                               membrane: MembraneFrame, params: TMParams):
-        """Bounded refinement: SS elements near each TM candidate are grouped into
-        crossings; boundaries come from the membrane envelope, never from where a
-        helix happens to end. Returns (crossings, intramembrane pieces, notes)."""
-        n = len(coarse)
-        thickness = 2.0 * membrane.half_thickness
-        min_cross = params.min_cross_span_frac * thickness
-        full_cross = params.full_cross_frac * thickness
-        elements = self._ss_elements(coarse, breaks)
-        crossings: list[Span] = []
-        intra: list[Span] = []
-        notes: list[str] = []
-        unsupported = rejected = 0
-
-        for idx, (s0, e0) in enumerate(segments):
-            prev_end = segments[idx - 1][1] if idx > 0 else -1
-            next_start = segments[idx + 1][0] if idx + 1 < len(segments) else n
-            left_gap, right_gap = s0 - prev_end - 1, next_start - e0 - 1
-            lo = s0 - max(0, min(self.max_snap, left_gap // 2 if idx == 0 else (left_gap - 1) // 2))
-            hi = e0 + max(0, min(self.max_snap, right_gap // 2 if idx + 1 == len(segments)
-                                 else (right_gap - 1) // 2))
-            cand = [(max(a, lo), min(b, hi), c) for a, b, c in elements if a <= hi and b >= lo]
-            groups = self._group_elements(cand, coarse, breaks, coords, membrane,
-                                          params.broken_gap_max, full_cross, min_cross)
-            found = False
-            for a, b in groups:
-                inside = [k for k in range(a, b + 1) if membrane.in_envelope(k)]
-                if len(inside) < min(params.min_tm_element_in_slab, b - a + 1):
-                    continue                    # element does not reach the bilayer
-                a2, b2 = inside[0], inside[-1]
-                cls = self._majority(coarse[a2:b2 + 1])
-                if membrane.span(a2, b2) >= min_cross:
-                    crossings.append((a2, b2, cls))
-                    found = True
-                elif np.nanmin(np.abs(membrane.depth[a2:b2 + 1])) <= membrane.half_thickness - EDGE_WIDTH:
-                    intra.append((a2, b2, cls))  # dips into the core without crossing
-            if not found:
-                inside = [k for k in range(s0, e0 + 1) if membrane.in_envelope(k)]
-                if inside and membrane.span(inside[0], inside[-1]) >= min_cross:
-                    crossings.append((inside[0], inside[-1], "I"))
-                    unsupported += 1
-                else:
-                    rejected += 1
-        # a window can only produce disjoint pieces; drop intramembrane pieces that
-        # overlap a crossing from a neighbouring window
-        intra = [p for p in intra if not any(p[0] <= c[1] and p[1] >= c[0] for c in crossings)]
-        if unsupported:
-            notes.append(f"structure_guided: {unsupported} TM segment(s) cross the membrane but "
-                         "have no regular helix/strand - labelled Transmembrane Irregular")
-        if rejected:
-            notes.append(f"structure_guided: {rejected} TM segment(s) do not cross the membrane "
-                         f"({membrane.source}) and were not kept as crossings")
-        return sorted(crossings), sorted(intra), notes
-
-    def _group_elements(self, cand, coarse, breaks, coords, membrane: MembraneFrame,
-                        gap_max: int, full_cross: float,
-                        min_cross: Optional[float] = None) -> list[tuple[int, int]]:
-        return [(g[0][0], g[-1][1]) for g in
-                self._element_groups(cand, breaks, coords, membrane, gap_max, full_cross, min_cross)]
-
-    def _element_groups(self, cand, breaks, coords, membrane: MembraneFrame,
-                        gap_max: int, full_cross: float, min_cross: Optional[float] = None,
-                        with_evidence: bool = False):
-        """Group consecutive SS elements into crossings with the transition state
-        machine (transitions.classify_membrane_transition). ``gap_max`` only limits
-        which pairs are considered; geometry decides. Elements shorter than
-        MIN_FRAGMENT_LEN are treated as part of a gap when longer ones exist.
-        Returns member lists per group (+ the transitions inside each group)."""
-        if min_cross is None:
-            min_cross = 0.45 * 2.0 * membrane.half_thickness
-        els = sorted((a, b) for a, b, _ in cand)
-        if any(b - a + 1 >= MIN_FRAGMENT_LEN for a, b in els):
-            els = [(a, b) for a, b in els if b - a + 1 >= MIN_FRAGMENT_LEN]
-        groups: list[list[tuple[int, int]]] = []
-        evidence: list[list[TransitionEvidence]] = []
-        for a, b in els:
-            if groups:
-                g = groups[-1]
-                if a - g[-1][1] - 1 <= gap_max:
-                    ev = classify_membrane_transition((g[0][0], g[-1][1]), (a, b), membrane,
-                                                      coords, breaks, min_cross, full_cross)
-                    if ev.classification in MERGING:
-                        g.append((a, b))
-                        evidence[-1].append(ev)
-                        continue
-            groups.append([(a, b)])
-            evidence.append([])
-        return (groups, evidence) if with_evidence else groups
-
-    @staticmethod
-    def _group_positions(intervals, gap_max, breaks, coords=None) -> list[tuple[int, int]]:
-        """Group sorted inclusive intervals (SS elements, or single residues) into
-        crossings. The next interval joins the current group only if the gap between
-        them is <= gap_max residues, contains no chain break, and - when both pieces are
-        long enough to have a direction - the chain keeps going the same way (a kink or
-        a pi-bulge). Two antiparallel elements are a hairpin, i.e. two crossings, even
-        when the turn between them is only 1-2 residues (common in MFS transporters)."""
-        groups: list[tuple[int, int]] = []
-        last: Optional[tuple[int, int]] = None           # last element of current group
-
-        def direction(a, b):
-            if coords is None or b - a < 3:
-                return None
-            v = coords[b] - coords[a]
-            norm = float(np.linalg.norm(v))
-            return v / norm if np.isfinite(norm) and norm > 0 else None
-
-        for a, b in sorted(intervals):
-            if groups:
-                ga, gb = groups[-1]
-                gap = a - gb - 1
-                joinable = gap <= gap_max and not any(breaks[k] for k in range(gb + 1, a + 1))
-                if joinable:
-                    assert last is not None
-                    u, v = direction(*last), direction(a, b)
-                    if u is not None and v is not None and float(u @ v) < 0.0:
-                        joinable = False                    # antiparallel -> hairpin
-                if joinable:
-                    groups[-1] = (ga, max(gb, b))
-                    if b - a >= 3:                          # keep a piece with a direction
-                        last = (a, b)
-                    continue
-            groups.append((a, b))
-            last = (a, b)
-        return groups
 
     # ---------------------------------------------------------------- helpers
     @staticmethod
@@ -1145,8 +895,7 @@ class TopologyOrchestrator:
             membrane_score=round(float(tm_pred.membrane_score or 0.0), 3),
             membrane_normal=[round(float(x), 4) for x in normal] if normal is not None else None,
             labeler=labeler,
-            parameters_used={**params.to_response_dict(), "flow": self.flow_type,
-                             "max_snap": self.max_snap},
+            parameters_used={**params.to_response_dict(), "flow": FLOW},
             regions=regions,
             chain_id=frame.chain_id,
             warnings=list(dict.fromkeys(warns)),

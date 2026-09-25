@@ -261,7 +261,7 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
       {chain && (
         <div style={{ marginTop: '24px', background: '#0f172a', borderRadius: '8px', border: '1px solid #1e293b', overflow: 'hidden' }}>
           <div className="consensus-map-header" style={{ padding: '16px', borderBottom: '1px solid #1e293b' }}>
-            <h3 className="consensus-map-title">3D Consensus Validation</h3>
+            <h3 className="consensus-map-title">3D SS&TM Validation</h3>
             <p className="consensus-map-subtitle">
               Verify the structural separation of Extracellular, Intramembrane, Cytoplasmic segments, and Turn/Bend residues in 3D space.
             </p>

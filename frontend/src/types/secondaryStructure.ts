@@ -87,10 +87,11 @@ export interface TransitionEvidence {
   decision_source?: string | null;
 }
 
-/** One entry of the consensus residue map (flow parallel_merge / consensus). Only
- *  residues that are helix in DSSP/STRIDE (strand inside a beta TM segment) appear.
- *  TM_in = inside a TM segment of the TM block (drawn); TM_C / TM_E = helix on the
- *  cytoplasmic / extracellular side (not drawn, kept for later analysis). */
+/** One entry of the consensus residue map (the only flow). Only residues that are
+ *  helix in DSSP/STRIDE (strand inside a beta TM segment; T/S next to a helix with
+ *  treat_turn_as_helix) appear. TM_in = inside a TM segment of the TM block (drawn);
+ *  TM_C / TM_E = helix on the cytoplasmic / extracellular side (not drawn, kept for
+ *  later analysis); Turn_* = turn next to a helix. */
 export interface ConsensusResidue {
   index: number;
   residue_number: number;
@@ -102,6 +103,8 @@ export interface ConsensusResidue {
   tm_segment?: number | null;
   /** TM_in: 1-based crossing it is drawn in; null = not drawn (e.g. fragment < 5). */
   crossing?: number | null;
+  /** 'a' / 'b' when that crossing is drawn broken (TM1a / TM1b); null otherwise. */
+  part?: 'a' | 'b' | null;
 }
 
 /** One row of the backend's residue-level evidence matrix. */
@@ -149,7 +152,7 @@ export interface CalculatedTopologyData extends UniProtTopologyData {
   domain_type?: 'alpha_helical' | 'beta_barrel' | 'beta' | 'mixed' | 'irregular' | null;
   membrane?: MembranePlacement | null;
   residues?: ResidueAnnotation[] | null;
-  /** Consensus flow only. */
+  /** Residue map TM_in / TM_C / TM_E; null when no SS tool was run. */
   consensus_map?: ConsensusResidue[] | null;
 }
 

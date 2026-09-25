@@ -58,7 +58,8 @@ export function TransmembraneTopologyDiagram({
   onTopologySourceChange,
   onTopologyDataChange,
   triggerTmRecalc,
-  distinguishTurns = false
+  distinguishTurns = false,
+  onLoadingChange
 }: Props) {
   const [uniprotIdInput, setUniprotIdInput] = useState<string>('P31645');
   const [uniprotData, setUniprotData] = useState<UniProtTopologyData | null>(null);
@@ -82,7 +83,6 @@ export function TransmembraneTopologyDiagram({
   };
 
   const [ssAlgorithm, setSsAlgorithm] = useState<string>('dssp');
-  const [flowType, setFlowType] = useState<string>('ss_then_tm');
   const [customUniprotId, setCustomUniprotId] = useState<string>('');
   const [overlayType, setOverlayType] = useState<'none' | 'dssp' | 'stride'>('none');
   const [calculatedData, setCalculatedData] = useState<CalculatedTopologyData | null>(null);
@@ -98,10 +98,8 @@ export function TransmembraneTopologyDiagram({
   // the form can never silently disagree with the server.
   const [showAdvancedParams, setShowAdvancedParams] = useState(false);
   const [tmThickness, setTmThickness] = useState<string>('');
-  const [tmMinElement, setTmMinElement] = useState<string>('');
   const [tmMinCrossSpan, setTmMinCrossSpan] = useState<string>('');
   const [tmFullCrossFrac, setTmFullCrossFrac] = useState<string>('');
-  const [tmBrokenGapMax, setTmBrokenGapMax] = useState<string>('');
   const [tmMinMembraneScore, setTmMinMembraneScore] = useState<string>('');
   const [tmTreatTurnAsHelix, setTmTreatTurnAsHelix] = useState<boolean>(false);
 
@@ -152,7 +150,6 @@ export function TransmembraneTopologyDiagram({
     filenameToFetch: string,
     tm: string,
     ss: string,
-    flow: string,
     cUni: string,
     chainIdToFetch?: string
   ) => {
@@ -160,7 +157,8 @@ export function TransmembraneTopologyDiagram({
     setLoadingCalculated(true);
     setCalculatedError(null);
     try {
-      const qp = new URLSearchParams({ tm_algo: tm, ss_algo: ss, flow_type: flow });
+      // One flow: TM block and DSSP/STRIDE merged residue by residue (consensus).
+      const qp = new URLSearchParams({ tm_algo: tm, ss_algo: ss, flow_type: 'consensus' });
       // Without chain_id the backend analyses the first protein chain, which is not
       // necessarily the chain selected here (SS overlay and 3D selection use this one).
       if (chainIdToFetch) qp.set('chain_id', chainIdToFetch);
@@ -172,14 +170,12 @@ export function TransmembraneTopologyDiagram({
         if (!isNaN(value)) qp.set(key, String(value));
       };
       setNumber('thickness', tmThickness);
-      setNumber('broken_gap_max', tmBrokenGapMax, true);
       setNumber('min_membrane_score', tmMinMembraneScore);
       if (tmTreatTurnAsHelix || distinguishTurns) {
         qp.set('treat_turn_as_helix', 'true');
       }
-      // crossing geometry: read only by the structure-guided flow
-      if (flow === 'ss_then_tm') {
-        setNumber('min_tm_element', tmMinElement, true);
+      // hairpin guard (two helices under one TM segment): needs the SS result
+      if (ss !== 'none') {
         setNumber('min_cross_span', tmMinCrossSpan);
         setNumber('full_cross_frac', tmFullCrossFrac);
       }
@@ -198,7 +194,7 @@ export function TransmembraneTopologyDiagram({
     } finally {
       setLoadingCalculated(false);
     }
-  }, [tmThickness, tmBrokenGapMax, tmMinMembraneScore, tmTreatTurnAsHelix, tmMinElement, tmMinCrossSpan, tmFullCrossFrac, distinguishTurns]);
+  }, [tmThickness, tmMinMembraneScore, tmTreatTurnAsHelix, tmMinCrossSpan, tmFullCrossFrac, distinguishTurns]);
 
   useEffect(() => {
     if (uniprotId) {
@@ -215,7 +211,7 @@ export function TransmembraneTopologyDiagram({
       if (filename) {
         setCalculatedData(null);
         setCalculatedError(null);
-        fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId, chain?.id);
+        fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain?.id);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -225,7 +221,7 @@ export function TransmembraneTopologyDiagram({
   useEffect(() => {
     if (topologySource !== 'calculated' || !filename || !chain?.id || loadingCalculated) return;
     if (calculatedData?.chain_id && calculatedData.chain_id !== chain.id) {
-      fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId, chain.id);
+      fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chain?.id]);
@@ -287,6 +283,12 @@ export function TransmembraneTopologyDiagram({
 
   const activeError = topologySource === 'calculated' ? calculatedError : uniprotError;
   const activeLoading = topologySource === 'calculated' ? loadingCalculated : loadingUniProt;
+
+  useEffect(() => {
+    if (onLoadingChange) {
+      onLoadingChange(activeLoading);
+    }
+  }, [activeLoading, onLoadingChange]);
 
   /* ---------------------------------------------------------------- *
    * Build helices + loops
@@ -360,8 +362,7 @@ export function TransmembraneTopologyDiagram({
 
   const isPub = figureTheme === 'publication';
   const slabParamsActive = tmAlgorithm === '3d_slab_geom';
-  const gapParamActive = ssAlgorithm !== 'none';
-  const crossParamsActive = flowType === 'ss_then_tm' && ssAlgorithm !== 'none';
+  const crossParamsActive = ssAlgorithm !== 'none';
   const usedParam = (key: string): string => {
     const value = calculatedData?.parameters_used?.[key];
     return value === undefined || value === null ? 'default' : String(value);
@@ -451,7 +452,7 @@ export function TransmembraneTopologyDiagram({
         <div>
           <span className="section-kicker">
             {topologySource === 'calculated'
-              ? 'Calculated topology (DSSP/STRIDE elements + membrane fit)'
+              ? 'Calculated topology (TM block × DSSP/STRIDE, residue-level consensus)'
               : 'UniProt topology'}
           </span>
           <h2>Transmembrane secondary structure map</h2>
@@ -508,22 +509,7 @@ export function TransmembraneTopologyDiagram({
           </button>
 
           
-          <select 
-            className="tm-input-field" 
-            value={overlayType}
-            onChange={(e) => setOverlayType(e.target.value as 'none' | 'dssp' | 'stride')}
-            style={{ padding: '4px 8px', width: 'auto' }}
-            disabled={!numberingMatchesStructure || !filename}
-            title={
-              numberingMatchesStructure
-                ? 'Secondary Structure Overlay'
-                : 'The overlay uses structure numbering; UniProt topology uses UniProt numbering. Use Calculated → UniProt API to map UniProt onto the structure.'
-            }
-          >
-            <option value="none">No Overlay</option>
-            <option value="dssp">Overlay DSSP</option>
-            <option value="stride">Overlay STRIDE</option>
-          </select>
+
           <button
             className={`tm-color-toggle-btn ${colorDrawerOpen ? 'active' : ''}`}
             onClick={() => setColorDrawerOpen((open) => !open)}
@@ -550,7 +536,7 @@ export function TransmembraneTopologyDiagram({
                 className="tm-add-btn"
                 style={{ background: '#3b82f6' }}
               >
-                {loadingUniProt ? '…' : 'Load'}
+                {loadingUniProt ? 'Loading...' : 'Load UniProt'}
               </button>
 
               <button
@@ -613,22 +599,12 @@ export function TransmembraneTopologyDiagram({
                     <option value="none">None (Only TM boundaries)</option>
                   </select>
 
-                  <select 
-                    className="tm-input-field" 
-                    value={flowType}
-                    onChange={(e) => setFlowType(e.target.value)}
-                    style={{ padding: '4px 8px' }}
-                  >
-                    <option value="ss_then_tm">Structure-guided (Recommended)</option>
-                    <option value="tm_then_ss">TM first (keep TM boundaries)</option>
-                    <option value="parallel_merge">Consensus (residue-level agreement)</option>
-                  </select>
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
                     onClick={() =>
-                      filename && fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, flowType, customUniprotId, chain?.id)
+                      filename && fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain?.id)
                     }
                     disabled={loadingCalculated || !filename}
                     className="tm-add-btn"
@@ -671,35 +647,21 @@ export function TransmembraneTopologyDiagram({
                       onChange={e => setTmMinMembraneScore(e.target.value)}
                       className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
                   </label>
-                  <label title="Kinks/breaks up to this many residues stay inside one crossing when the chain keeps its direction. Used by the SS-driven flows." style={{ opacity: gapParamActive ? 1 : 0.45 }}>
-                    Broken gap max
-                    <input type="number" step="1" min="0" max="20" value={tmBrokenGapMax}
-                      placeholder={usedParam('broken_gap_max')} disabled={!gapParamActive}
-                      onChange={e => setTmBrokenGapMax(e.target.value)}
-                      className="tm-input-field" style={{ width: '50px', marginLeft: 4 }} />
-                  </label>
-                  <label title="Min residues of a helix/strand inside the membrane envelope to count as a crossing. Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
-                    Min element in slab
-                    <input type="number" step="1" min="1" max="40" value={tmMinElement} disabled={!crossParamsActive}
-                      placeholder={usedParam('min_tm_element_in_slab')}
-                      onChange={e => setTmMinElement(e.target.value)}
-                      className="tm-input-field" style={{ width: '50px', marginLeft: 4 }} />
-                  </label>
-                  <label title="Min fraction of the thickness a group must span along the membrane normal to be a crossing; shallower groups that reach the core become Intramembrane (re-entrant). Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
+                  <label title="Hairpin guard: fraction of the thickness two TM_in runs must span together to count as one traversal of the bilayer. Needs DSSP/STRIDE." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
                     Min cross span
                     <input type="number" step="0.05" min="0.05" max="1" value={tmMinCrossSpan} disabled={!crossParamsActive}
                       placeholder={usedParam('min_cross_span_frac')}
                       onChange={e => setTmMinCrossSpan(e.target.value)}
                       className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
                   </label>
-                  <label title="An element spanning this fraction of the thickness is a full crossing on its own and is never fused with a neighbour. Structure-guided flow." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
+                  <label title="Hairpin guard: a TM_in run spanning this fraction of the thickness crosses the bilayer on its own, so two such runs inside one TM segment are two crossings. Needs DSSP/STRIDE." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
                     Full cross frac
                     <input type="number" step="0.05" min="0.1" max="1.5" value={tmFullCrossFrac} disabled={!crossParamsActive}
                       placeholder={usedParam('full_cross_frac')}
                       onChange={e => setTmFullCrossFrac(e.target.value)}
                       className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
                   </label>
-                  <label title="Treat Turn (T) and Bend (S) secondary structures as Alpha Helix (H). This prevents the algorithm from splitting TM crossings on turns/bends." style={{ opacity: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <label title="Turn (T) / Bend (S) with a helix on both sides becomes helix (not when the two helices are an antiparallel hairpin); with a helix on one side it is labelled Turn. Note: an unwound TM stretch coded T/S then no longer splits TM1a / TM1b." style={{ opacity: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <input type="checkbox" checked={tmTreatTurnAsHelix}
                       onChange={e => setTmTreatTurnAsHelix(e.target.checked)} />
                     Treat Turn/Bend as Helix
@@ -714,24 +676,6 @@ export function TransmembraneTopologyDiagram({
           )}
         </div>
       </div>
-
-      {topologySource === 'uniprot' && (
-        <div className="tm-preset-row" style={{ margin: '4px 0 12px' }}>
-          <span className="preset-label">Examples</span>
-          {DEFAULT_PRESETS.map((p) => (
-            <button
-              key={p.id}
-              className="tm-preset-chip"
-              onClick={() => {
-                setUniprotIdInput(p.id);
-                fetchUniProtTopology(p.id);
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Color drawer */}
       {colorDrawerOpen && (

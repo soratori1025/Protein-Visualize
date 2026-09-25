@@ -15,14 +15,16 @@ from app.core.constants import (
 
 @dataclass
 class TMParams:
-    """All biology-dependent thresholds that affect TM detection."""
-    membrane_thickness: float = MEMBRANE_THICKNESS
-    min_membrane_score: float = MIN_MEMBRANE_SCORE
+    """All biology-dependent thresholds that affect TM detection (consensus flow)."""
+    membrane_thickness: float = MEMBRANE_THICKNESS      # 3D slab fit + estimated bilayer
+    min_membrane_score: float = MIN_MEMBRANE_SCORE      # 3D slab: below -> soluble protein
+    min_cross_span_frac: float = MIN_CROSS_SPAN_FRAC    # hairpin guard / bilayer centring
+    full_cross_frac: float = FULL_CROSS_FRAC            # hairpin guard: a run crosses alone
+    treat_turn_as_helix: bool = False                   # T/S next to helices (orchestrator)
+    # Read by the removed tm_then_ss / ss_then_tm flows only. Kept so old requests still
+    # validate; the service reports them as ignored.
     min_tm_element_in_slab: int = MIN_TM_ELEMENT_IN_SLAB
-    min_cross_span_frac: float = MIN_CROSS_SPAN_FRAC
-    full_cross_frac: float = FULL_CROSS_FRAC
     broken_gap_max: int = BROKEN_GAP_MAX
-    treat_turn_as_helix: bool = False
 
     def to_response_dict(self) -> dict:
         return {
@@ -83,16 +85,18 @@ class ResidueAnnotation(BaseModel):
 
 
 class ConsensusResidue(BaseModel):
-    """One entry of the consensus residue map (flow parallel_merge / consensus).
-    Only residues whose SS flag is on (helix; strand in a beta TM segment) appear."""
+    """One entry of the consensus residue map (the only flow).
+    Only residues whose SS flag is on (helix; strand in a beta TM segment; T/S next to
+    a helix with treat_turn_as_helix) appear."""
     index: int                          # position in the analysed chain (0-based)
     residue_number: int
     insertion_code: Optional[str] = None
     aa: str
     label: str                          # TM_in | TM_C | TM_E | Turn_in | Turn_C | Turn_E
-    ss_raw: str                         # DSSP/STRIDE code (H, G, I, or E)
+    ss_raw: str                         # raw DSSP/STRIDE code (H G I E; T/S for promoted turns)
     tm_segment: Optional[int] = None    # TM_in: 1-based TM segment of the TM block (UniProt TM feature)
     crossing: Optional[int] = None      # TM_in: 1-based crossing it is drawn in (None = not drawn)
+    part: Optional[str] = None          # "a" / "b" when that crossing is drawn broken (TM1a / TM1b)
 
 
 class TopologyResponse(BaseModel):
@@ -114,5 +118,5 @@ class TopologyResponse(BaseModel):
     # {"source", "normal", "half_thickness"} of the membrane placement used
     membrane: Optional[dict] = None
     residues: Optional[list[ResidueAnnotation]] = None
-    # consensus flow only: residue map TM_in / TM_C / TM_E (see ConsensusResidue)
+    # residue map TM_in / TM_C / TM_E (see ConsensusResidue); None without an SS result
     consensus_map: Optional[list[ConsensusResidue]] = None

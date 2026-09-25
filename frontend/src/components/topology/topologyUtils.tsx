@@ -270,6 +270,7 @@ export interface Props {
   onTopologyDataChange?: (data: UniProtTopologyData | null) => void;
   triggerTmRecalc?: number;
   distinguishTurns?: boolean;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 export interface TMHelix {
@@ -551,79 +552,60 @@ export function buildTopologyModel({
     usingAnnotation = true;
 
     if (isCalculatedTopology(activeTopologyData) && activeTopologyData.consensus_map) {
-      // Synchronize strictly with the Consensus Merge Analysis map
-      const tmInMap = new Map<number, typeof activeTopologyData.consensus_map>();
-      activeTopologyData.consensus_map.forEach((r) => {
-        if (r.label === 'TM_in' && r.tm_segment != null) {
-          if (!tmInMap.has(r.tm_segment)) tmInMap.set(r.tm_segment, []);
-          tmInMap.get(r.tm_segment)!.push(r);
+      // Draw exactly the crossings the backend built from the residue map: TM_in
+      // residues grouped by `crossing` (null = not drawn, e.g. a fragment < 5 residues)
+      // and by `part` ('a' / 'b') when that crossing is broken. Grouping is by crossing,
+      // never by tm_segment: one TM segment of a Kyte-Doolittle / slab TM block can hold
+      // two crossings (a hairpin), which must be drawn as two helices.
+      const cmap = activeTopologyData.consensus_map;
+      const brokenCrossings = new Set(
+        cmap.filter((r) => r.label === 'TM_in' && r.crossing != null && r.part).map((r) => r.crossing!)
+      );
+      const pieces = new Map<string, typeof cmap>();
+      for (const r of cmap) {
+        if (r.label !== 'TM_in' || r.crossing == null) continue;
+        // a TM_in speck inside the unwound stretch of a broken crossing is not a third part
+        if (!r.part && brokenCrossings.has(r.crossing)) continue;
+        const key = `${r.crossing}:${r.part ?? ''}`;
+        if (!pieces.has(key)) pieces.set(key, []);
+        pieces.get(key)!.push(r);
+      }
+
+      const confidenceOf = new Map<number, string | null | undefined>();
+      for (const region of activeTopologyData.regions) {
+        if (region.type === 'Transmembrane' && region.crossing != null && !confidenceOf.has(region.crossing)) {
+          confidenceOf.set(region.crossing, region.confidence);
         }
-      });
+      }
 
-      const segments: (typeof activeTopologyData.consensus_map)[] = [];
-      const observedSpansMap = new Map<number, { start: number; end: number }[]>();
-
-      for (const residues of tmInMap.values()) {
-        if (residues.length === 0) continue;
-        
-        let currentSubSeg = [residues[0]];
-        const observedSpans: { start: number; end: number }[] = [];
-        
-        for (let i = 1; i < residues.length; i++) {
-          if (residues[i].index === residues[i - 1].index + 1) {
-            currentSubSeg.push(residues[i]);
-          } else {
-            observedSpans.push({
-              start: currentSubSeg[0].residue_number,
-              end: currentSubSeg[currentSubSeg.length - 1].residue_number,
-            });
-            currentSubSeg = [residues[i]];
+      rawTMs = [...pieces.values()]
+        .map((residues): RawTM => {
+          const sorted = [...residues].sort((a, b) => a.index - b.index);
+          // contiguous frame positions; a 1-2 residue kink shows as a gap in the cylinder
+          const observedSpans: { start: number; end: number }[] = [];
+          let runStart = sorted[0];
+          for (let i = 1; i <= sorted.length; i++) {
+            if (i === sorted.length || sorted[i].index !== sorted[i - 1].index + 1) {
+              observedSpans.push({ start: runStart.residue_number, end: sorted[i - 1].residue_number });
+              if (i < sorted.length) runStart = sorted[i];
+            }
           }
-        }
-        observedSpans.push({
-          start: currentSubSeg[0].residue_number,
-          end: currentSubSeg[currentSubSeg.length - 1].residue_number,
-        });
-
-        segments.push([...residues]);
-        observedSpansMap.set(residues[0].index, observedSpans);
-      }
-
-      segments.sort((a, b) => a[0].index - b[0].index);
-      
-      const crossingCounts = new Map<number, number>();
-      for (const seg of segments) {
-        if (seg[0].crossing != null) {
-          crossingCounts.set(seg[0].crossing, (crossingCounts.get(seg[0].crossing) || 0) + 1);
-        }
-      }
-
-      const crossingSeen = new Map<number, number>();
-      rawTMs = segments.map((seg) => {
-        const start = seg[0].residue_number;
-        const end = seg[seg.length - 1].residue_number;
-        const crossing = seg[0].crossing;
-        const observedSpans = observedSpansMap.get(seg[0].index);
-        
-        let part: string | null = null;
-        if (crossing != null && crossingCounts.get(crossing)! > 1) {
-          const seen = crossingSeen.get(crossing) || 0;
-          part = String.fromCharCode(97 + seen); // 'a', 'b', 'c', etc.
-          crossingSeen.set(crossing, seen + 1);
-        }
-
-        return {
-          start,
-          end,
-          name: part ? `TM${crossing || ''}${part}` : `TM${crossing || ''}`,
-          description: part ? 'Transmembrane Unwound' : 'Transmembrane', // Helps shouldSplit
-          ss: seg[0].ss_raw === 'E' ? 'Strand' : 'Helix',
-          confidence: 'high',
-          crossing,
-          part,
-          observedSpans,
-        };
-      });
+          const first = sorted[0];
+          const crossing = first.crossing as number;
+          const part = first.part ?? null;
+          return {
+            start: first.residue_number,
+            end: sorted[sorted.length - 1].residue_number,
+            name: `TM${crossing}${part ?? ''}`,
+            description: 'Transmembrane',
+            ss: first.ss_raw === 'E' ? 'Strand' : 'Helix',
+            confidence: confidenceOf.get(crossing) ?? null,
+            crossing,
+            part,
+            observedSpans,
+          };
+        })
+        .sort((a, b) => a.start - b.start);
 
       domainRegions = activeTopologyData.regions
         .filter((r) => r.type === 'Topological domain')
