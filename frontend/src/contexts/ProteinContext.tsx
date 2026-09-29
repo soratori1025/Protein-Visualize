@@ -15,6 +15,7 @@ interface ProteinContextType {
   health: string;
   isUploading: boolean;
   handleUpload: (file: File) => Promise<void>;
+  handleClear: () => void;
   checkHealth: () => Promise<void>;
   
   secondaryResult: SecondaryStructureResult | null;
@@ -91,6 +92,17 @@ export function ProteinProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleClear = () => {
+    setProtein(null);
+    setChainId(null);
+    setSecondaryResult(null);
+    setActiveTopologyData(null);
+    setChainAnalysis(null);
+    setSelectedResidue(null);
+    setStatus('Ready for a structure file');
+    localStorage.removeItem('protein-cache');
+  };
+
   return (
     <ProteinContext.Provider
       value={{
@@ -104,6 +116,7 @@ export function ProteinProvider({ children }: { children: React.ReactNode }) {
         health,
         isUploading,
         handleUpload,
+        handleClear,
         checkHealth,
         secondaryResult,
         setSecondaryResult,

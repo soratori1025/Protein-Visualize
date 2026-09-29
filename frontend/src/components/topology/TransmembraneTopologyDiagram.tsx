@@ -61,7 +61,7 @@ export function TransmembraneTopologyDiagram({
   distinguishTurns = false,
   onLoadingChange
 }: Props) {
-  const [uniprotIdInput, setUniprotIdInput] = useState<string>('P31645');
+  const [uniprotIdInput, setUniprotIdInput] = useState<string>('');
   const [uniprotData, setUniprotData] = useState<UniProtTopologyData | null>(null);
   const [loadingUniProt, setLoadingUniProt] = useState<boolean>(false);
   const [uniprotError, setUniprotError] = useState<string | null>(null);
@@ -205,8 +205,6 @@ export function TransmembraneTopologyDiagram({
     if (uniprotId) {
       setUniprotIdInput(uniprotId);
       fetchUniProtTopology(uniprotId);
-    } else {
-      fetchUniProtTopology('P31645');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uniprotId]);

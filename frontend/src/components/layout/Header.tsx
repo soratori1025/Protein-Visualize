@@ -8,7 +8,7 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle, eyebrow = 'STRUCTURE LAB / MVP 0.1'}: HeaderProps) {
-  const { handleUpload, isUploading, protein } = useProtein();
+  const { handleUpload, handleClear, isUploading, protein } = useProtein();
   return (
     <header className="topbar">
       <div>
@@ -17,6 +17,15 @@ export function Header({ title, subtitle, eyebrow = 'STRUCTURE LAB / MVP 0.1'}: 
         <p style={{ color: title.includes('Storyboard') ? '#a5b9cb' : undefined, fontSize: title.includes('Storyboard') ? '14px' : undefined }}>{subtitle}</p>
       </div>
       <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {protein && (
+          <button 
+            className="upload-button" 
+            style={{ background: 'transparent', border: '1px solid #475569', color: '#94a3b8' }}
+            onClick={handleClear}
+          >
+            Clear Data
+          </button>
+        )}
         <label className="upload-button">
           <span>{isUploading ? 'Uploading...' : 'Upload Structure'}</span>
           <input 
