@@ -40,6 +40,9 @@ def read_root():
     return {"message": "ProteinLab API is running on Render!"}
 
 @app.get("/api/health")
+@app.get("/health")
+@app.get("/healthz")
+@app.get("/ping")
 def health() -> dict:
     return {
         "status": "ok",

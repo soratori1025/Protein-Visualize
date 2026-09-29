@@ -33,5 +33,8 @@ WORKDIR /workspace/backend
 # Thêm workspace vào PYTHONPATH để Python nhận diện được gói protein_engine
 ENV PYTHONPATH=/workspace
 
-# Khởi chạy Uvicorn
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Expose port 10000 (Render's default)
+EXPOSE 10000
+
+# Khởi chạy Uvicorn với proxy-headers để hoạt động tốt sau Render load balancer
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000} --proxy-headers --forwarded-allow-ips '*'"]
