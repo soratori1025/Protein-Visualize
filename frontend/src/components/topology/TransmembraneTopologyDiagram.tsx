@@ -104,10 +104,15 @@ export function TransmembraneTopologyDiagram({
   const [tmTreatTurnAsHelix, setTmTreatTurnAsHelix] = useState<boolean>(false);
 
   const [colorDrawerOpen, setColorDrawerOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'preset' | 'helices' | 'residues' | 'effects'>('preset');
+  const [activeTab, setActiveTab] = useState<'preset' | 'helices' | 'residues' | 'effects' | 'regions'>('preset');
   const [visualStyle, setVisualStyle] = useState<'cylinder' | 'ribbon' | 'wire' | 'flat' | 'beads'>('cylinder');
   const [selectedPaletteKey, setSelectedPaletteKey] = useState<string>('PAPER_DEFAULT');
   const [customHelixColors, setCustomHelixColors] = useState<Record<string, string>>({});
+  const [customRegionColors, setCustomRegionColors] = useState<Record<string, string>>({
+    Membrane: '#ffa600',
+    ExtracellularText: '#64748b',
+    CytoplasmicText: '#64748b'
+  });
   const [customResidueRules, setCustomResidueRules] = useState<CustomResidueColorRule[]>([]);
   const [hoverBrightness, setHoverBrightness] = useState<number>(1.1);
   const [hoverShadow, setHoverShadow] = useState<number>(0.3);
@@ -489,12 +494,6 @@ export function TransmembraneTopologyDiagram({
 
           <div className="tm-preset-chip" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
             <button
-              className={`tm-tab-btn ${topologySource === 'uniprot' ? 'active' : ''}`}
-              onClick={() => handleTopologySourceChange('uniprot')}
-            >
-              UniProt
-            </button>
-            <button
               className={`tm-tab-btn ${topologySource === 'calculated' ? 'active' : ''}`}
               onClick={() => handleTopologySourceChange('calculated')}
               disabled={!filename}
@@ -502,6 +501,12 @@ export function TransmembraneTopologyDiagram({
             >
               Calculated (beta)
             </button>
+            <button
+              className={`tm-tab-btn ${topologySource === 'uniprot' ? 'active' : ''}`}
+              onClick={() => handleTopologySourceChange('uniprot')}
+            >
+              UniProt
+            </button>  
           </div>
 
           <button className="tm-color-toggle-btn" onClick={() => handleExport('png')} disabled={exporting}>
@@ -514,7 +519,7 @@ export function TransmembraneTopologyDiagram({
             className={`tm-color-toggle-btn ${colorDrawerOpen ? 'active' : ''}`}
             onClick={() => setColorDrawerOpen((open) => !open)}
           >
-            <span>{colorDrawerOpen ? 'Close colors' : 'Customize colors'}</span>
+            <span>{colorDrawerOpen ? 'Close customize bar' : 'Customize styles'}</span>
           </button>
 
           {topologySource === 'uniprot' ? (
@@ -572,8 +577,6 @@ export function TransmembraneTopologyDiagram({
                     onChange={(e) => handleTmAlgorithmChange(e.target.value)}
                     style={{ padding: '4px 8px' }}
                   >
-                    <option value="3d_slab_geom">3D Slab Geometry (Recommended)</option>
-                    <option value="kyte_doolittle_seq">Kyte-Doolittle Sequence</option>
                     <option value="uniprot_api">UniProt API</option>
                   </select>
 
@@ -675,8 +678,8 @@ export function TransmembraneTopologyDiagram({
             </>
           )}
         </div>
+        
       </div>
-
       {/* Color drawer */}
       {colorDrawerOpen && (
         <div className={`tm-color-customizer-drawer ${isPub ? 'publication' : 'lab'}`}>
@@ -703,10 +706,16 @@ export function TransmembraneTopologyDiagram({
               className={`tm-tab-btn ${activeTab === 'effects' ? 'active' : ''}`}
               onClick={() => setActiveTab('effects')}
             >
-              Effects
+              Styles display
+            </button>
+            <button
+              className={`tm-tab-btn ${activeTab === 'regions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('regions')}
+            >
+              Regions
             </button>
             <button className="tm-reset-btn" onClick={handleResetColors}>
-              Reset
+              Reset setting
             </button>
           </div>
 
@@ -720,9 +729,7 @@ export function TransmembraneTopologyDiagram({
                   {[
                     { id: 'cylinder', label: 'Cylinder' },
                     { id: 'ribbon', label: 'Ribbon' },
-                    { id: 'wire', label: 'Wire / Trace' },
                     { id: 'flat', label: 'Flat Block' },
-                    { id: 'beads', label: 'Beads' },
                   ].map((style) => (
                     <label key={style.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: isPub ? '#334155' : '#cbd5e1', cursor: 'pointer' }}>
                       <input type="radio" name="visualStyle" checked={visualStyle === style.id} onChange={() => setVisualStyle(style.id as any)} />
@@ -731,33 +738,58 @@ export function TransmembraneTopologyDiagram({
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'regions' && (
+            <div className="tm-effects-section" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Hover Brightness</span>
-                  <span>{hoverBrightness.toFixed(2)}</span>
+                  <span>Membrane Background</span>
                 </label>
-                <input 
-                  type="range" 
-                  min="1.0" 
-                  max="2.0" 
-                  step="0.05" 
-                  value={hoverBrightness} 
-                  onChange={(e) => setHoverBrightness(parseFloat(e.target.value))} 
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input 
+                    type="color" 
+                    value={customRegionColors.Membrane || '#ffa600'} 
+                    onChange={(e) => setCustomRegionColors(prev => ({ ...prev, Membrane: e.target.value }))}
+                    style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
+                  />
+                  <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
+                    {customRegionColors.Membrane || '#ffa600'}
+                  </span>
+                </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Hover Shadow Opacity</span>
-                  <span>{hoverShadow.toFixed(2)}</span>
+                  <span>Extracellular Label Color</span>
                 </label>
-                <input 
-                  type="range" 
-                  min="0.0" 
-                  max="1.0" 
-                  step="0.05" 
-                  value={hoverShadow} 
-                  onChange={(e) => setHoverShadow(parseFloat(e.target.value))} 
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input 
+                    type="color" 
+                    value={customRegionColors.ExtracellularText || '#64748b'} 
+                    onChange={(e) => setCustomRegionColors(prev => ({ ...prev, ExtracellularText: e.target.value }))}
+                    style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
+                  />
+                  <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
+                    {customRegionColors.ExtracellularText || '#64748b'}
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Cytoplasmic Label Color</span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input 
+                    type="color" 
+                    value={customRegionColors.CytoplasmicText || '#64748b'} 
+                    onChange={(e) => setCustomRegionColors(prev => ({ ...prev, CytoplasmicText: e.target.value }))}
+                    style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
+                  />
+                  <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
+                    {customRegionColors.CytoplasmicText || '#64748b'}
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -850,7 +882,14 @@ export function TransmembraneTopologyDiagram({
           )}
         </div>
       )}
-
+      {isCalculatedTopology(activeTopologyData) && activeTopologyData.consensus_map && (
+        <ConsensusAnalysisMap 
+          consensusMap={activeTopologyData.consensus_map} 
+          customHelixColors={Object.fromEntries(helices.map(h => [h.helixNumber.toString(), h.color]))}
+          customRegionColors={customRegionColors}
+        />
+      )}
+      
       {activeError && <div className="tm-error-banner">{activeError}</div>}
       {overlayError && <div className="tm-error-banner">Overlay: {overlayError}</div>}
       {calcWarnings.length > 0 && (
@@ -874,12 +913,14 @@ export function TransmembraneTopologyDiagram({
           {topologySource === 'calculated' ? 'Computing topology from the structure…' : 'Loading UniProt topology…'}
         </div>
       )}
-
       {/* Diagram */}
       <div className={`tm-diagram-wrap ${isPub ? 'publication' : 'lab'}`}>
         <svg
           ref={svgRef}
           className="tm-diagram-svg"
+          onClick={() => {
+            if (selectResidue) selectResidue(null);
+          }}
           viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
           role="img"
           aria-label="Transmembrane topology diagram"
@@ -939,13 +980,13 @@ export function TransmembraneTopologyDiagram({
               y={membraneTopY}
               width={canvasWidth}
               height={membraneBottomY - membraneTopY}
-              fill={isPub ? '#d9d4cb' : '#1e293b'}
+              fill={customRegionColors.Membrane || '#ffa600'}
               opacity={isPub ? 0.75 : 0.85}
             />
-            <text x="16" y={membraneTopY - 12} className="membrane-label">
+            <text x="16" y={membraneTopY - 12} className="membrane-label" fill={customRegionColors.ExtracellularText || '#64748b'}>
               Extracellular
             </text>
-            <text x="16" y={membraneBottomY + 24} className="membrane-label">
+            <text x="16" y={membraneBottomY + 24} className="membrane-label" fill={customRegionColors.CytoplasmicText || '#64748b'}>
               Cytoplasmic
             </text>
           </g>
@@ -979,7 +1020,7 @@ export function TransmembraneTopologyDiagram({
                 ? (loop.hasExtraFeature ? apexY + 34 : apexY - 8)
                 : (loop.hasExtraFeature ? apexY - 26 : apexY + 16);
               const hideLabel = loop.extraFeatures?.length === 1 && loop.extraFeatures[0].label === loop.label;
-
+              const isSelected = selectedResidue != null && selectedResidue >= loop.startRes && selectedResidue <= loop.endRes;
               return (
                 <g
                   key={loop.id}
@@ -993,7 +1034,12 @@ export function TransmembraneTopologyDiagram({
                     })
                   }
                   onMouseLeave={() => setHoveredElement(null)}
-                  onClick={() => selectResidue?.(loop.startRes)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (selectResidue) {
+                      selectResidue(isSelected ? null : loop.startRes);
+                    }
+                  }}
                 >
                   <defs>
                     <linearGradient id={`loop-grad-${loop.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -1261,7 +1307,12 @@ export function TransmembraneTopologyDiagram({
                     });
                   }}
                   onMouseLeave={() => setHoveredElement(null)}
-                  onClick={() => selectResidue?.(h.startRes)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (selectResidue) {
+                      selectResidue(isSelected ? null : h.startRes);
+                    }
+                  }}
                 >
                   {isAlpha ? (
                     <>
@@ -1468,7 +1519,6 @@ export function TransmembraneTopologyDiagram({
 
         </svg>
       </div>
-
       {/* Inspector */}
       <div className="tm-tooltip-bar">
         {hoveredElement ? (
@@ -1484,10 +1534,6 @@ export function TransmembraneTopologyDiagram({
           </div>
         )}
       </div>
-
-      {isCalculatedTopology(activeTopologyData) && activeTopologyData.consensus_map && (
-        <ConsensusAnalysisMap consensusMap={activeTopologyData.consensus_map} />
-      )}
     </div>
   );
 }

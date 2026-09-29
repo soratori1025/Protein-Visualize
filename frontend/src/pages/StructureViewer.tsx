@@ -12,11 +12,9 @@ export function StructureViewer() {
   const { protein, chainId, setChainId, selectedResidue, setSelectedResidue, status, setStatus, health, chainAnalysis, setChainAnalysis } = useProtein();
   const [sequenceOpen, setSequenceOpen] = useState(false);
   const [analysisLoading, setAnalysisLoading] = useState(false);
-
   const chain = protein?.models[0]?.chains.find((item) => item.id === chainId) ?? protein?.models[0]?.chains[0];
   const chains = protein?.models[0]?.chains ?? [];
   const selectedResidueData = chain?.residues.find((item) => item.id === selectedResidue);
-
   const runChainAnalysis = async () => {
     if (!protein || !chain) {
       setStatus('Upload a structure and select a chain before analysis');

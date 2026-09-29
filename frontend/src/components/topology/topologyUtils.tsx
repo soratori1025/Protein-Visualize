@@ -260,7 +260,7 @@ export interface Props {
   chain: Chain | undefined;
   secondaryResult?: SecondaryStructureResult | null;
   selectedResidue?: number | null;
-  onSelectResidue?: (residueNumber: number) => void;
+  onSelectResidue?: (residueNumber: number | null) => void;
   uniprotId?: string | null;
   filename?: string | null;
   tmAlgorithm?: string;

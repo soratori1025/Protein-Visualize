@@ -14,8 +14,8 @@ export function TransmembraneAnalysis() {
   const [method, setMethod] = useState<Method>('DSSP');
   const [secondaryCapabilities, setSecondaryCapabilities] = useState<Record<string, { available: boolean; executable: string }>>({});
   const [secondaryError, setSecondaryError] = useState<string | null>(null);
-  const [tmAlgorithm, setTmAlgorithm] = useState<string>('3d_slab_geom');
-  const [topologySource, setTopologySource] = useState<'uniprot' | 'calculated'>('uniprot');
+  const [tmAlgorithm, setTmAlgorithm] = useState<string>('uniprot_api');
+  const [topologySource, setTopologySource] = useState<'uniprot' | 'calculated'>('calculated');
   const [triggerTmRecalc, setTriggerTmRecalc] = useState(0);
   const [distinguishTurns, setDistinguishTurns] = useState(false);
   const [isSSRunning, setIsSSRunning] = useState(false);
@@ -56,14 +56,19 @@ export function TransmembraneAnalysis() {
     setTriggerTmRecalc(t => t + 1);
   };
 
+  useEffect(() => {
+    if (protein?.filename) {
+      runTmAnalysis();
+    }
+  }, [protein?.filename]);
+
   return (
     <main className="app-shell">
       <Header 
         title="Transmembrane Analysis" 
         subtitle="Inspect secondary structure and transmembrane topology annotations." 
       />
-
-      <section className="lower-grid">
+      {/* <section className="lower-grid">
         <div className="panel method-selector-panel">
           <div className="panel-heading">
             <div>
@@ -108,7 +113,6 @@ export function TransmembraneAnalysis() {
           )}
         </div>
       </section>
-
       {secondaryResult && (
         <section className="secondary-result-section" style={{ marginTop: '14px' }}>
           <SecondaryStructureTrack
@@ -118,7 +122,6 @@ export function TransmembraneAnalysis() {
           />
         </section>
       )}
-
       <section className="lower-grid" style={{ marginTop: '14px' }}>
         <div className="panel method-selector-panel">
           <div className="panel-heading">
@@ -156,7 +159,6 @@ export function TransmembraneAnalysis() {
           </button>
         </div>
       </section>
-
       {activeTopologyData && chain && (
         <section className="secondary-result-section" style={{ marginTop: '14px' }}>
           <TransmembraneStructureTrack
@@ -166,8 +168,7 @@ export function TransmembraneAnalysis() {
             onSelectResidue={setSelectedResidue}
           />
         </section>
-      )}
-
+      )} */}
       <section className="tm-topology-section">
         <TransmembraneTopologyDiagram
           chain={chain}

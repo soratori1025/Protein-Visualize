@@ -17,6 +17,8 @@ interface Props {
   onSelectResidue: (id: number) => void;
   consensusMap?: ConsensusResidue[];
   defaultColorScheme?: ColorScheme;
+  customHelixColors?: Record<string, string>;
+  customRegionColors?: Record<string, string>;
 }
 
 const chainColors = [
@@ -24,7 +26,7 @@ const chainColors = [
   '#8ab17d', '#e9c46a', '#ef8354', '#00b4d8', '#c77dff', '#90be6d',
 ];
 
-export function ProteinViewer({ chain, chains, filename, variant = 'interactive', focusChainId, selectedResidue, onSelectResidue, consensusMap, defaultColorScheme }: Props) {
+export function ProteinViewer({ chain, chains, filename, variant = 'interactive', focusChainId, selectedResidue, onSelectResidue, consensusMap, defaultColorScheme, customHelixColors, customRegionColors }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<$3Dmol.Viewer>();
   const [style, setStyle] = useState<RepresentationStyle>('ribbon');
@@ -33,6 +35,23 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
   const [layoutMode, setLayoutMode] = useState<'native' | 'aligned' | 'spread'>('native');
   const [showMembraneRegions, setShowMembraneRegions] = useState(false);
   const [orthographic, setOrthographic] = useState(false);
+
+  useEffect(() => {
+    if (defaultColorScheme) {
+      setColorScheme(defaultColorScheme);
+    }
+  }, [defaultColorScheme]);
+
+  useEffect(() => {
+    if (customRegionColors) {
+      setRegionColors(prev => ({
+        ...prev,
+        Membrane: customRegionColors.Membrane || prev.Membrane,
+        Extracellular: customRegionColors.ExtracellularText || prev.Extracellular,
+        Cytoplasmic: customRegionColors.CytoplasmicText || prev.Cytoplasmic
+      }));
+    }
+  }, [customRegionColors]);
   const [ssColors, setSsColors] = useState({
     Helix: '#ff0080',
     Strand: '#ffc107',
@@ -40,9 +59,9 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
   });
   const [helixColors, setHelixColors] = useState<Record<string, string>>({});
   const [regionColors, setRegionColors] = useState<Record<string, string>>({
-    Extracellular: '#ff6b6b',
-    Membrane: '#48dbfb',
-    Cytoplasmic: '#c44569'
+    Extracellular: '#64748b',
+    Membrane: '#ffa600',
+    Cytoplasmic: '#64748b'
   });
 
   const [consensusColors, setConsensusColors] = useState({
@@ -110,6 +129,12 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
     }
   }, [orthographic]);
 
+  useEffect(() => {
+    if (customHelixColors !== undefined) {
+      setHelixColors(customHelixColors);
+    }
+  }, [customHelixColors]);
+
   // Re-apply style when style, colorScheme, or selectedResidue changes
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -172,12 +197,6 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
             {consensusMap && (
               <>
                 <button
-                  className={colorScheme === 'consensus' ? 'toolbar-btn active' : 'toolbar-btn'}
-                  onClick={() => setColorScheme('consensus')}
-                >
-                  TM & SS Mapping
-                </button>
-                <button
                   className={colorScheme === 'helices' ? 'toolbar-btn active' : 'toolbar-btn'}
                   onClick={() => setColorScheme('helices')}
                 >
@@ -202,23 +221,13 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
                 Native 3D
               </button>
               <button
-                className={layoutMode === 'aligned' ? 'toolbar-btn active' : 'toolbar-btn'}
-                onClick={() => {
-                  setLayoutMode('aligned');
-                  setOrthographic(false);
-                }}
-                title="Rigidly aligned to the membrane normal"
-              >
-                Aligned 3D
-              </button>
-              <button
                 className={layoutMode === 'spread' ? 'toolbar-btn active' : 'toolbar-btn'}
                 onClick={() => {
                   setLayoutMode('spread');
                   setOrthographic(true);
                 }}
               >
-                Spread Out (2D-like)
+                Spread Out (2D)
               </button>
             </div>
           )}
@@ -234,22 +243,9 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
             </div>
           )}
           <div className="toolbar-group">
-            <span className="toolbar-label">VIEW:</span>
-            <button
-              className={orthographic ? 'toolbar-btn active' : 'toolbar-btn'}
-              onClick={() => setOrthographic(!orthographic)}
-            >
-              2D Projection
-            </button>
+            <span className="toolbar-label">EXPORT:</span>
             <button className="toolbar-btn" onClick={handleExportPNG}>
               Export PNG
-            </button>
-            <button
-              className={showCustomColors ? 'toolbar-btn active' : 'toolbar-btn'}
-              onClick={() => setShowCustomColors(!showCustomColors)}
-              style={{ marginLeft: '8px', border: '1px solid #78d8c1' }}
-            >
-              {showCustomColors ? 'Hide Colors' : 'Customize Colors'}
             </button>
           </div>
 
@@ -310,24 +306,6 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
                       </label>
                     );
                   })}
-                </div>
-              )}
-
-              {showMembraneRegions && (layoutMode === 'spread' || layoutMode === 'aligned') && (
-                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', width: '100%', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(120, 216, 193, 0.3)' }}>
-                  <span style={{ color: '#78d8c1', fontSize: '11px', fontWeight: 600, marginRight: '8px' }}>REGION COLORS:</span>
-                  {Object.entries(regionColors).map(([key, value]) => (
-                    <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#e7edf4', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
-                      <input
-                        type="color"
-                        value={value}
-                        onChange={(e) => setRegionColors({ ...regionColors, [key]: e.target.value })}
-                        style={{ border: 'none', padding: 0, width: '18px', height: '18px', cursor: 'pointer', background: 'transparent', borderRadius: '4px' }}
-                        title={`Color for ${key}`}
-                      />
-                      {key}
-                    </label>
-                  ))}
                 </div>
               )}
 

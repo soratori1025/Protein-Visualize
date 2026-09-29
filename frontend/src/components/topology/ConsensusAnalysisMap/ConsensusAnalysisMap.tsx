@@ -27,9 +27,11 @@ const TURN_LABELS = new Set(['Turn_in', 'Turn_E', 'Turn_C']);
 
 interface ConsensusAnalysisMapProps {
   consensusMap: ConsensusResidue[];
+  customHelixColors?: Record<string, string>;
+  customRegionColors?: Record<string, string>;
 }
 
-export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ consensusMap }) => {
+export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ consensusMap, customHelixColors, customRegionColors }) => {
   const [hoveredRes, setHoveredRes] = useState<ConsensusResidue | null>(null);
   
   const { protein, chainId, selectedResidue, setSelectedResidue } = useProtein();
@@ -77,196 +79,9 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
   const canvasHeight = 280;
 
   return (
-    <div className="consensus-map-container" style={{ marginTop: '24px' }}>
-      <div className="consensus-map-header">
-        <h3 className="consensus-map-title">Consensus Merge Analysis</h3>
-        <p className="consensus-map-subtitle">
-          Complete topology including extra-membrane helices (TM_C, TM_E), intra-membrane (TM_in), and supported Turn/Bend residues (Turn_C, Turn_E, Turn_in).
-          Showing exactly <b>{consensusMap.length} residues</b> as distinct nodes.
-        </p>
-      </div>
-
-      <div style={{ background: '#0f172a', borderRadius: '8px', border: '1px solid #1e293b' }}>
-        {/* The SVG scrollable container */}
-        <div style={{ overflowX: 'auto' }}>
-          <svg
-            width={canvasWidth}
-            height={canvasHeight}
-            viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
-            style={{ minWidth: '100%', display: 'block', background: '#1e293b', borderRadius: '8px 8px 0 0' }}
-          >
-            {/* Background Bands */}
-            <rect x="0" y="0" width={canvasWidth} height="80" fill="#1e293b" />
-            <text x="16" y="24" fill="#64748b" fontSize="12" fontWeight="600" letterSpacing="1">EXTRACELLULAR</text>
-
-            <rect x="0" y="80" width={canvasWidth} height="120" fill="#0f172a" />
-            <line x1="0" y1="80" x2={canvasWidth} y2="80" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-            <line x1="0" y1="200" x2={canvasWidth} y2="200" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
-            <text x="16" y="104" fill="#00d2d3" fontSize="12" fontWeight="600" letterSpacing="1" opacity="0.7">LIQUID MEMBRANE</text>
-
-            <rect x="0" y="200" width={canvasWidth} height="80" fill="#1e293b" />
-            <text x="16" y="270" fill="#64748b" fontSize="12" fontWeight="600" letterSpacing="1">CYTOPLASMIC</text>
-
-            {/* Lines between nodes */}
-            {nodes.map((node, i) => {
-              if (i === 0) return null;
-              const prev = nodes[i - 1];
-              const isGap = node.index > prev.index + 1;
-              return (
-                <line
-                  key={`link-${i}`}
-                  x1={prev.cx}
-                  y1={prev.cy}
-                  x2={node.cx}
-                  y2={node.cy}
-                  stroke="#475569"
-                  strokeWidth="2"
-                  strokeDasharray={isGap ? "4 4" : "none"}
-                />
-              );
-            })}
-
-            {/* Nodes */}
-            {nodes.map((node, i) => {
-              const isHovered = hoveredRes === node;
-              const color = labelColors[node.label] || '#94a3b8';
-              const isTurn = TURN_LABELS.has(node.label);
-              const isTopRow = node.label === 'TM_E' || node.label === 'Turn_E';
-              return (
-                <g 
-                  key={`node-${i}`} 
-                  transform={`translate(${node.cx}, ${node.cy})`}
-                  onMouseEnter={() => setHoveredRes(node)}
-                  onMouseLeave={() => setHoveredRes(null)}
-                  style={{ cursor: 'crosshair' }}
-                >
-                  {isTurn ? (
-                    /* Diamond shape for Turn residues */
-                    <polygon
-                      points="0,-14 14,0 0,14 -14,0"
-                      fill={color}
-                      stroke={isHovered ? '#ffffff' : color}
-                      strokeWidth={isHovered ? 2 : 0}
-                      opacity={0.9}
-                    />
-                  ) : (
-                    /* Rounded square for TM helix residues */
-                    <rect
-                      x="-12"
-                      y="-12"
-                      width="24"
-                      height="24"
-                      rx="4"
-                      fill={color}
-                      stroke={isHovered ? '#ffffff' : color}
-                      strokeWidth={isHovered ? 2 : 0}
-                    />
-                  )}
-                  <text
-                    x="0"
-                    y="4"
-                    fill="#ffffff"
-                    fontSize="11"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    style={{ pointerEvents: 'none' }}
-                  >
-                    {node.aa}
-                  </text>
-                  
-                  {/* Always show index for the first node, last node, or if hovered */}
-                  {(isHovered || i === 0 || i === nodes.length - 1 || node.index % 10 === 0) && (
-                    <text
-                      x="0"
-                      y={isTopRow ? -18 : 26}
-                      fill={isHovered ? '#f8fafc' : '#94a3b8'}
-                      fontSize="10"
-                      fontWeight={isHovered ? 'bold' : 'normal'}
-                      textAnchor="middle"
-                      style={{ pointerEvents: 'none' }}
-                    >
-                      {node.index}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-
-        {/* Legend & Inspector */}
-        <div style={{ padding: '16px', display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', borderTop: '1px solid #1e293b' }}>
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-            {/* TM Helix labels */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: labelColors.TM_E }} />
-              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Extracellular (TM_E)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: labelColors.TM_in }} />
-              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Transmembrane (TM_in)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '2px', background: labelColors.TM_C }} />
-              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Cytoplasmic (TM_C)</span>
-            </div>
-            {/* Turn labels — diamond swatch */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 12,6 6,12 0,6" fill={labelColors.Turn_E} /></svg>
-              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Turn Extra (Turn_E)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 12,6 6,12 0,6" fill={labelColors.Turn_in} /></svg>
-              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Turn Membrane (Turn_in)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="12" height="12" viewBox="0 0 12 12"><polygon points="6,0 12,6 6,12 0,6" fill={labelColors.Turn_C} /></svg>
-              <span style={{ fontSize: '14px', color: '#cbd5e1' }}>Turn Cyto (Turn_C)</span>
-            </div>
-          </div>
-
-          <div style={{ flex: 1, borderLeft: '1px solid #334155', paddingLeft: '24px', minHeight: '32px', display: 'flex', alignItems: 'center' }}>
-            {hoveredRes ? (
-              <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: labelColors[hoveredRes.label] }}>
-                  {hoveredRes.aa}
-                </span>
-                <span style={{ fontSize: '14px', color: '#f8fafc' }}>
-                  Residue: <b>{hoveredRes.residue_number}</b> <span style={{ color: '#94a3b8' }}>(Idx: {hoveredRes.index})</span>
-                </span>
-                <span style={{ fontSize: '14px', color: '#cbd5e1' }}>
-                  Label: <b style={{ color: labelColors[hoveredRes.label] }}>{hoveredRes.label}</b>
-                </span>
-                <span style={{ fontSize: '14px', color: '#cbd5e1' }}>
-                  SS Raw: <b>{hoveredRes.ss_raw}</b>
-                </span>
-                {hoveredRes.tm_segment && (
-                  <span style={{ fontSize: '14px', color: '#94a3b8', border: '1px solid #475569', padding: '2px 6px', borderRadius: '4px' }}>
-                    TM Segment {hoveredRes.tm_segment}
-                  </span>
-                )}
-                {hoveredRes.crossing && (
-                  <span style={{ fontSize: '14px', color: '#94a3b8', border: '1px solid #475569', padding: '2px 6px', borderRadius: '4px' }}>
-                    Crossing {hoveredRes.crossing}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Hover over a residue node to see details</span>
-            )}
-          </div>
-        </div>
-      </div>
-      
+    <div className="consensus-map-container">
       {chain && (
-        <div style={{ marginTop: '24px', background: '#0f172a', borderRadius: '8px', border: '1px solid #1e293b', overflow: 'hidden' }}>
-          <div className="consensus-map-header" style={{ padding: '16px', borderBottom: '1px solid #1e293b' }}>
-            <h3 className="consensus-map-title">3D SS&TM Validation</h3>
-            <p className="consensus-map-subtitle">
-              Verify the structural separation of Extracellular, Intramembrane, Cytoplasmic segments, and Turn/Bend residues in 3D space.
-            </p>
-          </div>
-          <div style={{ height: '400px', position: 'relative' }}>
+        <div>
             <ProteinViewer 
               chain={chain} 
               chains={chains} 
@@ -276,9 +91,10 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
               selectedResidue={hoveredRes ? hoveredRes.residue_number : selectedResidue} 
               onSelectResidue={setSelectedResidue}
               consensusMap={consensusMap}
-              defaultColorScheme="consensus"
+              defaultColorScheme="helices"
+              customHelixColors={customHelixColors}
+              customRegionColors={customRegionColors}
             />
-          </div>
         </div>
       )}
     </div>
