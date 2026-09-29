@@ -1,6 +1,6 @@
 export type RepresentationStyle = 'ribbon' | 'stick' | 'sphere' | 'line' | 'pipesAndPlanks';
 
-export type ColorScheme = 'chain' | 'ss' | 'hydropathy' | 'bFactor' | 'consensus';
+export type ColorScheme = 'chain' | 'ss' | 'hydropathy' | 'bFactor' | 'consensus' | 'helices';
 
 export interface ViewerOptions {
   style: RepresentationStyle;

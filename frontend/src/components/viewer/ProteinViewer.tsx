@@ -30,12 +30,19 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
   const [style, setStyle] = useState<RepresentationStyle>('ribbon');
   const [colorScheme, setColorScheme] = useState<ColorScheme>(defaultColorScheme || 'chain');
   const [showCustomColors, setShowCustomColors] = useState(false);
-  const [layoutMode, setLayoutMode] = useState<'native' | 'spread'>('native');
+  const [layoutMode, setLayoutMode] = useState<'native' | 'aligned' | 'spread'>('native');
+  const [showMembraneRegions, setShowMembraneRegions] = useState(false);
   const [orthographic, setOrthographic] = useState(false);
   const [ssColors, setSsColors] = useState({
     Helix: '#ff0080',
     Strand: '#ffc107',
     Coil: '#00d2d3'
+  });
+  const [helixColors, setHelixColors] = useState<Record<string, string>>({});
+  const [regionColors, setRegionColors] = useState<Record<string, string>>({
+    Extracellular: '#ff6b6b',
+    Membrane: '#48dbfb',
+    Cytoplasmic: '#c44569'
   });
 
   const [consensusColors, setConsensusColors] = useState({
@@ -58,8 +65,8 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       if (!response.ok || cancelled || !containerRef.current) return;
       let structure = await response.text();
 
-      if (layoutMode === 'spread' && consensusMap && consensusMap.length > 0) {
-        structure = spreadStructure(structure, consensusMap);
+      if ((layoutMode === 'spread' || layoutMode === 'aligned') && consensusMap && consensusMap.length > 0) {
+        structure = spreadStructure(structure, consensusMap, { mode: layoutMode === 'spread' ? 'unrolled' : 'aligned' });
       }
 
       viewer = $3Dmol.createViewer(containerRef.current, { antialias: true });
@@ -71,7 +78,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
         (viewer as any).setProjection(orthographic ? 'orthographic' : 'perspective');
       }
 
-      applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap, consensusColors);
+      applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap, consensusColors, ssColors, helixColors, showMembraneRegions, layoutMode, regionColors);
 
       if (variant === 'interactive') {
         viewer.setClickable({}, true, (atom) => {
@@ -107,7 +114,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer) return;
-    applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap, consensusColors, ssColors);
+    applyStyles(viewer, chains, focusChainId, style, colorScheme, chain, consensusMap, consensusColors, ssColors, helixColors, showMembraneRegions, layoutMode, regionColors);
 
     if (variant === 'interactive' && selectedResidue !== null) {
       viewer.setStyle({ chain: chain?.id, resi: selectedResidue }, {
@@ -117,7 +124,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       });
     }
     viewer.render();
-  }, [chain, chains, focusChainId, selectedResidue, style, colorScheme, variant, consensusMap, consensusColors]);
+  }, [chain, chains, focusChainId, selectedResidue, style, colorScheme, variant, consensusMap, consensusColors, ssColors, helixColors, showMembraneRegions, layoutMode, regionColors]);
 
   const handleExportPNG = () => {
     if (viewerRef.current) {
@@ -163,12 +170,20 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
               Secondary Structure
             </button>
             {consensusMap && (
-              <button
-                className={colorScheme === 'consensus' ? 'toolbar-btn active' : 'toolbar-btn'}
-                onClick={() => setColorScheme('consensus')}
-              >
-                TM & SS Mapping
-              </button>
+              <>
+                <button
+                  className={colorScheme === 'consensus' ? 'toolbar-btn active' : 'toolbar-btn'}
+                  onClick={() => setColorScheme('consensus')}
+                >
+                  TM & SS Mapping
+                </button>
+                <button
+                  className={colorScheme === 'helices' ? 'toolbar-btn active' : 'toolbar-btn'}
+                  onClick={() => setColorScheme('helices')}
+                >
+                  Individual Helices
+                </button>
+              </>
             )}
             <button
               className={colorScheme === 'hydropathy' ? 'toolbar-btn active' : 'toolbar-btn'}
@@ -187,13 +202,34 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
                 Native 3D
               </button>
               <button
+                className={layoutMode === 'aligned' ? 'toolbar-btn active' : 'toolbar-btn'}
+                onClick={() => {
+                  setLayoutMode('aligned');
+                  setOrthographic(false);
+                }}
+                title="Rigidly aligned to the membrane normal"
+              >
+                Aligned 3D
+              </button>
+              <button
                 className={layoutMode === 'spread' ? 'toolbar-btn active' : 'toolbar-btn'}
                 onClick={() => {
                   setLayoutMode('spread');
-                  setOrthographic(true); // Default to orthographic for 2D look
+                  setOrthographic(true);
                 }}
               >
                 Spread Out (2D-like)
+              </button>
+            </div>
+          )}
+          {consensusMap && consensusMap.length > 0 && (layoutMode === 'spread' || layoutMode === 'aligned') && (
+            <div className="toolbar-group">
+              <span className="toolbar-label">REGIONS:</span>
+              <button
+                className={showMembraneRegions ? 'toolbar-btn active' : 'toolbar-btn'}
+                onClick={() => setShowMembraneRegions(!showMembraneRegions)}
+              >
+                Show Membrane Regions
               </button>
             </div>
           )}
@@ -255,9 +291,49 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
                 </div>
               )}
 
+              {colorScheme === 'helices' && consensusMap && (
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  {Array.from({ length: new Set(consensusMap.map(r => r.crossing).filter(c => c != null)).size }).map((_, i) => {
+                    const cNum = i + 1;
+                    const defaultHelixColor = chainColors[(cNum - 1) % chainColors.length];
+                    const currentColor = helixColors[cNum] || defaultHelixColor;
+                    return (
+                      <label key={cNum} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#e7edf4', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                        <input
+                          type="color"
+                          value={currentColor}
+                          onChange={(e) => setHelixColors({ ...helixColors, [cNum]: e.target.value })}
+                          style={{ border: 'none', padding: 0, width: '18px', height: '18px', cursor: 'pointer', background: 'transparent', borderRadius: '4px' }}
+                          title={`Color for Helix ${cNum}`}
+                        />
+                        Helix {cNum}
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+
+              {showMembraneRegions && (layoutMode === 'spread' || layoutMode === 'aligned') && (
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', width: '100%', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed rgba(120, 216, 193, 0.3)' }}>
+                  <span style={{ color: '#78d8c1', fontSize: '11px', fontWeight: 600, marginRight: '8px' }}>REGION COLORS:</span>
+                  {Object.entries(regionColors).map(([key, value]) => (
+                    <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#e7edf4', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}>
+                      <input
+                        type="color"
+                        value={value}
+                        onChange={(e) => setRegionColors({ ...regionColors, [key]: e.target.value })}
+                        style={{ border: 'none', padding: 0, width: '18px', height: '18px', cursor: 'pointer', background: 'transparent', borderRadius: '4px' }}
+                        title={`Color for ${key}`}
+                      />
+                      {key}
+                    </label>
+                  ))}
+                </div>
+              )}
+
               {(colorScheme === 'chain' || colorScheme === 'hydropathy') && (
                 <div style={{ color: '#829ba9', fontSize: '11px', fontStyle: 'italic' }}>
-                  Select <b>Secondary Structure</b> or <b>TM & SS Mapping</b> algorithm to customize structural colors.
+                  Select <b>Secondary Structure</b>, <b>TM & SS Mapping</b>, or <b>Individual Helices</b> to customize colors.
                 </div>
               )}
             </div>
@@ -337,9 +413,16 @@ function applyStyles(
   selectedChain?: Chain,
   consensusMap?: ConsensusResidue[],
   consensusColors?: Record<string, string>,
-  ssColors?: Record<string, string>
+  ssColors?: Record<string, string>,
+  helixColors?: Record<string, string>,
+  showMembraneRegions?: boolean,
+  layoutMode?: 'native' | 'aligned' | 'spread',
+  regionColors?: Record<string, string>
 ) {
   (viewer as any).removeAllShapes();
+  if (typeof (viewer as any).removeAllLabels === 'function') {
+    (viewer as any).removeAllLabels();
+  }
   viewer.setStyle({}, { cartoon: { hidden: true }, stick: { hidden: true }, sphere: { hidden: true }, line: { hidden: true } });
 
   chains.forEach((item, index) => {
@@ -426,7 +509,183 @@ function applyStyles(
     });
   }
 
+  // Apply helices colors if selected
+  if (colorScheme === 'helices' && selectedChain && consensusMap) {
+    const defaultColor = '#64748b';
+
+    // Find all crossings and their start/end residues
+    const crossings = new Map<number, { start: number, end: number }>();
+    consensusMap.forEach(r => {
+      if (r.crossing) {
+        if (!crossings.has(r.crossing)) {
+          crossings.set(r.crossing, { start: r.residue_number, end: r.residue_number });
+        } else {
+          const c = crossings.get(r.crossing)!;
+          c.start = Math.min(c.start, r.residue_number);
+          c.end = Math.max(c.end, r.residue_number);
+        }
+      }
+    });
+    
+    const crossingList = Array.from(crossings.entries()).sort((a, b) => a[0] - b[0]);
+    const getHelixColor = (cNum: number) => {
+      if (helixColors && helixColors[cNum]) return helixColors[cNum];
+      return chainColors[(cNum - 1) % chainColors.length];
+    };
+
+    selectedChain.residues.forEach((res) => {
+      let color = defaultColor;
+      
+      if (crossingList.length > 0) {
+        let inCrossing = false;
+        for (let i = 0; i < crossingList.length; i++) {
+          const [cNum, bounds] = crossingList[i];
+          if (res.id >= bounds.start && res.id <= bounds.end) {
+            color = getHelixColor(cNum);
+            inCrossing = true;
+            break;
+          }
+        }
+
+        if (!inCrossing) {
+          let prev = null;
+          let next = null;
+          for (let i = 0; i < crossingList.length; i++) {
+            const [, bounds] = crossingList[i];
+            if (bounds.end < res.id) prev = crossingList[i];
+            if (bounds.start > res.id && !next) next = crossingList[i];
+          }
+
+          if (prev && next) {
+            const [prevNum, prevBounds] = prev;
+            const [nextNum, nextBounds] = next;
+            const prevColor = getHelixColor(prevNum);
+            const nextColor = getHelixColor(nextNum);
+            const fraction = (res.id - prevBounds.end) / (nextBounds.start - prevBounds.end);
+            color = interpolateColor(prevColor, nextColor, fraction);
+          } else if (prev) {
+            color = getHelixColor(prev[0]);
+          } else if (next) {
+            color = getHelixColor(next[0]);
+          }
+        }
+      }
+
+      const sel = { chain: selectedChain.id, resi: res.id };
+      if (style === 'ribbon') {
+        viewer.setStyle(sel, { cartoon: { color, opacity: 1 } });
+      } else if (style === 'sphere') {
+        viewer.setStyle(sel, { sphere: { color, scale: 0.75 } });
+      } else if (style === 'stick') {
+        viewer.setStyle(sel, { stick: { color, radius: 0.22 } });
+      } else if (style === 'line') {
+        viewer.setStyle(sel, { line: { color, linewidth: 1.5 } });
+      }
+    });
+  }
+
   // Always keep heteratoms (ligands, water) readable as sticks
   viewer.setStyle({ hetflag: true }, { stick: { colorscheme: 'Jmol', radius: 0.18 } });
+  // Draw Membrane Regions if toggled and aligned/spread
+  if (showMembraneRegions && (layoutMode === 'spread' || layoutMode === 'aligned')) {
+    const m = (viewer as any).getModel(0);
+    if (m) {
+      const atoms = m.selectedAtoms({});
+      let minX = Infinity, maxX = -Infinity;
+      let minZ = Infinity, maxZ = -Infinity;
+      let maxY = -Infinity, minY = Infinity;
+      atoms.forEach((a: any) => {
+        if (a.x < minX) minX = a.x;
+        if (a.x > maxX) maxX = a.x;
+        if (a.y < minY) minY = a.y;
+        if (a.y > maxY) maxY = a.y;
+        if (a.z < minZ) minZ = a.z;
+        if (a.z > maxZ) maxZ = a.z;
+      });
+
+      const pad = 30;
+      const w = (maxX - minX) + pad;
+      const d = (maxZ - minZ) + pad;
+      const cx = (minX + maxX) / 2;
+      const cz = (minZ + maxZ) / 2;
+
+      const halfThickness = 15;
+
+      // Membrane Core
+      if (typeof (viewer as any).addBox === 'function') {
+        (viewer as any).addBox({
+          center: { x: cx, y: 0, z: cz },
+          dimensions: { w, h: halfThickness * 2, d },
+          color: regionColors?.Membrane || '#95a5a6',
+          alpha: 0.15,
+        });
+
+        // Extracellular
+        if (maxY > halfThickness) {
+          const hTop = Math.max(10, maxY - halfThickness + pad / 2);
+          const cyTop = halfThickness + hTop / 2;
+          (viewer as any).addBox({
+            center: { x: cx, y: cyTop, z: cz },
+            dimensions: { w, h: hTop, d },
+            color: regionColors?.Extracellular || '#ff6b6b',
+            alpha: 0.1,
+          });
+          if (typeof (viewer as any).addLabel === 'function') {
+            (viewer as any).addLabel("Extracellular", {
+              position: { x: maxX + pad / 2, y: halfThickness + 10, z: cz },
+              backgroundColor: 'transparent',
+              fontColor: regionColors?.Extracellular || '#ff6b6b',
+              backgroundOpacity: 0.0,
+              fontSize: 14,
+              alignment: 'center'
+            });
+          }
+        }
+
+        // Cytoplasmic
+        if (minY < -halfThickness) {
+          const hBot = Math.max(10, -halfThickness - minY + pad / 2);
+          const cyBot = -halfThickness - hBot / 2;
+          (viewer as any).addBox({
+            center: { x: cx, y: cyBot, z: cz },
+            dimensions: { w, h: hBot, d },
+            color: regionColors?.Cytoplasmic || '#c44569',
+            alpha: 0.1,
+          });
+          if (typeof (viewer as any).addLabel === 'function') {
+            (viewer as any).addLabel("Cytoplasmic", {
+              position: { x: maxX + pad / 2, y: -halfThickness - 10, z: cz },
+              backgroundColor: 'transparent',
+              fontColor: regionColors?.Cytoplasmic || '#c44569',
+              backgroundOpacity: 0.0,
+              fontSize: 14,
+              alignment: 'center'
+            });
+          }
+        }
+      }
+    }
+  }
+
+  viewer.render();
 }
 
+function interpolateColor(c1: string, c2: string, fraction: number): string {
+  if (c1.startsWith('#')) c1 = c1.slice(1);
+  if (c2.startsWith('#')) c2 = c2.slice(1);
+  if (c1.length === 3) c1 = c1.split('').map(c => c + c).join('');
+  if (c2.length === 3) c2 = c2.split('').map(c => c + c).join('');
+  
+  const r1 = parseInt(c1.slice(0, 2), 16);
+  const g1 = parseInt(c1.slice(2, 4), 16);
+  const b1 = parseInt(c1.slice(4, 6), 16);
+  const r2 = parseInt(c2.slice(0, 2), 16);
+  const g2 = parseInt(c2.slice(2, 4), 16);
+  const b2 = parseInt(c2.slice(4, 6), 16);
+  
+  const r = Math.round(r1 + (r2 - r1) * fraction);
+  const g = Math.round(g1 + (g2 - g1) * fraction);
+  const b = Math.round(b1 + (b2 - b1) * fraction);
+  
+  return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
+}

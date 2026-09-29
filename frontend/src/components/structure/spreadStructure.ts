@@ -632,8 +632,12 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
       if (flat) {
         // planar guide: out of the membrane, along a narrow band, back into the next TM
         const A = placed.get(res[g.last].C!)!, B = F[0];
-        targets = residueTargets(loopIdx, guideCurve(A, B, sideOf(A[1] + B[1]), contour(loopIdx) + STEP_COIL,
-                                                     1, half + 3, half + loopHeight, LOOP_SPAN_MAX), true);
+        const currentSide = sideOf(A[1] + B[1]);
+        const minHeight = Math.max(half + 3, Math.abs(A[1]), Math.abs(B[1]));
+        const yLo = minHeight;
+        const yHi = Math.max(yLo + loopHeight, yLo + 10);
+        targets = residueTargets(loopIdx, guideCurve(A, B, currentSide, contour(loopIdx) + STEP_COIL,
+                                                     1, yLo, yHi, LOOP_SPAN_MAX), true);
       }
       const best = solveChain(ch, targets, F, gridWithout(loopIdx[0], loopIdx[loopIdx.length - 1]), placed, 1000 + k);
       entry.closureRmsd = Math.round(best.rmsd * 100) / 100;
@@ -722,8 +726,11 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
       }
       const ch = buildChain(guided, reverse, anchorT);
       const A = placed.get(reverse ? res[anchorRes].N! : res[anchorRes].C!)!;
+      const minHeight = Math.max(half + 3, Math.abs(A[1]));
+      const yLo = minHeight;
+      const yHi = Math.max(yLo + loopHeight, yLo + 10);
       const targets = residueTargets(guided, guideCurve(A, null, sideOf(A[1]), contour(guided),
-                                                        reverse ? -1 : 1, half + 3, half + loopHeight, TAIL_SPAN_MAX), false);
+                                                        reverse ? -1 : 1, yLo, yHi, TAIL_SPAN_MAX), false);
       const lo = Math.min(...guided), hi = Math.max(...guided);
       const best = solveChain(ch, targets, null, gridWithout(Math.min(lo, ...all), Math.max(hi, ...all)), placed, reverse ? 7 : 11);
       placeChain(ch, best.P, placed, resT);
