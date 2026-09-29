@@ -315,14 +315,12 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 .membrane-label {
-  fill: #94a3b8;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: .1em;
   font-family: Arial, Helvetica, sans-serif;
 }
 .tm-diagram-wrap.publication .membrane-label {
-  fill: #64748b;
 }
 .helix-group {
   cursor: pointer;
@@ -505,5 +503,4 @@
   background: #ffffff;
 }
 .tm-diagram-wrap.publication .membrane-label {
-  fill: #64748b;
 }

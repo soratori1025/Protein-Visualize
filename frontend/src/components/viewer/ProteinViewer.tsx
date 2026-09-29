@@ -19,6 +19,7 @@ interface Props {
   defaultColorScheme?: ColorScheme;
   customHelixColors?: Record<string, string>;
   customRegionColors?: Record<string, string>;
+  figureTheme?: 'lab' | 'publication';
 }
 
 const chainColors = [
@@ -26,7 +27,7 @@ const chainColors = [
   '#8ab17d', '#e9c46a', '#ef8354', '#00b4d8', '#c77dff', '#90be6d',
 ];
 
-export function ProteinViewer({ chain, chains, filename, variant = 'interactive', focusChainId, selectedResidue, onSelectResidue, consensusMap, defaultColorScheme, customHelixColors, customRegionColors }: Props) {
+export function ProteinViewer({ chain, chains, filename, variant = 'interactive', focusChainId, selectedResidue, onSelectResidue, consensusMap, defaultColorScheme, customHelixColors, customRegionColors, figureTheme }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<$3Dmol.Viewer>();
   const [style, setStyle] = useState<RepresentationStyle>('ribbon');
@@ -90,7 +91,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
 
       viewer = $3Dmol.createViewer(containerRef.current, { antialias: true });
       viewerRef.current = viewer;
-      viewer.setBackgroundColor('#0b151e');
+      viewer.setBackgroundColor(figureTheme === 'publication' ? '#ffffff' : '#0b151e');
       viewer.addModel(structure, filename.toLowerCase().endsWith('.pdb') || filename.toLowerCase().endsWith('.ent') ? 'pdb' : 'cif');
 
       if (typeof (viewer as any).setProjection === 'function') {
@@ -151,6 +152,13 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
     viewer.render();
   }, [chain, chains, focusChainId, selectedResidue, style, colorScheme, variant, consensusMap, consensusColors, ssColors, helixColors, showMembraneRegions, layoutMode, regionColors]);
 
+  useEffect(() => {
+    if (viewerRef.current) {
+      viewerRef.current.setBackgroundColor(figureTheme === 'publication' ? '#ffffff' : '#0b151e');
+      viewerRef.current.render();
+    }
+  }, [figureTheme]);
+
   const handleExportPNG = () => {
     if (viewerRef.current) {
       const imgURI = (viewerRef.current as any).pngURI();
@@ -165,7 +173,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
 
   if (filename) {
     return (
-      <div className="viewer-stage molecular-stage">
+      <div className={`viewer-stage molecular-stage ${figureTheme === 'publication' ? 'light-mode' : ''}`}>
         <div className="viewer-toolbar">
           <div className="toolbar-group">
             <span className="toolbar-label">STYLE:</span>
@@ -339,7 +347,7 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
   const ribbonSpline = generateRibbonSpline(caPoints, 4, 1.4);
 
   return (
-    <div className="viewer-stage">
+    <div className={`viewer-stage ${figureTheme === 'publication' ? 'light-mode' : ''}`}>
       <svg viewBox="0 0 200 150" role="img" aria-label={`Catmull-Rom ribbon projection of chain ${chain.id}`}>
         {/* Draw smooth Catmull-Rom Ribbon band */}
         {ribbonSpline.length > 1 && (
@@ -504,7 +512,7 @@ function applyStyles(
         }
       }
     });
-    
+
     const crossingList = Array.from(crossings.entries()).sort((a, b) => a[0] - b[0]);
     const getHelixColor = (cNum: number) => {
       if (helixColors && helixColors[cNum]) return helixColors[cNum];
@@ -513,7 +521,7 @@ function applyStyles(
 
     selectedChain.residues.forEach((res) => {
       let color = defaultColor;
-      
+
       if (crossingList.length > 0) {
         let inCrossing = false;
         for (let i = 0; i < crossingList.length; i++) {
@@ -595,7 +603,7 @@ function applyStyles(
           center: { x: cx, y: 0, z: cz },
           dimensions: { w, h: halfThickness * 2, d },
           color: regionColors?.Membrane || '#95a5a6',
-          alpha: 0.15,
+          alpha: 0.5,
         });
 
         // Extracellular
@@ -653,17 +661,17 @@ function interpolateColor(c1: string, c2: string, fraction: number): string {
   if (c2.startsWith('#')) c2 = c2.slice(1);
   if (c1.length === 3) c1 = c1.split('').map(c => c + c).join('');
   if (c2.length === 3) c2 = c2.split('').map(c => c + c).join('');
-  
+
   const r1 = parseInt(c1.slice(0, 2), 16);
   const g1 = parseInt(c1.slice(2, 4), 16);
   const b1 = parseInt(c1.slice(4, 6), 16);
   const r2 = parseInt(c2.slice(0, 2), 16);
   const g2 = parseInt(c2.slice(2, 4), 16);
   const b2 = parseInt(c2.slice(4, 6), 16);
-  
+
   const r = Math.round(r1 + (r2 - r1) * fraction);
   const g = Math.round(g1 + (g2 - g1) * fraction);
   const b = Math.round(b1 + (b2 - b1) * fraction);
-  
+
   return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
 }

@@ -109,9 +109,9 @@ export function TransmembraneTopologyDiagram({
   const [selectedPaletteKey, setSelectedPaletteKey] = useState<string>('PAPER_DEFAULT');
   const [customHelixColors, setCustomHelixColors] = useState<Record<string, string>>({});
   const [customRegionColors, setCustomRegionColors] = useState<Record<string, string>>({
-    Membrane: '#ffa600',
-    ExtracellularText: '#64748b',
-    CytoplasmicText: '#64748b'
+    Membrane: '#00d2d3',
+    ExtracellularText: '#ff9f43',
+    CytoplasmicText: '#5f27cd'
   });
   const [customResidueRules, setCustomResidueRules] = useState<CustomResidueColorRule[]>([]);
   const [hoverBrightness, setHoverBrightness] = useState<number>(1.1);
@@ -480,13 +480,13 @@ export function TransmembraneTopologyDiagram({
               className={`tm-tab-btn ${figureTheme === 'publication' ? 'active' : ''}`}
               onClick={() => setFigureTheme('publication')}
             >
-              Publication
+              Light Mode
             </button>
             <button
               className={`tm-tab-btn ${figureTheme === 'lab' ? 'active' : ''}`}
               onClick={() => setFigureTheme('lab')}
             >
-              Dark lab
+              Dark Mode
             </button>
           </div>
 
@@ -748,12 +748,12 @@ export function TransmembraneTopologyDiagram({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input 
                     type="color" 
-                    value={customRegionColors.Membrane || '#ffa600'} 
+                    value={customRegionColors.Membrane || '#00d2d3'} 
                     onChange={(e) => setCustomRegionColors(prev => ({ ...prev, Membrane: e.target.value }))}
                     style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
                   />
                   <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
-                    {customRegionColors.Membrane || '#ffa600'}
+                    {customRegionColors.Membrane || '#00d2d3'}
                   </span>
                 </div>
               </div>
@@ -764,12 +764,12 @@ export function TransmembraneTopologyDiagram({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input 
                     type="color" 
-                    value={customRegionColors.ExtracellularText || '#64748b'} 
+                    value={customRegionColors.ExtracellularText || '#ff9f43'} 
                     onChange={(e) => setCustomRegionColors(prev => ({ ...prev, ExtracellularText: e.target.value }))}
                     style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
                   />
                   <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
-                    {customRegionColors.ExtracellularText || '#64748b'}
+                    {customRegionColors.ExtracellularText || '#ff9f43'}
                   </span>
                 </div>
               </div>
@@ -780,12 +780,12 @@ export function TransmembraneTopologyDiagram({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input 
                     type="color" 
-                    value={customRegionColors.CytoplasmicText || '#64748b'} 
+                    value={customRegionColors.CytoplasmicText || '#5f27cd'} 
                     onChange={(e) => setCustomRegionColors(prev => ({ ...prev, CytoplasmicText: e.target.value }))}
                     style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
                   />
                   <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
-                    {customRegionColors.CytoplasmicText || '#64748b'}
+                    {customRegionColors.CytoplasmicText || '#5f27cd'}
                   </span>
                 </div>
               </div>
@@ -885,6 +885,7 @@ export function TransmembraneTopologyDiagram({
           consensusMap={activeTopologyData.consensus_map} 
           customHelixColors={Object.fromEntries(helices.map(h => [h.helixNumber.toString(), h.color]))}
           customRegionColors={customRegionColors}
+          figureTheme={figureTheme}
         />
       )}
       
@@ -978,13 +979,13 @@ export function TransmembraneTopologyDiagram({
               y={membraneTopY}
               width={canvasWidth}
               height={membraneBottomY - membraneTopY}
-              fill={customRegionColors.Membrane || '#ffa600'}
-              opacity={isPub ? 0.75 : 0.85}
+              fill={customRegionColors.Membrane || '#00d2d3'}
+              opacity={isPub ? 0.9 : 1.0}
             />
-            <text x="16" y={membraneTopY - 12} className="membrane-label" fill={customRegionColors.ExtracellularText || '#64748b'}>
+            <text x="16" y={membraneTopY - 12} className="membrane-label" fill={customRegionColors.ExtracellularText || '#ff9f43'}>
               Extracellular
             </text>
-            <text x="16" y={membraneBottomY + 24} className="membrane-label" fill={customRegionColors.CytoplasmicText || '#64748b'}>
+            <text x="16" y={membraneBottomY + 24} className="membrane-label" fill={customRegionColors.CytoplasmicText || '#5f27cd'}>
               Cytoplasmic
             </text>
           </g>

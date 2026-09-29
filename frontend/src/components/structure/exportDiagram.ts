@@ -1,7 +1,7 @@
 /** Export SVG diagram as high-resolution PNG or JPEG for publication figures. */
 
 const EXPORT_STYLES = `
-  .membrane-label { fill: #64748b; font-size: 10px; font-weight: 700; letter-spacing: .12em; font-family: Arial, Helvetica, sans-serif; }
+  .membrane-label { font-size: 10px; font-weight: 700; letter-spacing: .12em; font-family: Arial, Helvetica, sans-serif; }
   .helix-label-text { fill: #ffffff; font-size: 13px; font-weight: 800; font-family: Arial, Helvetica, sans-serif; }
   .helix-sub-text { fill: #f8fafc; font-size: 8px; font-weight: 700; font-family: Arial, Helvetica, sans-serif; }
   .loop-text-label { fill: #1e293b; font-size: 11px; font-weight: 700; font-family: Arial, Helvetica, sans-serif; }

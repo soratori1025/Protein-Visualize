@@ -121,10 +121,12 @@ height: 410px;
 .chain-focus-section .molecular-viewer, .chain-focus-section .molecular-stage { height: 390px; min-height: 390px; }
 .tag, .chain-chip { border: 1px solid #3c5665; border-radius: 999px; color: #9bb5c5; font-size: 11px; padding: 4px 8px; letter-spacing: .08em; }
 .viewer-stage { position: relative; min-height: 370px; display: grid; place-items: center; overflow: hidden; border: 1px solid #253a46; border-radius: 8px; background: radial-gradient(circle, #183440 0, #0b151e 68%); }
+.viewer-stage.light-mode { background: #ffffff; border-color: #cbd5e1; }
 .molecular-stage { min-height: 370px; }
 .molecular-viewer { width: 100%; height: 370px; touch-action: none; }
 .viewer-stage svg { width: 92%; height: 330px; }
 .viewer-caption { position: absolute; bottom: 12px; left: 14px; color: #6f8998; font-size: 12px; }
+.viewer-stage.light-mode .viewer-caption { color: #8492a6; }
 .empty-state { display: grid; min-height: 370px; place-items: center; color: #718895; text-align: center; }
 
 .spread-map-wrap { overflow-x: auto; border: 1px solid #253a46; border-radius: 8px; background: linear-gradient(180deg, #0b151e 0%, #0d1a22 100%); padding: 8px 8px 12px; }
@@ -596,6 +598,31 @@ background: #101e27;
 font-size: 11px;
 font-weight: 600;
 transition: all 0.15s ease;
+}
+
+/* Light Mode Overrides for Viewer Toolbar */
+.viewer-stage.light-mode .viewer-toolbar {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(203, 213, 225, 0.5);
+}
+.viewer-stage.light-mode .toolbar-label {
+  color: #475569;
+}
+.viewer-stage.light-mode .toolbar-btn {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+.viewer-stage.light-mode .toolbar-btn:hover {
+  background: #f1f5f9;
+}
+.viewer-stage.light-mode .toolbar-btn.active {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+.viewer-stage.light-mode .viewer-controls label {
+  color: #475569 !important;
 }
 
 .toolbar-btn:hover {

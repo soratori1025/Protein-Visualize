@@ -29,9 +29,10 @@ interface ConsensusAnalysisMapProps {
   consensusMap: ConsensusResidue[];
   customHelixColors?: Record<string, string>;
   customRegionColors?: Record<string, string>;
+  figureTheme?: 'lab' | 'publication';
 }
 
-export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ consensusMap, customHelixColors, customRegionColors }) => {
+export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ consensusMap, customHelixColors, customRegionColors, figureTheme }) => {
   const [hoveredRes, setHoveredRes] = useState<ConsensusResidue | null>(null);
   
   const { protein, chainId, selectedResidue, setSelectedResidue } = useProtein();
@@ -94,6 +95,7 @@ export const ConsensusAnalysisMap: React.FC<ConsensusAnalysisMapProps> = ({ cons
               defaultColorScheme="helices"
               customHelixColors={customHelixColors}
               customRegionColors={customRegionColors}
+              figureTheme={figureTheme}
             />
         </div>
       )}
