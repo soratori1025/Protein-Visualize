@@ -24,7 +24,9 @@ MAX_JITTER_LEN = 3          # max length of a slab-edge jitter dip that may be m
 JITTER_MARGIN = 3.0         # Angstrom a jitter residue may sit beyond the slab face
 MIN_TM_CORE = 5             # drop TM runs whose in-slab core is shorter than this
 MIN_FACE_RESIDUES = 5       # min residues required OUTSIDE the slab on each face
-MIN_FACE_FRACTION = 0.08    # ...and each face must hold >= this fraction of residues
+MIN_FACE_FRACTION = 0.0     # extra per-face fraction (0 = off). 0.08 made the true slab
+                            # invalid whenever one side holds < 8% of the chain, e.g. a
+                            # single-pass protein with a short cytoplasmic tail
 MAX_SNAP = 4                # max residues a boundary may snap past the slab edge
 MIN_MEMBRANE_SCORE = 0.5    # below this the structure is treated as non-membrane
 MIN_EXTRA_SS_LEN = 3        # extramembrane helix/strand shorter than this -> Coil
@@ -36,9 +38,13 @@ BROKEN_GAP_MAX = 9          # max intramembrane break between two halves of one 
 MIN_CROSS_SPAN_FRAC = 0.45  # a crossing must reach across at least this*thickness
 
 # --- Sequence Predictor Constants ---------------------------------------------
-TM_HYDRO_THRESHOLD = 1.6
+TM_HYDRO_THRESHOLD = 1.6   # detection: 19-residue (SMOOTH_WINDOW) mean above this
+TM_EDGE_WINDOW = 9         # extent: short-window profile that places the segment ends
+TM_EDGE_THRESHOLD = 0.5    # ...a segment is the run where that profile stays >= this
 TM_MIN_LENGTH = 15
-TM_MERGE_GAP = 3
+TM_SEGMENT_MIN_LENGTH = 13 # drop segments shorter than this (TM_MIN_LENGTH was never applied)
+TM_MAX_LENGTH = 38         # split longer runs at their least hydrophobic point
+TM_MERGE_GAP = 3           # legacy: only used by sequence._find_hydrophobic_segments
 RESCUE_HYDRO_THRESHOLD = 0.6
 RESCUE_MIN_ALPHA_LENGTH = 12
 RESCUE_MIN_BETA_LENGTH = 5

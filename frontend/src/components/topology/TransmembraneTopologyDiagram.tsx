@@ -315,11 +315,70 @@ export function TransmembraneTopologyDiagram({
   );
 
   const handleExport = useCallback(
-    async (format: 'png' | 'jpeg') => {
+    async (format: 'png' | 'jpeg' | '3line' | 'gff3') => {
+      const id = activeTopologyData?.uniprot_id || chain?.id || 'topology';
+      
+      if (format === '3line' || format === 'gff3') {
+        setExporting(true);
+        try {
+          const regions = activeTopologyData?.regions || [];
+          const sequence = chain?.sequence || '';
+          
+          if (format === '3line') {
+            const topArr = new Array(sequence.length).fill('U');
+            
+            regions.forEach(r => {
+              // Convert 1-based start/end to 0-based indexing
+              const s = Math.max(0, r.start - 1);
+              const e = Math.min(sequence.length - 1, r.end - 1);
+              
+              let char = 'U';
+              if (r.type === 'Transmembrane') char = 'M';
+              else if (r.type === 'Topological domain') {
+                if (r.side === 'Cytoplasmic' || r.description?.toLowerCase().includes('cytoplasm')) char = 'I';
+                else if (r.side === 'Extracellular' || r.description?.toLowerCase().includes('extracellular')) char = 'O';
+              }
+              
+              for (let i = s; i <= e; i++) {
+                if (char !== 'U') topArr[i] = char;
+              }
+            });
+            const content = `>${id}\n${sequence}\n${topArr.join('')}\n`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${id}_topology.3line`;
+            a.click();
+            URL.revokeObjectURL(url);
+          } else if (format === 'gff3') {
+            let content = `##gff-version 3\n`;
+            regions.forEach((r, i) => {
+              const source = topologySource === 'calculated' ? 'Calculated' : 'UniProt';
+              const type = r.type === 'Transmembrane' ? 'transmembrane_region' : 'topological_domain';
+              let attributes = `ID=region_${i + 1}`;
+              if (r.description) attributes += `;Note=${r.description.replace(/;/g, ',')}`;
+              if (r.side) attributes += `;Side=${r.side}`;
+              
+              content += `${id}\t${source}\t${type}\t${r.start}\t${r.end}\t.\t.\t.\t${attributes}\n`;
+            });
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${id}_topology.gff3`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+        } finally {
+          setExporting(false);
+        }
+        return;
+      }
+
       if (!svgRef.current) return;
       setExporting(true);
       try {
-        const id = activeTopologyData?.uniprot_id ?? 'topology';
         const ext = format === 'jpeg' ? 'jpg' : 'png';
         await exportSvgAsImage(svgRef.current, format, `${id}_TM_topology.${ext}`, 3);
       } catch {
@@ -328,7 +387,7 @@ export function TransmembraneTopologyDiagram({
         setExporting(false);
       }
     },
-    [activeTopologyData]
+    [activeTopologyData, chain, topologySource]
   );
 
   const handleAddResidueRule = () => {

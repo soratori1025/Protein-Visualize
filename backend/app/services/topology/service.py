@@ -4,6 +4,10 @@ frontend sends (tm_algo, ss_algo, uniprot_id, chain_id and the advanced TM param
 into providers + TMParams, and runs the orchestrator. There is ONE flow (consensus);
 ``flow_type`` is still accepted so old clients keep working.
 
+tm_algo "3d_energy" is the implicit-membrane energy provider: it fits the membrane
+thickness itself, so `thickness` and `min_membrane_score` do not apply to it (its
+membrane/soluble cut-off is a transfer free energy in kcal/mol).
+
 Keeping this mapping here (not in the FastAPI route) means the frontend/backend
 contract is in one testable place. The route only resolves the uploaded file and
 turns ValueError into HTTP 400:
@@ -56,8 +60,15 @@ def _geometry_provider() -> TMProvider:
     return GeometryTMProvider()
 
 
+def _energy_provider() -> TMProvider:
+    # imported lazily: SASA + implicit-membrane search (app.services.topology.membrane_energy)
+    from app.services.topology.providers.tm.energy import EnergyTMProvider
+    return EnergyTMProvider()
+
+
 TM_ALGORITHMS: dict[str, Callable[[], TMProvider]] = {
     "3d_slab_geom": _geometry_provider,
+    "3d_energy": _energy_provider,
     "kyte_doolittle_seq": SequenceTMProvider,
     "uniprot_api": UniprotTMProvider,
 }

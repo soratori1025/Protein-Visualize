@@ -38,12 +38,12 @@ export function StructureViewer() {
       />
 
       <section className="overview-section panel">
-        <div className="panel-heading"><div><span className="section-kicker">FULL ASSEMBLY</span><h2>Biological assembly overview</h2><p className="panel-subtitle">The complete colored protein stays together here, like the reference image.</p></div><span className="tag">{chains.length ? `${chains.length} CHAINS` : 'WAITING'}</span></div>
+        <div className="panel-heading"><div><h2>Biological assembly overview</h2><p className="panel-subtitle">The complete colored protein stays together here, like the reference image.</p></div><span className="tag">{chains.length ? `${chains.length} CHAINS` : 'WAITING'}</span></div>
         <ProteinViewer chain={chain} chains={chains} filename={protein?.filename} variant="overview" selectedResidue={selectedResidue} onSelectResidue={setSelectedResidue} />
       </section>
 
       <section className="spread-section panel">
-        <div className="panel-heading"><div><span className="section-kicker">EXPANDED ARCHITECTURE</span><h2>Spread protein map</h2><p className="panel-subtitle">Compounds are separated into readable lanes while the external ribbons preserve their assembly relationships.</p></div></div>
+        <div className="panel-heading"><div><h2>Spread protein map</h2><p className="panel-subtitle">Compounds are separated into readable lanes while the external ribbons preserve their assembly relationships.</p></div></div>
         <ExpandedProteinMap chains={chains} selectedChain={chain?.id} onSelectChain={(nextChain) => { setChainId(nextChain); setSelectedResidue(null); setChainAnalysis(null); }} />
       </section>
 

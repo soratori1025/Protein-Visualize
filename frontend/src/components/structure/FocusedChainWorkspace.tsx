@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SequenceView } from '../sequence/SequenceView';
 import { ProteinViewer } from '../viewer/ProteinViewer';
 import type { Chain } from '../../types/protein';
+import './FocusedChainWorkspace.css';
 
 interface FocusedChainWorkspaceProps {
   chain?: Chain;
@@ -22,43 +23,53 @@ export function FocusedChainWorkspace({
   const selectedResidueData = chain?.residues.find((item) => item.id === selectedResidue);
 
   return (
-    <section className="focused-workspace panel">
-      <div className="panel-heading">
+    <section className="premium-workspace-section">
+      <div className="premium-workspace-header">
         <div>
-          <span className="section-kicker">INTERACTION</span>
-          <h2>Focused chain workspace</h2>
-          <p className="panel-subtitle">
+          <h2 className="premium-workspace-title">Focused chain workspace</h2>
+          <p className="premium-workspace-subtitle">
             Choose one chain, read its sequence, then inspect only that chain in 3D.
           </p>
         </div>
-        <span className="tag">{chain ? `CHAIN ${chain.id}` : 'WAITING'}</span>
+        <span className="premium-tag">{chain ? `CHAIN ${chain.id}` : 'WAITING'}</span>
       </div>
-      <div className="focused-sequence-layout">
-        <div className="focused-sequence-column">
+      
+      <div className="premium-workspace-layout">
+        <div className="premium-sequence-column">
           <button
-            className={`sequence-disclosure ${sequenceOpen ? 'open' : ''}`}
+            className={`premium-sequence-btn ${sequenceOpen ? 'open' : ''}`}
             onClick={() => setSequenceOpen((open) => !open)}
             aria-expanded={sequenceOpen}
           >
-            <span>
-              <span className="section-kicker">SELECTED SEQUENCE</span>
-              <strong>Chain {chain?.id ?? '-'}</strong>
-              <small>
+            <span className="premium-btn-content">
+              <span className="premium-btn-kicker">SELECTED SEQUENCE</span>
+              <strong className="premium-btn-title">Chain {chain?.id ?? '-'}</strong>
+              <small className="premium-btn-subtitle">
                 {chain?.residue_count ?? 0} residues · {sequenceOpen ? 'Hide sequence' : 'Show sequence'}
               </small>
             </span>
-            <span className="disclosure-chevron">{sequenceOpen ? '▲' : '▼'}</span>
+            <span className="premium-chevron">{sequenceOpen ? '▲' : '▼'}</span>
           </button>
-          {sequenceOpen && (
-            <div className="sequence-dropdown-content">
-              <div className={`selection-inspector ${selectedResidueData ? 'active' : ''}`}>
-                <span className="selection-label">CURRENT RESIDUE</span>
-                <strong>
+          <ProteinViewer
+            chain={chain}
+            chains={chains}
+            filename={filename}
+            variant="interactive"
+            focusChainId={chain?.id}
+            selectedResidue={selectedResidue}
+            onSelectResidue={onSelectResidue}
+          />
+        </div>
+        {sequenceOpen && (
+            <div className="premium-dropdown-content">
+              <div className={`premium-inspector ${selectedResidueData ? 'active' : ''}`}>
+                <span className="inspector-label">CURRENT RESIDUE</span>
+                <strong className="inspector-value">
                   {selectedResidueData
                     ? `${chain?.id}:${selectedResidueData.id} · ${selectedResidueData.name}`
                     : 'Select a residue below'}
                 </strong>
-                <small>
+                <small className="inspector-help">
                   {selectedResidueData
                     ? 'Highlighted in the isolated 3D chain and topology map.'
                     : 'Click an amino acid to highlight its exact position in 3D.'}
@@ -71,25 +82,6 @@ export function FocusedChainWorkspace({
               />
             </div>
           )}
-        </div>
-        <div className="focused-viewer-column">
-          <div className="panel-heading compact-heading">
-            <div>
-              <span className="section-kicker">3D ISOLATE</span>
-              <h3>Chain {chain?.id ?? '-'}</h3>
-            </div>
-            <span className="tag">INTERACTIVE</span>
-          </div>
-          <ProteinViewer
-            chain={chain}
-            chains={chains}
-            filename={filename}
-            variant="interactive"
-            focusChainId={chain?.id}
-            selectedResidue={selectedResidue}
-            onSelectResidue={onSelectResidue}
-          />
-        </div>
       </div>
     </section>
   );

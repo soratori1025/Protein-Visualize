@@ -8,7 +8,7 @@ interface Props {
   topologySource: TopologySource;
   handleTopologySourceChange: (s: TopologySource) => void;
   filename?: string | null;
-  handleExport: (format: 'png' | 'jpeg') => void;
+  handleExport: (format: 'png' | 'jpeg' | '3line' | 'gff3') => void;
   exporting: boolean;
   colorDrawerOpen: boolean;
   setColorDrawerOpen: (v: boolean | ((prev: boolean) => boolean)) => void;
@@ -64,20 +64,24 @@ export function TopologyToolbar({
         <button className={`tm-tab-btn ${figureTheme === 'publication' ? 'active' : ''}`} onClick={() => setFigureTheme('publication')}>Light Mode</button>
         <button className={`tm-tab-btn ${figureTheme === 'lab' ? 'active' : ''}`} onClick={() => setFigureTheme('lab')}>Dark Mode</button>
       </div>
-
       <div className="tm-preset-chip" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
         <button className={`tm-tab-btn ${topologySource === 'calculated' ? 'active' : ''}`} onClick={() => handleTopologySourceChange('calculated')} disabled={!filename} title={!filename ? 'Upload a structure file to calculate topology' : undefined}>Calculated (beta)</button>
         <button className={`tm-tab-btn ${topologySource === 'uniprot' ? 'active' : ''}`} onClick={() => handleTopologySourceChange('uniprot')}>UniProt</button>
       </div>
-
-      <button className="tm-color-toggle-btn" onClick={() => handleExport('png')} disabled={exporting}>
-        <span>{exporting ? 'Exporting…' : 'Export PNG'}</span>
-      </button>
-
+      <div style={{ display: 'flex', gap: '4px' }}>
+        <button className="tm-color-toggle-btn" onClick={() => handleExport('png')} disabled={exporting}>
+          <span>{exporting ? 'Exporting…' : 'Export PNG'}</span>
+        </button>
+        <button className="tm-color-toggle-btn" onClick={() => handleExport('3line')} disabled={exporting} title="Export as .3line text format">
+          <span>.3line</span>
+        </button>
+        <button className="tm-color-toggle-btn" onClick={() => handleExport('gff3')} disabled={exporting} title="Export as .gff3 format">
+          <span>.gff3</span>
+        </button>
+      </div>
       <button className={`tm-color-toggle-btn ${colorDrawerOpen ? 'active' : ''}`} onClick={() => setColorDrawerOpen(open => !open)}>
         <span>{colorDrawerOpen ? 'Close customize bar' : 'Customize styles'}</span>
       </button>
-
       {topologySource === 'uniprot' ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
           <input type="text" value={uniprotIdInput} onChange={(e) => setUniprotIdInput(e.target.value)} placeholder="e.g. P31645" className="tm-input-field" style={{ width: '96px', fontWeight: 700, textTransform: 'uppercase' }} onKeyDown={(e) => { if (e.key === 'Enter') fetchUniProtTopology(uniprotIdInput); }} />
@@ -97,6 +101,9 @@ export function TopologyToolbar({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <select className="tm-input-field" value={tmAlgorithm} onChange={(e) => handleTmAlgorithmChange(e.target.value)} style={{ padding: '4px 8px' }}>
                 <option value="uniprot_api">UniProt API</option>
+                <option value="kyte_doolittle_seq">Kyte Doolittle</option>
+                <option value="3d_slab_geom">3D Geometry</option>
+                <option value="3d_energy">3D Energy</option>
               </select>
               {tmAlgorithm === 'uniprot_api' && (
                 <input type="text" className="tm-input-field" placeholder="UniProt ID (auto from file)" value={customUniprotId} onChange={(e) => setCustomUniprotId(e.target.value)} style={{ width: '150px', padding: '4px 8px' }} />
