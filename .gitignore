@@ -13,9 +13,9 @@ frontend/dist/
 .vscode/
 
 # Data
-data/
-data/uploads/
-!data/uploads/.gitkeep
+/data/
+/data/uploads/
+!/data/uploads/.gitkeep
 
 tools/src/dssp/build-msys/
 
