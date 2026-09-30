@@ -11,6 +11,8 @@ import { exportSvgAsImage } from '../structure/exportDiagram';
 import { API_URL, runSecondaryStructure } from '../../services/api';
 import './TransmembraneTopologyDiagram.css';
 import { ConsensusAnalysisMap } from './ConsensusAnalysisMap';
+import { TopologyCustomizeDrawer } from './components/TopologyCustomizeDrawer';
+import { TopologyToolbar } from './components/TopologyToolbar';
 
 import {
   FigureTheme,
@@ -474,411 +476,75 @@ export function TransmembraneTopologyDiagram({
           </p>
         </div>
 
-        <div className="tm-toolbar-actions">
-          <div className="tm-preset-chip" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <button
-              className={`tm-tab-btn ${figureTheme === 'publication' ? 'active' : ''}`}
-              onClick={() => setFigureTheme('publication')}
-            >
-              Light Mode
-            </button>
-            <button
-              className={`tm-tab-btn ${figureTheme === 'lab' ? 'active' : ''}`}
-              onClick={() => setFigureTheme('lab')}
-            >
-              Dark Mode
-            </button>
-          </div>
-
-          <div className="tm-preset-chip" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <button
-              className={`tm-tab-btn ${topologySource === 'calculated' ? 'active' : ''}`}
-              onClick={() => handleTopologySourceChange('calculated')}
-              disabled={!filename}
-              title={!filename ? 'Upload a structure file to calculate topology' : undefined}
-            >
-              Calculated (beta)
-            </button>
-            <button
-              className={`tm-tab-btn ${topologySource === 'uniprot' ? 'active' : ''}`}
-              onClick={() => handleTopologySourceChange('uniprot')}
-            >
-              UniProt
-            </button>  
-          </div>
-
-          <button className="tm-color-toggle-btn" onClick={() => handleExport('png')} disabled={exporting}>
-            <span>{exporting ? 'Exporting…' : 'Export PNG'}</span>
-          </button>
-
-          
-
-          <button
-            className={`tm-color-toggle-btn ${colorDrawerOpen ? 'active' : ''}`}
-            onClick={() => setColorDrawerOpen((open) => !open)}
-          >
-            <span>{colorDrawerOpen ? 'Close customize bar' : 'Customize styles'}</span>
-          </button>
-
-          {topologySource === 'uniprot' ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
-              <input
-                type="text"
-                value={uniprotIdInput}
-                onChange={(e) => setUniprotIdInput(e.target.value)}
-                placeholder="e.g. P31645"
-                className="tm-input-field"
-                style={{ width: '96px', fontWeight: 700, textTransform: 'uppercase' }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') fetchUniProtTopology(uniprotIdInput);
-                }}
-              />
-              <button
-                onClick={() => fetchUniProtTopology(uniprotIdInput)}
-                disabled={loadingUniProt}
-                className="tm-add-btn"
-                style={{ background: '#3b82f6' }}
-              >
-                {loadingUniProt ? 'Loading...' : 'Load UniProt'}
-              </button>
-
-              <button
-                onClick={() => setShowUniProtInfo((open) => !open)}
-                title="How the UniProt lookup works"
-                aria-label="How the UniProt lookup works"
-                className="tm-info-btn"
-                style={{
-                  background: showUniProtInfo ? '#38bdf8' : '#1e293b',
-                  color: showUniProtInfo ? '#0f172a' : '#94a3b8',
-                }}
-              >
-                ?
-              </button>
-
-              {showUniProtInfo && (
-                <div className="tm-info-popover">
-                  <strong>How the UniProt lookup works</strong>
-                  Enter any UniProt accession (for example <code>P31645</code>) and press Load. The app reads that
-                  entry's curated Transmembrane, Topological domain and Intramembrane features and draws the map from
-                  them — no structure file needed. For a structure-derived estimate, switch to Calculated (beta).
-                  <button onClick={() => setShowUniProtInfo(false)}>Close</button>
-                </div>
-              )}
-            </div>
-                    ) : (
-            <>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid #333', padding: '8px', borderRadius: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <select 
-                    className="tm-input-field" 
-                    value={tmAlgorithm}
-                    onChange={(e) => handleTmAlgorithmChange(e.target.value)}
-                    style={{ padding: '4px 8px' }}
-                  >
-                    <option value="uniprot_api">UniProt API</option>
-                  </select>
-
-                  {tmAlgorithm === 'uniprot_api' && (
-                    <input 
-                      type="text"
-                      className="tm-input-field"
-                      placeholder="UniProt ID (auto from file)"
-                      value={customUniprotId}
-                      onChange={(e) => setCustomUniprotId(e.target.value)}
-                      style={{ width: '150px', padding: '4px 8px' }}
-                    />
-                  )}
-
-                  <select 
-                    className="tm-input-field" 
-                    value={ssAlgorithm}
-                    onChange={(e) => setSsAlgorithm(e.target.value)}
-                    style={{ padding: '4px 8px' }}
-                  >
-                    <option value="dssp">DSSP</option>
-                    <option value="stride">STRIDE</option>
-                    <option value="none">None (Only TM boundaries)</option>
-                  </select>
-
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <button
-                    onClick={() =>
-                      filename && fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain?.id)
-                    }
-                    disabled={loadingCalculated || !filename}
-                    className="tm-add-btn"
-                  >
-                    {loadingCalculated ? 'Computing…' : 'Recalculate'}
-                  </button>
-                  <button
-                    onClick={() => setShowAdvancedParams(!showAdvancedParams)}
-                    className="tm-add-btn"
-                    style={{ fontSize: '0.8em', opacity: 0.8 }}
-                    title="Tune biological thresholds for TM detection"
-                  >
-                    {showAdvancedParams ? '▲ Parameters' : '▼ Parameters'}
-                  </button>
-                  {tmAlgorithm === 'uniprot_api' && !customUniprotId && (
-                    <span style={{ color: '#94a3b8', fontSize: '12px' }}>
-                      Empty = read from the file (DBREF / _struct_ref)
-                    </span>
-                  )}
-                </div>
-              </div>
-              {showAdvancedParams && (
-                <div style={{
-                  margin: '8px 0', padding: '10px 14px',
-                  background: 'rgba(100,100,140,0.08)', borderRadius: '8px',
-                  display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px 16px',
-                  fontSize: '0.82em',
-                }}>
-                  <label title="Hydrophobic core thickness (Å). Bacterial IM ~27, eukaryotic PM ~30, ER ~25. (Mitra 2004; OPM database). Used by 3D Slab Geometry." style={{ opacity: slabParamsActive ? 1 : 0.45 }}>
-                    Membrane thickness (Å)
-                    <input type="number" step="0.5" min="20" max="40" value={tmThickness}
-                      placeholder={usedParam('membrane_thickness')} disabled={!slabParamsActive}
-                      onChange={e => setTmThickness(e.target.value)}
-                      className="tm-input-field" style={{ width: '70px', marginLeft: 4 }} />
-                  </label>
-                  <label title="Min mean hydrophobicity inside the slab. Below this the protein is treated as soluble. Used by 3D Slab Geometry." style={{ opacity: slabParamsActive ? 1 : 0.45 }}>
-                    Min membrane score
-                    <input type="number" step="0.1" min="-3" max="3" value={tmMinMembraneScore}
-                      placeholder={usedParam('min_membrane_score')} disabled={!slabParamsActive}
-                      onChange={e => setTmMinMembraneScore(e.target.value)}
-                      className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
-                  </label>
-                  <label title="Hairpin guard: fraction of the thickness two TM_in runs must span together to count as one traversal of the bilayer. Needs DSSP/STRIDE." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
-                    Min cross span
-                    <input type="number" step="0.05" min="0.05" max="1" value={tmMinCrossSpan} disabled={!crossParamsActive}
-                      placeholder={usedParam('min_cross_span_frac')}
-                      onChange={e => setTmMinCrossSpan(e.target.value)}
-                      className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
-                  </label>
-                  <label title="Hairpin guard: a TM_in run spanning this fraction of the thickness crosses the bilayer on its own, so two such runs inside one TM segment are two crossings. Needs DSSP/STRIDE." style={{ opacity: crossParamsActive ? 1 : 0.45 }}>
-                    Full cross frac
-                    <input type="number" step="0.05" min="0.1" max="1.5" value={tmFullCrossFrac} disabled={!crossParamsActive}
-                      placeholder={usedParam('full_cross_frac')}
-                      onChange={e => setTmFullCrossFrac(e.target.value)}
-                      className="tm-input-field" style={{ width: '60px', marginLeft: 4 }} />
-                  </label>
-                  <label title="Turn (T) / Bend (S) with a helix on both sides becomes helix (not when the two helices are an antiparallel hairpin); with a helix on one side it is labelled Turn. Note: an unwound TM stretch coded T/S then no longer splits TM1a / TM1b." style={{ opacity: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <input type="checkbox" checked={tmTreatTurnAsHelix}
-                      onChange={e => setTmTreatTurnAsHelix(e.target.checked)} />
-                    Treat Turn/Bend as Helix
-                  </label>
-                  <div style={{ gridColumn: '1 / -1', marginTop: 4, opacity: 0.65, fontSize: '0.9em' }}>
-                    Empty fields use the backend defaults (shown greyed, as last used by the server).
-                    Defaults are literature-derived (Kyte–Doolittle 1982; Mitra 2004; OPM/PDBTM).
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <TopologyToolbar
+          figureTheme={figureTheme}
+          setFigureTheme={setFigureTheme}
+          topologySource={topologySource}
+          handleTopologySourceChange={handleTopologySourceChange}
+          filename={filename}
+          handleExport={handleExport as any}
+          exporting={exporting}
+          colorDrawerOpen={colorDrawerOpen}
+          setColorDrawerOpen={setColorDrawerOpen}
+          uniprotIdInput={uniprotIdInput}
+          setUniprotIdInput={setUniprotIdInput}
+          fetchUniProtTopology={fetchUniProtTopology}
+          loadingUniProt={loadingUniProt}
+          showUniProtInfo={showUniProtInfo}
+          setShowUniProtInfo={setShowUniProtInfo}
+          tmAlgorithm={tmAlgorithm}
+          handleTmAlgorithmChange={handleTmAlgorithmChange}
+          customUniprotId={customUniprotId}
+          setCustomUniprotId={setCustomUniprotId}
+          ssAlgorithm={ssAlgorithm}
+          setSsAlgorithm={setSsAlgorithm}
+          fetchCalculatedTopology={() => filename && fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain?.id)}
+          loadingCalculated={loadingCalculated}
+          showAdvancedParams={showAdvancedParams}
+          setShowAdvancedParams={setShowAdvancedParams}
+          tmThickness={tmThickness}
+          setTmThickness={setTmThickness}
+          tmMinMembraneScore={tmMinMembraneScore}
+          setTmMinMembraneScore={setTmMinMembraneScore}
+          tmMinCrossSpan={tmMinCrossSpan}
+          setTmMinCrossSpan={setTmMinCrossSpan}
+          tmFullCrossFrac={tmFullCrossFrac}
+          setTmFullCrossFrac={setTmFullCrossFrac}
+          tmTreatTurnAsHelix={tmTreatTurnAsHelix}
+          setTmTreatTurnAsHelix={setTmTreatTurnAsHelix}
+          calculatedData={calculatedData}
+          slabParamsActive={slabParamsActive}
+          crossParamsActive={crossParamsActive}
+        />
         
       </div>
       {/* Color drawer */}
       {colorDrawerOpen && (
-        <div className={`tm-color-customizer-drawer ${isPub ? 'publication' : 'lab'}`}>
-          <div className="tm-drawer-tabs">
-            <button
-              className={`tm-tab-btn ${activeTab === 'preset' ? 'active' : ''}`}
-              onClick={() => setActiveTab('preset')}
-            >
-              Palettes
-            </button>
-            <button
-              className={`tm-tab-btn ${activeTab === 'helices' ? 'active' : ''}`}
-              onClick={() => setActiveTab('helices')}
-            >
-              Individual helices
-            </button>
-            <button
-              className={`tm-tab-btn ${activeTab === 'residues' ? 'active' : ''}`}
-              onClick={() => setActiveTab('residues')}
-            >
-              Residue ranges
-            </button>
-            <button
-              className={`tm-tab-btn ${activeTab === 'effects' ? 'active' : ''}`}
-              onClick={() => setActiveTab('effects')}
-            >
-              Styles display
-            </button>
-            <button
-              className={`tm-tab-btn ${activeTab === 'regions' ? 'active' : ''}`}
-              onClick={() => setActiveTab('regions')}
-            >
-              Regions
-            </button>
-            <button className="tm-reset-btn" onClick={handleResetColors}>
-              Reset setting
-            </button>
-          </div>
-
-          {activeTab === 'effects' && (
-            <div className="tm-effects-section" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>TM Helix Style</span>
-                </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '4px' }}>
-                  {[
-                    { id: 'cylinder', label: 'Cylinder' },
-                    { id: 'ribbon', label: 'Ribbon' },
-                    { id: 'flat', label: 'Flat Block' },
-                  ].map((style) => (
-                    <label key={style.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: isPub ? '#334155' : '#cbd5e1', cursor: 'pointer' }}>
-                      <input type="radio" name="visualStyle" checked={visualStyle === style.id} onChange={() => setVisualStyle(style.id as any)} />
-                      {style.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'regions' && (
-            <div className="tm-effects-section" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Membrane Background</span>
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input 
-                    type="color" 
-                    value={customRegionColors.Membrane || '#00d2d3'} 
-                    onChange={(e) => setCustomRegionColors(prev => ({ ...prev, Membrane: e.target.value }))}
-                    style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
-                  />
-                  <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
-                    {customRegionColors.Membrane || '#00d2d3'}
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Extracellular Label Color</span>
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input 
-                    type="color" 
-                    value={customRegionColors.ExtracellularText || '#ff9f43'} 
-                    onChange={(e) => setCustomRegionColors(prev => ({ ...prev, ExtracellularText: e.target.value }))}
-                    style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
-                  />
-                  <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
-                    {customRegionColors.ExtracellularText || '#ff9f43'}
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', color: isPub ? '#334155' : '#94a3b8', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Cytoplasmic Label Color</span>
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input 
-                    type="color" 
-                    value={customRegionColors.CytoplasmicText || '#5f27cd'} 
-                    onChange={(e) => setCustomRegionColors(prev => ({ ...prev, CytoplasmicText: e.target.value }))}
-                    style={{ width: '24px', height: '24px', padding: '0', border: 'none', cursor: 'pointer', background: 'transparent' }}
-                  />
-                  <span style={{ fontSize: '11px', color: isPub ? '#64748b' : '#94a3b8' }}>
-                    {customRegionColors.CytoplasmicText || '#5f27cd'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'preset' && (
-            <div className="tm-palette-grid">
-              {Object.entries(PALETTES).map(([key, palette]) => (
-                <button
-                  key={key}
-                  className={`tm-palette-btn ${selectedPaletteKey === key ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedPaletteKey(key);
-                    setCustomHelixColors({});
-                  }}
-                >
-                  <div className="tm-palette-preview">
-                    {buildPalette(palette.colors, Math.max(6, Math.min(12, columnCount))).map((c, i) => (
-                      <span key={i} style={{ backgroundColor: c }} />
-                    ))}
-                  </div>
-                  <span>{palette.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'helices' && (
-            <div className="tm-helix-color-grid">
-              {helices.map((h) => (
-                <div key={`color-${h.id}`} className="tm-helix-color-item">
-                  <span>TM{h.subLabel}</span>
-                  <input
-                    type="color"
-                    className="tm-color-input"
-                    value={h.color}
-                    onChange={(e) =>
-                      setCustomHelixColors((prev) => ({ ...prev, [h.subLabel]: e.target.value }))
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'residues' && (
-            <div className="tm-residue-color-section">
-              <div className="tm-residue-form">
-                <input
-                  type="number"
-                  className="tm-input-field"
-                  placeholder="Start"
-                  value={resStartInput}
-                  onChange={(e) => setResStartInput(e.target.value)}
-                />
-                <span>–</span>
-                <input
-                  type="number"
-                  className="tm-input-field"
-                  placeholder="End (optional)"
-                  value={resEndInput}
-                  onChange={(e) => setResEndInput(e.target.value)}
-                />
-                <input
-                  type="color"
-                  className="tm-color-input"
-                  value={resColorInput}
-                  onChange={(e) => setResColorInput(e.target.value)}
-                />
-                <button className="tm-add-btn" onClick={handleAddResidueRule}>
-                  Add highlight
-                </button>
-              </div>
-
-              {customResidueRules.length > 0 ? (
-                <div className="tm-residue-tag-list">
-                  {customResidueRules.map((rule) => (
-                    <span key={rule.id} className="tm-residue-tag" style={{ borderLeftColor: rule.color }}>
-                      <span className="tm-rule-color-dot" style={{ backgroundColor: rule.color }} />
-                      {rule.label}
-                      <button onClick={() => handleRemoveResidueRule(rule.id)}>×</button>
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <small style={{ color: '#64748b', fontSize: '11px' }}>
-                  Enter a residue number or range to highlight positions on the map.
-                </small>
-              )}
-            </div>
-          )}
-        </div>
+        <TopologyCustomizeDrawer
+          isPub={isPub}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          visualStyle={visualStyle}
+          setVisualStyle={setVisualStyle}
+          selectedPaletteKey={selectedPaletteKey}
+          setSelectedPaletteKey={setSelectedPaletteKey}
+          helices={helices}
+          customHelixColors={customHelixColors}
+          setCustomHelixColors={setCustomHelixColors}
+          customRegionColors={customRegionColors}
+          setCustomRegionColors={setCustomRegionColors}
+          customResidueRules={customResidueRules}
+          resStartInput={resStartInput}
+          setResStartInput={setResStartInput}
+          resEndInput={resEndInput}
+          setResEndInput={setResEndInput}
+          resColorInput={resColorInput}
+          setResColorInput={setResColorInput}
+          handleAddResidueRule={handleAddResidueRule}
+          handleRemoveResidueRule={handleRemoveResidueRule}
+          handleResetColors={handleResetColors}
+          columnCount={columnCount}
+        />
       )}
       {isCalculatedTopology(activeTopologyData) && activeTopologyData.consensus_map && (
         <ConsensusAnalysisMap 
