@@ -430,7 +430,10 @@ function applyStyles(
       }
     } else if (style === 'pipesAndPlanks') {
       import('../../utils/PipePlanks').then(({ drawCustomPipesAndPlanks }) => {
-        drawCustomPipesAndPlanks(viewer, item.id, baseColor, colorScheme);
+        drawCustomPipesAndPlanks(
+          viewer, item.id, baseColor, colorScheme,
+          ssColors, consensusColors, consensusMap, helixColors
+        );
         viewer.render();
       });
     } else if (style === 'stick') {

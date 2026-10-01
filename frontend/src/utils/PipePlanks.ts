@@ -31,7 +31,11 @@ export function drawCustomPipesAndPlanks(
   viewer: $3Dmol.Viewer,
   chainId: string,
   baseColor: string,
-  colorScheme: ColorScheme
+  colorScheme: ColorScheme,
+  customSsColors?: Record<string, string>,
+  consensusColors?: Record<string, string>,
+  consensusMap?: any[],
+  helixColors?: Record<string, string>
 ) {
   const v = viewer as any;
   // Extract all CA atoms for this chain
@@ -57,10 +61,61 @@ export function drawCustomPipesAndPlanks(
     }
     currentSegment.atoms.push(atom);
   }
+  const chainColors = ['#ff6f61', '#78d8c1', '#fbc02d', '#8e44ad', '#2980b9', '#f39c12', '#2ecc71', '#d35400', '#c0392b', '#bdc3c7'];
+
+  // Pre-calculate crossings for 'helices' color scheme
+  const crossings = new Map<number, { start: number, end: number }>();
+  if (colorScheme === 'helices' && consensusMap) {
+    consensusMap.forEach(r => {
+      if (r.crossing) {
+        if (!crossings.has(r.crossing)) {
+          crossings.set(r.crossing, { start: r.residue_number, end: r.residue_number });
+        } else {
+          const c = crossings.get(r.crossing)!;
+          c.start = Math.min(c.start, r.residue_number);
+          c.end = Math.max(c.end, r.residue_number);
+        }
+      }
+    });
+  }
+  const crossingList = Array.from(crossings.entries()).sort((a, b) => a[0] - b[0]);
 
   const getColor = (atom: any) => {
-    if (colorScheme === 'ss') return atom.ss === 'h' ? ssColors.h : atom.ss === 's' ? ssColors.s : ssColors.c;
+    if (colorScheme === 'ss') {
+      if (atom.ss === 'h') return customSsColors?.Helix || ssColors.h;
+      if (atom.ss === 's') return customSsColors?.Strand || ssColors.s;
+      return customSsColors?.Coil || ssColors.c;
+    }
     if (colorScheme === 'hydropathy') return getHydropathyColor(atom.resn || atom.resname || 'ALA');
+    
+    if (colorScheme === 'consensus' && consensusMap) {
+      const consensusRes = consensusMap.find((c: any) => c.residue_number === atom.resi);
+      if (consensusRes) {
+        const label = consensusRes.label;
+        if (label === 'TM_E') return consensusColors?.TM_E || '#ff9f43';
+        if (label === 'TM_in') return consensusColors?.TM_in || '#00d2d3';
+        if (label === 'TM_C') return consensusColors?.TM_C || '#5f27cd';
+        if (label.startsWith('TM')) {
+          const num = label.replace(/\D/g, '');
+          if (num && helixColors?.[num]) return helixColors[num];
+        }
+      }
+      return consensusColors?.Coil || '#64748b';
+    }
+
+    if (colorScheme === 'helices' && consensusMap && crossingList.length > 0) {
+      for (let i = 0; i < crossingList.length; i++) {
+        const [cNum, bounds] = crossingList[i];
+        if (atom.resi >= bounds.start && atom.resi <= bounds.end) {
+          if (helixColors && helixColors[cNum]) return helixColors[cNum];
+          return chainColors[(cNum - 1) % chainColors.length];
+        }
+      }
+      // If not in crossing, try to interpolate color based on neighboring crossings like ProteinViewer does, 
+      // but to keep PipePlanks segment color simple we just return a default color for loops
+      return '#64748b';
+    }
+
     return baseColor;
   };
 

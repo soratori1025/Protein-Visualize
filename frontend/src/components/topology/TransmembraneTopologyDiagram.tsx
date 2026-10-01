@@ -521,16 +521,6 @@ export function TransmembraneTopologyDiagram({
               : 'UniProt topology'}
           </span>
           <h2>Transmembrane secondary structure map</h2>
-          <p className="panel-subtitle">
-            {isCalculatedTopology(activeTopologyData)
-              ? `${activeTopologyData.labeler} · chain ${activeTopologyData.chain_id ?? '?'} · ${helixCount} crossings, ${loops.length
-              } loops${activeTopologyData.domain_type ? ` · ${activeTopologyData.domain_type.replace('_', ' ')}` : ''}${activeTopologyData.membrane ? ` · membrane: ${activeTopologyData.membrane.source}` : ''
-              }`
-              : activeTopologyData
-                ? `${activeTopologyData.protein_name}${activeTopologyData.gene_name ? ` (${activeTopologyData.gene_name})` : ''
-                } · ${activeTopologyData.uniprot_id} · ${helixCount} helices, ${loops.length} loops · UniProt numbering`
-                : 'Transmembrane helices, extracellular and cytoplasmic loops, re-entrant segments.'}
-          </p>
         </div>
 
         <TopologyToolbar
@@ -614,16 +604,7 @@ export function TransmembraneTopologyDiagram({
 
       {activeError && <div className="tm-error-banner">{activeError}</div>}
       {overlayError && <div className="tm-error-banner">Overlay: {overlayError}</div>}
-      {calcWarnings.length > 0 && (
-        <div className="tm-error-banner" style={{ background: 'rgba(234, 179, 8, 0.12)', borderColor: '#ca8a04', color: isPub ? '#713f12' : '#fde68a' }}>
-          <strong>Backend notes</strong>
-          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-            {calcWarnings.map((w, i) => (
-              <li key={i}>{w}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+      
       {noCrossings && (
         <div className="tm-error-banner tm-loading-banner">
           No transmembrane segment in this topology
