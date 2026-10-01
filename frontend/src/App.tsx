@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { TransmembraneAnalysis } from './pages/TransmembraneAnalysis';
+import { TransmembraneViewer } from './pages/TransmembraneViewer';
 import { Storyboard } from './pages/Storyboard';
 import { StructureViewer } from './pages/StructureViewer';
 
@@ -9,8 +10,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<AppLayout />}>
-          <Route index element={<TransmembraneAnalysis />} />
-          <Route path="visualize" element={<StructureViewer />} />
+          <Route index element={<TransmembraneViewer />} />
+          <Route path="transmembrane-analysis" element={<TransmembraneAnalysis />} />
+          <Route path="structure-visualize" element={<StructureViewer />} />
           <Route path="storyboard" element={<Storyboard />} />
         </Route>
       </Routes>

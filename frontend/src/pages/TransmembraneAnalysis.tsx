@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SecondaryStructureTrack } from '../components/analysis/SecondaryStructureTrack';
 import { TransmembraneStructureTrack } from '../components/analysis/TransmembraneStructureTrack';
-import { TransmembraneTopologyDiagram } from '../components/topology/TransmembraneTopologyDiagram';
+import { TransmembraneTopologyAnalysisDiagram } from '../components/topology/TransmembraneTopologyAnalysisDiagram';
 import { getSecondaryCapabilities, runSecondaryStructure } from '../services/api';
 import type { SecondaryStructureResult, UniProtTopologyData } from '../types/secondaryStructure';
 import { useProtein } from '../contexts/ProteinContext';
@@ -70,7 +70,7 @@ export function TransmembraneAnalysis() {
       />
 
       <section className="tm-topology-section">
-        <TransmembraneTopologyDiagram
+        <TransmembraneTopologyAnalysisDiagram
           chain={chain}
           secondaryResult={secondaryResult}
           selectedResidue={selectedResidue}

@@ -9,30 +9,24 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle, eyebrow = 'STRUCTURE LAB / MVP 0.1'}: HeaderProps) {
-  const { handleUpload, handleClear, isUploading, protein, setStatus } = useProtein();
-  const [pdbInput, setPdbInput] = useState('');
-  const [isFetching, setIsFetching] = useState(false);
+  const { 
+    handleUpload, 
+    handleFetchRemote, 
+    handleClear, 
+    isUploading, 
+    protein, 
+    setStatus,
+    fetchInputId: inputId,
+    setFetchInputId: setInputId,
+    fetchInputType: inputType,
+    setFetchInputType: setInputType
+  } = useProtein();
 
   const handleFetch = async () => {
-    const acc = pdbInput.trim().toUpperCase();
+    const acc = inputId.trim().toUpperCase();
     if (!acc) return;
-    setIsFetching(true);
-    setStatus(`Fetching ${acc} from RCSB PDB...`);
-    try {
-      const cifUrl = `https://files.rcsb.org/download/${acc}.cif`;
-      const response = await fetch(cifUrl);
-      if (!response.ok) {
-        throw new Error(`PDB structure for ${acc} not found (Status: ${response.status})`);
-      }
-      const blob = await response.blob();
-      const file = new File([blob], `${acc}.cif`);
-      await handleUpload(file);
-      setPdbInput('');
-    } catch (err) {
-      setStatus(err instanceof Error ? err.message : 'Fetch failed');
-    } finally {
-      setIsFetching(false);
-    }
+    // Calls the backend endpoint to handle UniProt resolution, PDB fetching, and uploading internally
+    await handleFetchRemote(acc, inputType);
   };
 
   return (
@@ -44,21 +38,28 @@ export function Header({ title, subtitle, eyebrow = 'STRUCTURE LAB / MVP 0.1'}: 
       </div>
       <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #475569', borderRadius: '7px', overflow: 'hidden', background: '#081218' }}>
+          <select 
+            value={inputType} 
+            onChange={e => setInputType(e.target.value as 'PDB' | 'UniProt')}
+            style={{ background: '#1e293b', border: 'none', color: '#fff', padding: '10px', outline: 'none', borderRight: '1px solid #475569', cursor: 'pointer', fontSize: '14px' }}
+          >
+            <option value="PDB">PDB ID</option>
+            <option value="UniProt">UniProt ID</option>
+          </select>
           <input
             type="text"
-            placeholder="PDB ID"
-            value={pdbInput}
-            onChange={(e) => setPdbInput(e.target.value)}
+            value={inputId}
+            onChange={(e) => setInputId(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleFetch()}
-            style={{ background: 'transparent', border: 'none', color: '#fff', padding: '10px 14px', width: '180px', outline: 'none' }}
+            style={{ background: 'transparent', border: 'none', color: '#fff', padding: '10px 14px', width: '130px', outline: 'none', fontSize: '14px' }}
           />
           <button 
             className="upload-button" 
             style={{ borderRadius: '0', border: 'none', borderLeft: '1px solid #475569' }}
             onClick={handleFetch}
-            disabled={isFetching || isUploading}
+            disabled={isUploading}
           >
-            {isFetching ? 'Fetching...' : 'Fetch PDB'}
+            {isUploading ? 'Fetching...' : 'Fetch'}
           </button>
         </div>
         {protein && (
@@ -71,7 +72,7 @@ export function Header({ title, subtitle, eyebrow = 'STRUCTURE LAB / MVP 0.1'}: 
           </button>
         )}
         <label className="upload-button">
-          <span>{isUploading && !isFetching ? 'Uploading...' : 'Upload File'}</span>
+          <span>{isUploading ? 'Uploading...' : 'Upload File'}</span>
           <input 
             type="file" 
             accept=".pdb,.ent,.cif,.mmcif" 

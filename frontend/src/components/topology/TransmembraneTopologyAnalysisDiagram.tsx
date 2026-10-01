@@ -9,7 +9,7 @@ import type {
 import { compareResidues, isCalculatedTopology } from '../../types/secondaryStructure';
 import { exportSvgAsImage } from '../structure/exportDiagram';
 import { API_URL, runSecondaryStructure } from '../../services/api';
-import './TransmembraneTopologyDiagram.css';
+import './TransmembraneTopologyAnalysisDiagram.css';
 import { ConsensusAnalysisMap } from './ConsensusAnalysisMap';
 import { TopologyCustomizeDrawer } from './components/TopologyCustomizeDrawer';
 import { TopologyToolbar } from './components/TopologyToolbar';
@@ -48,7 +48,7 @@ import {
   getExtraFeatures
 } from './topologyUtils';
 
-export function TransmembraneTopologyDiagram({
+export function TransmembraneTopologyAnalysisDiagram({
   chain,
   secondaryResult,
   filename,
@@ -69,7 +69,7 @@ export function TransmembraneTopologyDiagram({
   const [loadingUniProt, setLoadingUniProt] = useState<boolean>(false);
   const [uniprotError, setUniprotError] = useState<string | null>(null);
 
-  const [internalTopologySource, setInternalTopologySource] = useState<TopologySource>('uniprot');
+  const [internalTopologySource, setInternalTopologySource] = useState<TopologySource>('calculated');
   const topologySource = propsTopologySource ?? internalTopologySource;
 
   const handleTopologySourceChange = (source: TopologySource) => {

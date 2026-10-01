@@ -18,6 +18,20 @@ export async function uploadStructure(file: File): Promise<ProteinUpload> {
   return response.json() as Promise<ProteinUpload>;
 }
 
+export async function fetchRemoteStructure(id: string, type: 'PDB' | 'UniProt'): Promise<ProteinUpload> {
+  const response = await fetch(`${API_URL}/api/structure/fetch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, type }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.detail || `Fetch failed (${response.status})`);
+  }
+  return response.json() as Promise<ProteinUpload>;
+}
+
 export async function getHealth(): Promise<Record<string, string>> {
   const response = await fetch(`${API_URL}/api/health`);
   if (!response.ok) throw new Error('Backend unavailable');
