@@ -1,47 +1,7 @@
-"""
-Request-level entry point for "Calculated topology": turns the query parameters the
-frontend sends (tm_algo, ss_algo, uniprot_id, chain_id and the advanced TM parameters)
-into providers + TMParams, and runs the orchestrator. There is ONE flow (consensus);
-``flow_type`` is still accepted so old clients keep working.
-
-tm_algo "3d_energy" is the implicit-membrane energy provider: it fits the membrane
-thickness itself, so `thickness` and `min_membrane_score` do not apply to it (its
-membrane/soluble cut-off is a transfer free energy in kcal/mol).
-
-Keeping this mapping here (not in the FastAPI route) means the frontend/backend
-contract is in one testable place. The route only resolves the uploaded file and
-turns ValueError into HTTP 400:
-
-    @router.get("/predict-topology/{filename}", response_model=TopologyResponse)
-    def predict_topology_endpoint(filename: str, tm_algo: str = "3d_slab_geom",
-                                  ss_algo: str = "dssp", flow_type: str | None = None,
-                                  uniprot_id: str | None = None, chain_id: str | None = None,
-                                  thickness: float | None = None,
-                                  min_membrane_score: float | None = None,
-                                  min_cross_span: float | None = None,
-                                  full_cross_frac: float | None = None,
-                                  treat_turn_as_helix: bool | None = None,
-                                  broken_gap_max: int | None = None,      # ignored (old flows)
-                                  min_tm_element: int | None = None,      # ignored (old flows)
-                                  include_residues: bool = True):
-        path = <resolve uploaded filename as the other endpoints do>
-        try:
-            return predict_topology(path, tm_algo=tm_algo, ss_algo=ss_algo, flow_type=flow_type,
-                                    uniprot_id=uniprot_id, chain_id=chain_id, thickness=thickness,
-                                    min_membrane_score=min_membrane_score,
-                                    min_cross_span=min_cross_span, full_cross_frac=full_cross_frac,
-                                    treat_turn_as_helix=treat_turn_as_helix,
-                                    broken_gap_max=broken_gap_max, min_tm_element=min_tm_element,
-                                    include_residues=include_residues)
-        except ValueError as error:
-            raise HTTPException(status_code=400, detail=str(error))
-"""
 from __future__ import annotations
-
 from dataclasses import replace
 from pathlib import Path
 from typing import Callable, Optional
-
 from app.schemas.topology import TMParams, TopologyResponse
 from app.services.topology.orchestrator import (
     CONSENSUS_NAMES, FLOW, REMOVED_FLOWS, TopologyOrchestrator,
@@ -52,7 +12,6 @@ from app.services.topology.providers.ss.stride import STRIDEProvider
 from app.services.topology.providers.tm.base import TMProvider
 from app.services.topology.providers.tm.sequence import SequenceTMProvider
 from app.services.topology.providers.tm.uniprot import UniprotTMProvider
-
 
 def _geometry_provider() -> TMProvider:
     # imported lazily: the predictor module is large and pulls in the numeric core
@@ -66,10 +25,17 @@ def _energy_provider() -> TMProvider:
     return EnergyTMProvider()
 
 
+def _tmhmm_provider() -> TMProvider:
+    # imported lazily: parses the TMHMM 2.0 model file on first use
+    from app.services.topology.providers.tm.tmhmm import TMHMMProvider
+    return TMHMMProvider()
+
+
 TM_ALGORITHMS: dict[str, Callable[[], TMProvider]] = {
     "3d_slab_geom": _geometry_provider,
     "3d_energy": _energy_provider,
     "kyte_doolittle_seq": SequenceTMProvider,
+    "tmhmm": _tmhmm_provider,
     "uniprot_api": UniprotTMProvider,
 }
 SS_ALGORITHMS: dict[str, Optional[Callable[[], SSProvider]]] = {

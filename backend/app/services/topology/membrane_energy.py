@@ -36,9 +36,20 @@ Model (in the spirit of PPM [Lomize et al.] and TmDet [Tusnady et al.]):
     a local refinement around the best normals.
   * dG_transfer = E_min (negative = favourable). A structure whose best placement is not
     below MAX_MEMBRANE_DG is reported as non-membrane.
+  * Curved membranes (PPM 3.0 style, `place_membrane_curved`): the mid-surface may also be
+    a sphere of radius R in [CURVED_MIN_RADIUS, CURVED_MAX_RADIUS]. For a fixed sphere
+    centre the energy depends only on |x_i - C|, so R and D come from the same FFT search
+    on the radial histogram; centres are scanned around the planar solution and refined
+    by a pattern search. The sphere replaces the plane only when it is clearly better
+    (CURVED_MIN_GAIN and CURVED_MIN_GAIN_REL), so ordinary membrane proteins keep the
+    planar placement. Depth is then measured from the sphere (`MembranePlacement.depth`).
 
 `fit_structure` is the single entry point used by the provider (parsing, SASA, pore
-correction, search; C-alpha-only fallback with half-sphere exposure).
+correction, search; C-alpha-only fallback with half-sphere exposure). For predicted models
+(AlphaFold, ESMFold ... detected from the header) residues with pLDDT < MIN_PLDDT are left
+out of the fit: disordered loops drawn as ribbons through the bilayer region otherwise
+shrink the fitted thickness to its 20 A lower bound and can lose most TM segments (stress
+test with polar low-pLDDT loops on Piezo1: 8/26 UniProt TMs without, 26/26 with the filter).
 
 Checked on 54 PDB structures (2026-09-30; small set, re-validate on OPM before publishing):
   * 7 membrane proteins with a reference membrane frame (PDBTM/OPM), randomly rotated:
@@ -49,13 +60,23 @@ Checked on 54 PDB structures (2026-09-30; small set, re-validate on OPM before p
   * Known limits: beta-barrels settle at the 20 A lower bound of the thickness; the
     ATP-synthase c-ring (2x2v) at the 40 A upper bound; residues of a plug domain inside
     a beta-barrel can be labelled TM (they sit at membrane depth).
+  * Curvature (2026-10-01): on those 54 structures the sphere never replaces the plane
+    (largest gain 4.9 kcal/mol, 4 %), so their results are unchanged. Human PIEZO1-MDFIC
+    9VMX (3 x 1280 + 3 x 21 resolved residues, 32k atoms): plane -91 kcal/mol, tilted 18
+    deg from the 3-fold axis, 15 TM segments in chain A; sphere -340 kcal/mol with
+    R = 127 A (PPM 3.0 reports 114 +/- 8 A for Piezo structures), centre 0.5 A from the
+    3-fold axis, 26 TM segments in each PIEZO1 chain = THU4-9 (6 x 4) + outer helix +
+    inner helix; stable under random rotations (boundaries within 3 residues) and from a
+    C-alpha-only copy (26/26). The MDFIC C-terminal helix is correctly left out (it lies
+    in the inner interface, 71 deg from the local normal).
 
 References (verify the tabulated values against the original tables before publishing):
   Engelman, Steitz & Goldman (1986) Annu Rev Biophys Biophys Chem 15:321 (GES scale);
   Wimley & White (1996) Nat Struct Biol 3:842 (interface scale, whole residue);
   Wimley, Creamer & White (1996) Biochemistry 35:5109 (octanol scale, not used by default);
   Tien et al. (2013) PLoS One 8:e80635 (maximum ASA, theoretical);
-  Shrake & Rupley (1973) J Mol Biol 79:351; Hamelryck (2005) Proteins 59:38 (HSE).
+  Shrake & Rupley (1973) J Mol Biol 79:351; Hamelryck (2005) Proteins 59:38 (HSE);
+  Lomize, Todd & Pogozheva (2022) Protein Sci 31:209 (PPM 3.0, planar and curved membranes).
 """
 from __future__ import annotations
 
@@ -109,6 +130,8 @@ BACKBONE = {"N", "CA", "C", "O", "OXT"}
 # -----------------------------------------------------------------------------
 PROBE = 1.4               # A, water probe for SASA
 SR_POINTS = 96            # Shrake-Rupley test points per atom
+SR_LARGE_ATOMS = 20000    # above this many atoms ...
+SR_POINTS_LARGE = 48      # ... use fewer test points
 MIN_HALF = 10.0           # A, hydrophobic half-thickness search range (20-40 A total)
 MAX_HALF = 20.0
 INTERFACE_WIDTH = 7.0     # A, head-group/interface region beyond the core boundary
@@ -118,8 +141,14 @@ REFINE_TOP = 5            # distinct coarse minima refined locally
 REFINE_CAP_DEG = 7.0      # radius of the refinement cap
 REFINE_NORMALS = 160      # normals per refinement cap
 PORE_ESCAPE = (0.03, 0.12)  # ray-escape fraction mapped to pore weight 0 -> 1
+MIN_PLDDT = 50.0          # predicted models: residues below this are left out of the fit
 MAX_MEMBRANE_DG = -10.0   # kcal/mol; a best placement above this = not a membrane protein
                           # (54 test structures: membrane <= -27, soluble >= -3.6)
+CURVED_MIN_RADIUS = 60.0  # A, smallest mid-surface radius tried for curved membranes
+CURVED_MAX_RADIUS = 600.0 # A, beyond this a sphere is indistinguishable from the plane
+CURVED_MIN_GAIN = 10.0    # kcal/mol; the sphere must beat the plane by this much AND by
+CURVED_MIN_GAIN_REL = 0.15  # this fraction of |E_plane|. 22 planar membrane proteins gain
+                          # <= 4.9 kcal/mol (<= 4 %) from curvature; Piezo1 9VMX gains 250.
 
 
 # -----------------------------------------------------------------------------
@@ -134,6 +163,7 @@ class Residue:
     atom_names: list[str] = field(default_factory=list)
     elements: list[str] = field(default_factory=list)
     xyz: list[tuple[float, float, float]] = field(default_factory=list)
+    bfactor: Optional[float] = None   # B-factor of CA (pLDDT in AlphaFold/ESMFold models)
 
     def coord(self, name):
         try:
@@ -159,7 +189,7 @@ def _element(name: str, element: str, resname: str) -> str:
     return n[:1] if n else "C"
 
 
-def _add_atom(residues, index, chain, resseq, icode, resname, name, element, x, y, z):
+def _add_atom(residues, index, chain, resseq, icode, resname, name, element, x, y, z, b=None):
     parent = ALIASES.get(resname, resname)
     if parent not in STANDARD:
         return                                  # water, ligands, lipids, DUM atoms ...
@@ -177,6 +207,8 @@ def _add_atom(residues, index, chain, resseq, icode, resname, name, element, x, 
     res.atom_names.append(name)
     res.elements.append(el)
     res.xyz.append((x, y, z))
+    if name == "CA":
+        res.bfactor = b
 
 
 def _parse_pdb(text: str) -> list[Residue]:
@@ -195,8 +227,12 @@ def _parse_pdb(text: str) -> list[Residue]:
             resseq = int(line[22:26])
         except ValueError:
             continue
+        try:
+            b = float(line[60:66])
+        except ValueError:
+            b = None
         _add_atom(residues, index, line[21:22].strip(), resseq, line[26:27].strip(),
-                  line[17:20].strip(), line[12:16].strip(), line[76:78], x, y, z)
+                  line[17:20].strip(), line[12:16].strip(), line[76:78], x, y, z, b)
     return residues
 
 
@@ -230,6 +266,7 @@ def _parse_mmcif(text: str) -> list[Residue]:
             c_ins = pick("pdbx_PDB_ins_code")
             c_x, c_y, c_z = pick("Cartn_x"), pick("Cartn_y"), pick("Cartn_z")
             c_model = pick("pdbx_PDB_model_num")
+            c_b = pick("B_iso_or_equiv")
             if c_x is None or c_y is None or c_z is None or c_res is None or c_chain is None or c_seq is None or c_atom is None:
                 i += 1
                 continue
@@ -259,20 +296,73 @@ def _parse_mmcif(text: str) -> list[Residue]:
                     continue
                 icode = tok[c_ins] if c_ins is not None else ""
                 icode = "" if icode in ("?", ".") else icode
+                try:
+                    b = float(tok[c_b]) if c_b is not None else None
+                except ValueError:
+                    b = None
                 _add_atom(residues, index, tok[c_chain], resseq, icode, tok[c_res],
-                          tok[c_atom], tok[c_el] if c_el is not None else "", x, y, z)
+                          tok[c_atom], tok[c_el] if c_el is not None else "", x, y, z, b)
             break
         i += 1
     return residues
 
 
-def load_protein_residues(path) -> list[Residue]:
-    """Protein residues (with a CA) of the first model, all chains, in file order."""
+_PREDICTED_MARKERS = ("ALPHAFOLD", "ESMFOLD", "COLABFOLD", "_MA_QA_METRIC", "ROSETTAFOLD",
+                      "OPENFOLD", "BOLTZ", "CHAI-1")
+
+
+def read_structure(path) -> tuple[list[Residue], bool]:
+    """(protein residues with a CA, first model, all chains, in file order;
+    True if the file is a predicted model whose B-factor column holds pLDDT)."""
     text = _open_text(Path(path))
     name = str(path).lower().replace(".gz", "")
     is_cif = name.endswith((".cif", ".mmcif")) or "_atom_site." in text[:200000]
     res = _parse_mmcif(text) if is_cif else _parse_pdb(text)
-    return [r for r in res if "CA" in r.atom_names]
+    return [r for r in res if "CA" in r.atom_names], _is_predicted(text)
+
+
+_EXPERIMENTAL = re.compile(r"(?im)^(?:_exptl\.method|EXPDTA)\s+['\"]?(?:X-RAY|ELECTRON|SOLUTION NMR|"
+                           r"SOLID-STATE NMR|NMR|NEUTRON|FIBER|POWDER|EPR|INFRARED|FLUORESCENCE)")
+
+
+def _is_predicted(text: str) -> bool:
+    """True for structure predictions whose B-factor column holds pLDDT. An experimental
+    method record (_exptl.method / EXPDTA) always wins: recent cryo-EM entries often cite
+    AlphaFold as their starting model, and their B-factors are not pLDDT."""
+    if _EXPERIMENTAL.search(text[:2_000_000]):
+        return False
+    upper = text.upper()
+    return any(m in upper for m in _PREDICTED_MARKERS)
+
+
+def load_protein_residues(path) -> list[Residue]:
+    """Protein residues (with a CA) of the first model, all chains, in file order."""
+    return read_structure(path)[0]
+
+
+def confident_residues(residues: list[Residue], predicted: bool, warnings: list[str],
+                       min_plddt: float = MIN_PLDDT) -> list[Residue]:
+    """Predicted models (AlphaFold, ESMFold ...): drop residues with pLDDT < min_plddt
+    before placing the membrane. Such regions are usually disordered loops drawn as
+    extended ribbons; they cover the lipid-facing surface in the SASA calculation and,
+    being polar, can pull the bilayer away from the real TM domain. Experimental
+    structures are never filtered."""
+    if not predicted:
+        return residues
+    b = np.array([np.nan if r.bfactor is None else r.bfactor for r in residues])
+    if not np.isfinite(b).any():
+        return residues
+    if np.nanmax(b) <= 1.0:                     # some tools write pLDDT on a 0-1 scale
+        b = b * 100.0
+    keep = ~(b < min_plddt)
+    if keep.sum() < max(30, 0.2 * len(residues)):
+        warnings.append(f"predicted model: only {int(keep.sum())} residues with pLDDT >= "
+                        f"{min_plddt:.0f}; low-confidence residues kept for the membrane fit")
+        return residues
+    if (~keep).any():
+        warnings.append(f"predicted model: {int((~keep).sum())} residues with pLDDT < "
+                        f"{min_plddt:.0f} ignored when placing the membrane")
+    return [r for r, k in zip(residues, keep) if k]
 
 
 # -----------------------------------------------------------------------------
@@ -341,7 +431,10 @@ def residue_exposure(residues: list[Residue]):
         for el, p in zip(r.elements, r.xyz):
             xyz.append(p); radii.append(VDW_RADIUS.get(el, 1.80)); owner.append(k)
     xyz, owner = np.asarray(xyz, float), np.asarray(owner)
-    atom_sasa = shrake_rupley(xyz, np.asarray(radii))
+    # large assemblies: 48 test points (2x faster; residue SASA r = 0.994 vs 96 points on a
+    # 32k-atom Piezo1 complex)
+    n_points = SR_POINTS if len(xyz) <= SR_LARGE_ATOMS else SR_POINTS_LARGE
+    atom_sasa = shrake_rupley(xyz, np.asarray(radii), n_points=n_points)
     res_sasa = np.bincount(owner, weights=atom_sasa, minlength=len(residues))
     rsa = np.array([min(1.0, s / MAX_ASA[r.resname]) for s, r in zip(res_sasa, residues)])
     centroids, ca = [], []
@@ -464,14 +557,38 @@ def _grid_search(P, oct_w, if_w, normals, halves, bin_w, chunk=64):
 
 @dataclass
 class MembranePlacement:
-    normal: np.ndarray          # unit vector
-    center: np.ndarray          # a point on the mid-plane (absolute coordinates)
+    normal: np.ndarray          # unit vector (curved: the normal where the protein sits)
+    center: np.ndarray          # a point on the mid-surface (absolute coordinates)
     half_thickness: float       # hydrophobic half-thickness D (A)
     energy: float               # dG_transfer at the optimum (kcal/mol, negative = favourable)
     n_residues: int
+    # curved membranes only: the mid-surface is a sphere of `radius` around `sphere_center`
+    sphere_center: Optional[np.ndarray] = None
+    radius: Optional[float] = None
+    planar_energy: Optional[float] = None     # energy of the best planar placement
+
+    @property
+    def curved(self) -> bool:
+        return self.radius is not None
 
     def depth(self, xyz) -> np.ndarray:
-        return (np.asarray(xyz, float) - self.center) @ self.normal
+        """Signed distance from the mid-surface (A). Planar: along `normal`. Curved:
+        positive towards the centre of curvature, so it agrees in sign with the planar
+        depth along `normal` near the protein."""
+        xyz = np.asarray(xyz, float)
+        if self.radius is None:
+            return (xyz - self.center) @ self.normal
+        return self.radius - np.linalg.norm(xyz - self.sphere_center, axis=-1)
+
+    def local_normals(self, xyz) -> np.ndarray:
+        """Unit membrane normal at each point (direction of increasing depth)."""
+        xyz = np.atleast_2d(np.asarray(xyz, float))
+        if self.radius is None:
+            return np.repeat(self.normal[None, :], len(xyz), axis=0)
+        v = self.sphere_center - xyz
+        nv = np.linalg.norm(v, axis=1, keepdims=True)
+        nv[nv == 0] = 1.0
+        return v / nv
 
 
 def place_membrane(positions: np.ndarray, rsa: np.ndarray, resnames: list[str],
@@ -524,6 +641,163 @@ def place_membrane(positions: np.ndarray, rsa: np.ndarray, resnames: list[str],
 
 
 # -----------------------------------------------------------------------------
+# Curved (spherical) membranes
+# -----------------------------------------------------------------------------
+def _radial_search(P, oct_w, if_w, centers, halves, bin_w, r_min, r_max, chunk=48):
+    """Same FFT trick as `_grid_search`, for spheres: for a fixed centre C the energy
+    depends on the residues only through r_i = |x_i - C|, so E(R, D) for every mid-surface
+    radius R and half-thickness D is a 1-D convolution of the radial histogram.
+    Returns (best energy, best R, best D) per centre; R is restricted to [r_min, r_max]."""
+    K = int(math.ceil((halves.max() + INTERFACE_WIDTH + 8 * SOFTNESS) / bin_w))
+    best_e = np.full(len(centers), np.inf)
+    best_r = np.zeros(len(centers))
+    best_h = np.zeros(len(centers))
+    kern_cache = {}
+    for s in range(0, len(centers), chunk):
+        C = centers[s:s + chunk]
+        m = len(C)
+        dist = np.sqrt(((P[None, :, :] - C[:, None, :]) ** 2).sum(-1))      # (m, n)
+        lo = dist.min(1)
+        idx = np.rint((dist - lo[:, None]) / bin_w).astype(np.int64)
+        nb = int(idx.max()) + 1
+        L = 1
+        while L < nb + 2 * K + 1:
+            L *= 2
+        if L not in kern_cache:
+            u = (np.arange(L) - K) * bin_w
+            kc, ki = [], []
+            for h in halves:
+                c, i = profiles(u, h)
+                c[2 * K + 1:] = 0.0
+                i[2 * K + 1:] = 0.0
+                kc.append(c)
+                ki.append(i)
+            kern_cache[L] = (np.fft.rfft(np.asarray(kc), axis=1), np.fft.rfft(np.asarray(ki), axis=1))
+        FC, FI = kern_cache[L]
+        flat = (idx + (np.arange(m) * L)[:, None]).ravel()
+        A = np.bincount(flat, weights=np.tile(oct_w, m), minlength=m * L).reshape(m, L)
+        B = np.bincount(flat, weights=np.tile(if_w, m), minlength=m * L).reshape(m, L)
+        E = np.fft.irfft(np.fft.rfft(A, axis=1)[:, None, :] * FC[None]
+                         + np.fft.rfft(B, axis=1)[:, None, :] * FI[None], n=L, axis=2)
+        E = E[:, :, K:K + nb]                                               # (m, H, nb)
+        R = lo[:, None] + np.arange(nb)[None, :] * bin_w                     # (m, nb)
+        E = np.where(((R >= r_min) & (R <= r_max))[:, None, :], E, np.inf)
+        flatE = E.reshape(m, -1)
+        k = flatE.argmin(1)
+        hi, ri = np.divmod(k, nb)
+        best_e[s:s + m] = flatE[np.arange(m), k]
+        best_r[s:s + m] = R[np.arange(m), ri]
+        best_h[s:s + m] = halves[hi]
+    return best_e, best_r, best_h
+
+
+def place_membrane_curved(positions: np.ndarray, rsa: np.ndarray, resnames: list[str],
+                          planar: MembranePlacement,
+                          min_half: float = MIN_HALF, max_half: float = MAX_HALF,
+                          r_min: float = CURVED_MIN_RADIUS, r_max: float = CURVED_MAX_RADIUS,
+                          core_scale: Optional[dict[str, float]] = None,
+                          interface_scale: Optional[dict[str, float]] = None) -> Optional[MembranePlacement]:
+    """Best SPHERICAL membrane (mid-surface radius R in [r_min, r_max]) around the planar
+    solution, as in PPM 3.0. Some proteins bend the bilayer they sit in - Piezo channels
+    most of all (PPM 3.0: R ~ 114 A); a plane can only cover part of them and the TM
+    helices of the rest end up "outside the membrane".
+
+    Search: sphere centres C = p0 + L*n0 + lateral offset (p0, n0 = planar placement),
+    |L| from r_min to r_max on both sides of the plane, lateral offsets up to ~0.35*|L|
+    (covers tilts of ~20 deg and an off-centre apex); for each centre R and D come from the
+    radial FFT search. The best centres are then refined by a pattern search. Returns None
+    when nothing in the range is better than the plane."""
+    core_scale = CORE_SCALE if core_scale is None else core_scale
+    interface_scale = INTERFACE_SCALE if interface_scale is None else interface_scale
+    pos = np.asarray(positions, float)
+    rsa = np.asarray(rsa, float)
+    oct_w = rsa * np.array([core_scale.get(r, 0.0) for r in resnames])
+    if_w = rsa * np.array([interface_scale.get(r, 0.0) for r in resnames])
+    centroid = pos.mean(0)
+    P = pos - centroid
+    n0 = planar.normal / np.linalg.norm(planar.normal)
+    p0 = planar.center - centroid
+    t = np.array([1.0, 0, 0]) if abs(n0[0]) < 0.9 else np.array([0, 1.0, 0])
+    e1 = np.cross(n0, t)
+    e1 /= np.linalg.norm(e1)
+    e2 = np.cross(n0, e1)
+
+    # 1. coarse centres
+    dists = np.geomspace(r_min, r_max, 14)
+    angles = np.linspace(0, 2 * np.pi, 8, endpoint=False)
+    cands = []
+    for sign in (1.0, -1.0):
+        for Ld in dists:
+            for rho in (0.0, 0.12, 0.24, 0.36):
+                for a in (angles if rho > 0 else [0.0]):
+                    off = rho * Ld * (math.cos(a) * e1 + math.sin(a) * e2)
+                    cands.append(p0 + sign * Ld * n0 + off)
+    cands = np.asarray(cands)
+    halves = np.arange(min_half, max_half + 1e-6, 1.0)
+    e, r, h = _radial_search(P, oct_w, if_w, cands, halves, 0.5, r_min, r_max)
+    if not np.isfinite(e).any():
+        return None
+
+    # 2. pattern search from the best few distinct centres
+    fine = np.arange(min_half, max_half + 1e-6, 0.25)
+
+    def evaluate(C):
+        ee, rr, hh = _radial_search(P, oct_w, if_w, C[None, :], fine, 0.25, r_min, r_max)
+        return float(ee[0]), float(rr[0]), float(hh[0])
+
+    order = np.argsort(e)
+    seeds = []
+    for k in order:
+        if not np.isfinite(e[k]):
+            break
+        if all(np.linalg.norm(cands[k] - cands[j]) > 0.25 * min(np.linalg.norm(cands[k] - p0),
+                                                                np.linalg.norm(cands[j] - p0))
+               for j in seeds):
+            seeds.append(k)
+        if len(seeds) >= 3:
+            break
+    best = (np.inf, None, 0.0, 0.0)
+    for k in seeds:
+        C = cands[k].copy()
+        cur = evaluate(C)
+        step = max(5.0, 0.08 * float(np.linalg.norm(C - p0)))
+        while step > 0.5:
+            improved = False
+            for v in (e1, -e1, e2, -e2, n0, -n0):
+                trial = C + step * v
+                res = evaluate(trial)
+                if res[0] < cur[0] - 1e-6:
+                    C, cur, improved = trial, res, True
+                    break
+            if not improved:
+                step /= 2.0
+        if cur[0] < best[0]:
+            best = (cur[0], C, cur[1], cur[2])
+    energy, C, R, half = best
+    if C is None or not np.isfinite(energy):
+        return None
+
+    # exact (unbinned) polish of R and D
+    dist = np.linalg.norm(P - C, axis=1)
+    grid = [(float(residue_energies(dist - rr, hh, oct_w, if_w).sum()), rr, hh)
+            for rr in R + np.arange(-1.0, 1.0001, 0.1)
+            for hh in np.clip(half + np.arange(-0.5, 0.5001, 0.1), min_half, max_half)]
+    energy, R, half = min(grid)
+    # normal / centre reported where the protein sits: towards the sphere centre from the
+    # energy-weighted centroid of the residues inside the hydrophobic layer
+    core, _ = profiles(dist - R, half)
+    wts = core * np.clip(-oct_w, 0, None) + 1e-9
+    focus = (P * wts[:, None]).sum(0) / wts.sum()
+    nrm = C - focus
+    nrm /= np.linalg.norm(nrm)
+    on_surface = C - R * nrm
+    return MembranePlacement(normal=nrm, center=centroid + on_surface, half_thickness=float(half),
+                             energy=float(energy), n_residues=len(pos),
+                             sphere_center=centroid + C, radius=float(R),
+                             planar_energy=float(planar.energy))
+
+
+# -----------------------------------------------------------------------------
 # Pore / cavity correction
 # -----------------------------------------------------------------------------
 def pore_weight(escape: np.ndarray, lo: float = PORE_ESCAPE[0], hi: float = PORE_ESCAPE[1]) -> np.ndarray:
@@ -570,6 +844,7 @@ class EnergyFit:
     mode: str                  # "all-atom" or "C-alpha"
     n_chains: int
     warnings: list[str]
+    predicted: bool = False    # predicted model (B-factor column = pLDDT)
 
 
 def fit_structure(file_path: Optional[Path | str] = None,
@@ -580,9 +855,11 @@ def fit_structure(file_path: Optional[Path | str] = None,
     correction) when the file cannot be read or holds no side chains."""
     warnings = []
     residues = []
+    predicted = False
     if file_path is not None:
         try:
-            residues = load_protein_residues(file_path)
+            residues, predicted = read_structure(file_path)
+            residues = confident_residues(residues, predicted, warnings)
         except Exception as error:                       # unreadable / unsupported format
             warnings.append(f"could not read atoms from the file ({error}); using C-alpha only")
     has_side_chains = bool(residues) and bool(np.mean([len(r.xyz) for r in residues]) > 3.0)
@@ -590,15 +867,45 @@ def fit_structure(file_path: Optional[Path | str] = None,
         rsa, centroids, _, _ = residue_exposure(residues)
         atoms = np.array([p for r in residues for p in r.xyz])
         pore = pore_weight(escape_fraction(centroids, atoms))
-        placement = place_membrane(centroids, rsa * pore, [r.resname for r in residues])
-        return EnergyFit(placement, "all-atom", len({r.chain for r in residues}), warnings)
-    if ca_coords is None:
-        raise ValueError("no coordinates to place a membrane on")
-    ca_names_list = ca_names if ca_names is not None else []
-    names = [ALIASES.get(n, n) for n in ca_names_list]
+        names = [r.resname for r in residues]
+        placement = _best_placement(centroids, rsa * pore, names, warnings)
+        return EnergyFit(placement, "all-atom", len({r.chain for r in residues}), warnings,
+                         predicted)
+    n_chains = 1
     if residues and not has_side_chains:
+        # C-alpha-only model: still use EVERY chain of the file (subunit interfaces are
+        # buried, and a curved assembly needs all of its subunits to show the curvature)
         warnings.append("model has no side chains")
+        ca_coords = np.array([r.coord("CA") for r in residues])
+        names = [r.resname for r in residues]
+        n_chains = len({r.chain for r in residues})
+    else:
+        if ca_coords is None:
+            raise ValueError("no coordinates to place a membrane on")
+        ca_names_list = ca_names if ca_names is not None else []
+        names = [ALIASES.get(n, n) for n in ca_names_list]
     warnings.append("exposure estimated from the C-alpha trace (half-sphere exposure); "
                     "no pore correction, so beta-barrel porins are unreliable")
-    placement = place_membrane(np.asarray(ca_coords, float), ca_exposure(ca_coords), names)
-    return EnergyFit(placement, "C-alpha", 1, warnings)
+    ca_coords = np.asarray(ca_coords, float)
+    placement = _best_placement(ca_coords, ca_exposure(ca_coords), names, warnings)
+    return EnergyFit(placement, "C-alpha", n_chains, warnings, predicted)
+
+
+def _best_placement(positions, weights, names, warnings: list[str]) -> MembranePlacement:
+    """Planar placement, replaced by a spherical one when the protein clearly bends the
+    membrane (see CURVED_MIN_GAIN / CURVED_MIN_GAIN_REL)."""
+    planar = place_membrane(positions, weights, names)
+    try:
+        curved = place_membrane_curved(positions, weights, names, planar)
+    except Exception as error:                     # never let the extra model break the plane
+        warnings.append(f"curved-membrane search failed ({error}); planar membrane used")
+        return planar
+    if curved is None:
+        return planar
+    gain = planar.energy - curved.energy
+    if gain >= max(CURVED_MIN_GAIN, CURVED_MIN_GAIN_REL * abs(planar.energy)):
+        warnings.append(f"curved membrane: a sphere of radius {curved.radius:.0f} A fits "
+                        f"{gain:.0f} kcal/mol better than a plane ({planar.energy:.1f} -> "
+                        f"{curved.energy:.1f}); depths are measured from the curved mid-surface")
+        return curved
+    return planar

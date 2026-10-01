@@ -12,6 +12,9 @@ Sources, most to least authoritative:
                        PPM 2/3 server output, memembed output. The plane normal and
                        thickness are taken as given. Run PPM on a structure and upload
                        its output to get physics-based placement.
+  2a."3D Energy fit" - the TM provider fitted the bilayer itself (planar, or a sphere for
+                       proteins that bend the membrane, e.g. Piezo) and returned the
+                       depth of every residue in TMPrediction.depth.
   2. "segment axes"  - normal = dominant direction of the CA(i+4)-CA(i) vectors of
                        the TM segments proposed by the TM block (TM helices/strands
                        point across the bilayer); centre = mean depth of their
@@ -40,11 +43,24 @@ MIN_DUM_ATOMS = 3
 
 @dataclass
 class MembraneFrame:
-    normal: np.ndarray          # unit vector
+    normal: np.ndarray          # unit vector (curved: the normal where the protein sits)
     mid_point: np.ndarray       # a point on the mid-plane (absolute coordinates)
     half_thickness: float       # A
     source: str
     depth: np.ndarray           # signed distance of every CA from the mid-plane (A)
+    # curved (spherical) membranes from the 3D Energy provider: depth is measured from a
+    # sphere of `radius` around `sphere_center`, and the normal changes along the protein
+    sphere_center: Optional[np.ndarray] = None
+    radius: Optional[float] = None
+    fitted: bool = False        # placement fitted by a TM provider: never re-centred
+
+    def normal_at(self, xyz) -> np.ndarray:
+        """Membrane normal at a point (the same everywhere for a plane)."""
+        if self.radius is None or self.sphere_center is None:
+            return self.normal
+        v = self.sphere_center - np.asarray(xyz, dtype=float)
+        nv = float(np.linalg.norm(v))
+        return v / nv if nv > 0 else self.normal
 
     def zone(self, i: int) -> Optional[str]:
         d = self.depth[i]
@@ -74,7 +90,7 @@ class MembraneFrame:
         """Re-place the mid-plane at the median mid-depth of membrane-spanning SS
         elements (every crossing is centred on the bilayer). Only for estimated
         placements - planes read from the file are kept as they are."""
-        if self.source.startswith("file") or not element_spans:
+        if self.source.startswith("file") or self.fitted or not element_spans:
             return self
         mids = [float(np.nanmean(self.depth[a:b + 1])) for a, b in element_spans]
         shift = float(np.median(mids))
@@ -84,9 +100,12 @@ class MembraneFrame:
                              self.half_thickness, self.source, self.depth - shift)
 
     def as_dict(self) -> dict:
-        return {"source": self.source,
-                "normal": [round(float(x), 4) for x in self.normal],
-                "half_thickness": round(float(self.half_thickness), 2)}
+        out = {"source": self.source,
+               "normal": [round(float(x), 4) for x in self.normal],
+               "half_thickness": round(float(self.half_thickness), 2)}
+        if self.radius is not None:
+            out["curvature_radius"] = round(float(self.radius), 1)
+        return out
 
 
 def _with_depth(frame: ResidueFrame, normal, mid_point, half, source) -> MembraneFrame:
@@ -192,7 +211,31 @@ def membrane_from_segments(frame: ResidueFrame, segments: Sequence[tuple[int, in
     return _with_depth(frame, normal, mid_point, half_thickness, "TM segment axes")
 
 
+# ----------------------------------------------------------------------------- 2a
+def membrane_from_prediction(frame: ResidueFrame, prediction) -> Optional[MembraneFrame]:
+    """Placement fitted by the TM provider itself (TMPrediction.depth etc., set by the 3D
+    Energy provider - planar or curved). Ignored unless it covers every position."""
+    depth = getattr(prediction, "depth", None) if prediction is not None else None
+    half = getattr(prediction, "half_thickness", None) if prediction is not None else None
+    if depth is None or half is None or len(depth) != len(frame) or len(frame) == 0:
+        return None
+    depth = np.asarray([np.nan if v is None else v for v in depth], dtype=float)
+    normal = np.asarray(prediction.membrane_normal or [0.0, 0.0, 1.0], dtype=float)
+    normal = normal / np.linalg.norm(normal)
+    centre = prediction.membrane_center
+    mid = np.asarray(centre, dtype=float) if centre is not None else np.zeros(3)
+    radius = prediction.membrane_radius
+    sphere = prediction.sphere_center
+    curved = radius is not None and sphere is not None
+    source = (f"3D Energy fit (curved, R = {radius:.0f} A)" if curved else "3D Energy fit")
+    return MembraneFrame(normal, mid, float(half), source, depth,
+                         sphere_center=np.asarray(sphere, dtype=float) if curved else None,
+                         radius=float(radius) if curved else None, fitted=True)
+
+
 def build_membrane(frame: ResidueFrame, segments: Sequence[tuple[int, int]],
-                   half_thickness: float) -> Optional[MembraneFrame]:
-    """Most authoritative membrane placement available for this structure."""
-    return membrane_from_file(frame) or membrane_from_segments(frame, segments, half_thickness)
+                   half_thickness: float, prediction=None) -> Optional[MembraneFrame]:
+    """Most authoritative membrane placement available for this structure:
+    DUM planes in the file > placement fitted by the TM provider > TM segment axes."""
+    return (membrane_from_file(frame) or membrane_from_prediction(frame, prediction)
+            or membrane_from_segments(frame, segments, half_thickness))

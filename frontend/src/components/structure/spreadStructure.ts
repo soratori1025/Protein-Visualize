@@ -52,7 +52,7 @@ export interface SpreadOptions {
   /** Analysed chain (CalculatedTopologyData.chain_id). Default: best match to the map. */
   chainId?: string | null;
   /** CalculatedTopologyData.membrane - exact normal used by the backend. */
-  membrane?: { normal: number[]; half_thickness?: number } | null;
+  membrane?: { normal: number[]; half_thickness?: number; curvature_radius?: number } | null;
   /** CalculatedTopologyData.residues - per-residue depth (exact mid-plane), ss, side. */
   residues?: ResidueAnnotation[] | null;
   /** rotate each crossing so its axis is parallel to the normal
@@ -114,7 +114,7 @@ export interface SpreadReport {
 
 /** Drop-in replacement for the old function: returns the new PDB text. */
 export function spreadStructure(pdbData: string, consensusMap: ConsensusResidue[],
-                                options: SpreadOptions = {}): string {
+  options: SpreadOptions = {}): string {
   return spreadStructureWithReport(pdbData, consensusMap, options).pdb;
 }
 
@@ -227,31 +227,51 @@ const DUMMY = new Set(['DUM']);                     // OPM / PPM / memembed memb
 const N_H_NAMES = new Set(['H', 'HN', 'H1', 'H2', 'H3']);
 const O_NAMES = new Set(['O', 'OXT', 'OT1', 'OT2']);
 const CLASH = 2.6;             // Å; heavy atoms of residues >= 3 apart closer than this overlap
-                               //    (backbone H-bonds are >= 2.8 Å, so they never count)
+//    (backbone H-bonds are >= 2.8 Å, so they never count)
 const CCD_RESTARTS = 64;       // max CCD attempts per loop (first from the native conformation)
 const CCD_REFINE = 200;        // Monte Carlo steps that remove the remaining clashes
 // 2D ('unrolled') drawing
 const STEP_COIL = 3.3;         // Å of drawing per coil residue (CA-CA 3.8, not fully extended)
 const STEP_HELIX = 1.5;        // Å per helix residue (rise along the axis)
 const LOOP_SPAN_PER_A = 0.4;   // horizontal room given to a loop per Å of its contour
-const LOOP_SPAN_MAX = 60;      // Å, widest gap a loop can open between two TMs
-const TAIL_SPAN_MAX = 40;      // Å, how far a tail runs sideways
-const TAIL_GUIDE = 40;         // tail residues next to the membrane that are laid flat
+const LOOP_SPAN_MAX_BASE = 60;     // Å, widest gap a loop can open between two TMs (base)
+const TAIL_SPAN_MAX_BASE = 40;     // Å, how far a tail runs sideways (base)
+const TAIL_GUIDE_BASE = 40;        // tail residues next to the membrane that are laid flat (base)
 const END_WEIGHT = 20;
 const GUIDED_RESTARTS = 24;    // attempts per loop in the 2D layout
 const GUIDED_REFINE = 80;      // clash-removal steps per loop in the 2D layout
 const BACKBONE_NAMES = new Set(['N', 'CA', 'C', 'O']);
 const BACKBONE_PAD = 2;        // Å added to the backbone footprint of a TM in the 2D layout         // closure vs path when guiding a loop
+// Large-protein thresholds: above these, constants scale up / iterations scale down.
+const LARGE_CROSSINGS = 12;
+const LARGE_RESIDUES = 600;
 const GOOD_PATH_DEV = 2.5;     // Å, stop searching once the loop follows its curve this well
 
-interface Atom { li: number; rec: string; name: string; alt: string; resName: string; chain: string;
-                 resSeq: number; iCode: string; p: V; model: number }
-interface Res { chain: string; resSeq: number; iCode: string; resName: string; atoms: Atom[];
-                N?: Atom; CA?: Atom; C?: Atom }
+interface Atom {
+  li: number; rec: string; name: string; alt: string; resName: string; chain: string;
+  resSeq: number; iCode: string; p: V; model: number
+}
+interface Res {
+  chain: string; resSeq: number; iCode: string; resName: string; atoms: Atom[];
+  N?: Atom; CA?: Atom; C?: Atom
+}
 
 const resLabel = (r: { chain: string; resSeq: number; iCode: string }) => `${r.chain}:${r.resSeq}${r.iCode}`;
 
+/** Detect whether the text is mmCIF (has _atom_site. column definitions) or PDB format. */
+function isCif(text: string): boolean {
+  // Quick heuristic: mmCIF has _atom_site. header lines before ATOM records.
+  // PDB format has ATOM at column 0 with fixed-width columns (char 30-54 are coordinates).
+  return /^_atom_site\./m.test(text);
+}
+
 function parsePdb(text: string) {
+  if (isCif(text)) return parseCif(text);
+  return parsePdbFormat(text);
+}
+
+/** Parse PDB fixed-column format. */
+function parsePdbFormat(text: string) {
   const lines = text.split(/\r?\n/);
   const atoms: Atom[] = [];
   let model = 0, seenModel = false;
@@ -267,7 +287,69 @@ function parsePdb(text: string) {
       iCode: line.substring(26, 27).trim(), p: [x, y, z], model,
     });
   });
-  // residues of the first model, file order, keyed by chain + number + insertion code
+  return { ...buildResidues(lines, atoms), format: 'pdb' as const, cifCols: null };
+}
+
+/** Parse mmCIF (PDBx) format.  Reads _atom_site. column definitions, then parses
+ *  ATOM/HETATM data rows by whitespace-split column index.  Outputs the same
+ *  {lines, atoms, residues} shape so the rest of spreadStructure is format-agnostic. */
+function parseCif(text: string) {
+  const lines = text.split(/\r?\n/);
+  // 1. find _atom_site. column definitions
+  const colNames: string[] = [];
+  let dataStart = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('_atom_site.')) {
+      colNames.push(line.split(/\s+/)[0].replace('_atom_site.', ''));
+      continue;
+    }
+    // first non-header line after _atom_site. definitions is data
+    if (colNames.length > 0 && !line.startsWith('_atom_site.') && !line.startsWith('#') && !line.startsWith('loop_') && line.length > 0) {
+      dataStart = i;
+      break;
+    }
+  }
+  if (colNames.length === 0 || dataStart < 0) return { ...buildResidues(lines, []), format: 'cif' as const, cifCols: null };
+  const col = (name: string) => colNames.indexOf(name);
+  const iGroup    = col('group_PDB');
+  const iAtomName = Math.max(col('auth_atom_id'), col('label_atom_id'));
+  const iAlt      = col('label_alt_id');
+  const iResName  = Math.max(col('auth_comp_id'), col('label_comp_id'));
+  const iChain    = Math.max(col('auth_asym_id'), col('label_asym_id'));
+  const iResSeq   = Math.max(col('auth_seq_id'), col('label_seq_id'));
+  const iInsCode  = col('pdbx_PDB_ins_code');
+  const iX        = col('Cartn_x');
+  const iY        = col('Cartn_y');
+  const iZ        = col('Cartn_z');
+  const iModel    = col('pdbx_PDB_model_num');
+
+  const atoms: Atom[] = [];
+  for (let li = dataStart; li < lines.length; li++) {
+    const line = lines[li].trim();
+    if (line.length === 0 || line.startsWith('#') || line.startsWith('loop_') || line.startsWith('_')) break;
+    const fields = line.split(/\s+/);
+    const rec = iGroup >= 0 ? fields[iGroup] : '';
+    if (rec !== 'ATOM' && rec !== 'HETATM') continue;
+    const x = parseFloat(fields[iX]), y = parseFloat(fields[iY]), z = parseFloat(fields[iZ]);
+    const resSeq = parseInt(fields[iResSeq], 10);
+    if (!isFinite(x) || !isFinite(y) || !isFinite(z) || isNaN(resSeq)) continue;
+    const atomName = iAtomName >= 0 ? fields[iAtomName] : '';
+    const alt = iAlt >= 0 ? fields[iAlt] : '.';
+    const resName = iResName >= 0 ? fields[iResName] : '';
+    const chain = iChain >= 0 ? fields[iChain] : 'A';
+    const insCode = iInsCode >= 0 && fields[iInsCode] !== '?' ? fields[iInsCode] : '';
+    const model = iModel >= 0 ? (parseInt(fields[iModel], 10) - 1) : 0;
+    atoms.push({
+      li, rec, name: atomName, alt: alt === '.' ? ' ' : alt, resName, chain, resSeq,
+      iCode: insCode, p: [x, y, z], model: isNaN(model) ? 0 : model,
+    });
+  }
+  return { ...buildResidues(lines, atoms), format: 'cif' as const, cifCols: { iX, iY, iZ } };
+}
+
+/** Shared residue-grouping logic used by both PDB and CIF parsers. */
+function buildResidues(lines: string[], atoms: Atom[]) {
   const residues: Res[] = [];
   const byKey = new Map<string, Res>();
   for (const a of atoms) {
@@ -299,14 +381,14 @@ const isAminoAcid = (r: Res) => !!r.CA && r.resName in ONE &&
  * ------------------------------------------------------------------ */
 
 export function spreadStructureWithReport(pdbData: string, consensusMap: ConsensusResidue[],
-                                          options: SpreadOptions = {}): { pdb: string; report: SpreadReport } {
+  options: SpreadOptions = {}): { pdb: string; report: SpreadReport } {
   const mode: SpreadMode = options.mode ?? 'unrolled';
   const straighten = options.straighten ?? mode === 'unrolled';
   const margin = options.margin ?? 6;
   const loopHeight = options.loopHeight ?? 12;
   const half = options.membrane?.half_thickness ?? 15;
   const warnings: string[] = [];
-  const { lines, atoms, residues: allRes } = parsePdb(pdbData);
+  const { lines, atoms, residues: allRes, format, cifCols } = parsePdb(pdbData);
 
   // ---- 1. analysed chain: the one whose residue numbers AND amino acids match the map
   const chains = [...new Set(allRes.filter(isAminoAcid).map((r) => r.chain))];
@@ -327,10 +409,12 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
   const posOf = new Map(res.map((r, i) => [mapKey(r.resSeq, r.iCode), i]));
   const empty = (why: string) => ({
     pdb: pdbData,
-    report: { mode, chainId, membraneSource: 'estimated from TM axes' as const, crossings: [], keptTogether: [],
-              loops: [], tails: [], maxPeptideBond: null, brokenPeptideBonds: 0, clashes: 0, brokenDisulfides: 0,
-              keptLigands: [], dropped: [],
-              warnings: [...warnings, why] },
+    report: {
+      mode, chainId, membraneSource: 'estimated from TM axes' as const, crossings: [], keptTogether: [],
+      loops: [], tails: [], maxPeptideBond: null, brokenPeptideBonds: 0, clashes: 0, brokenDisulfides: 0,
+      keptLigands: [], dropped: [],
+      warnings: [...warnings, why]
+    },
   });
   if (n === 0) return empty('no amino-acid residues found for the analysed chain');
 
@@ -371,7 +455,8 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
   }
   const depthRows = res.map((r, i) => ({ i, d: annot.get(mapKey(r.resSeq, r.iCode))?.depth }))
     .filter((x): x is { i: number; d: number } => typeof x.d === 'number');
-  let offset = membraneSource === 'backend' && depthRows.length
+  const isCurved = options.membrane?.curvature_radius != null;
+  let offset = membraneSource === 'backend' && depthRows.length && !isCurved
     ? median(depthRows.map(({ i, d }) => dot(normal, caOf(i)) - d))
     : median(bodies.map((b) => dot(normal, centroid(res.slice(b.s, b.e + 1).map((r) => r.CA!.p)))));
   // extracellular up: evidence from the backend labels, else TM_E / TM_C of the map
@@ -417,14 +502,21 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
   if (mode === 'aligned') {
     const out = lines.flatMap((line) => {
       if (line.startsWith('ANISOU')) return [];                 // tensors would need rotating
-      if (!(line.startsWith('ATOM  ') || line.startsWith('HETATM'))) return [line];
-      const p = apply(toMembrane, [parseFloat(line.substring(30, 38)), parseFloat(line.substring(38, 46)), parseFloat(line.substring(46, 54))]);
-      return [writeCoords(line, p)];
+      if (!(line.startsWith('ATOM  ') || line.startsWith('HETATM') || (format === 'cif' && (line.startsWith('ATOM ') || line.startsWith('HETATM '))))) return [line];
+      let p: V;
+      if (format === 'cif' && cifCols) {
+        const fields = line.trim().split(/\s+/);
+        if (Math.max(cifCols.iX, cifCols.iY, cifCols.iZ) >= fields.length) return [line];
+        p = apply(toMembrane, [parseFloat(fields[cifCols.iX]), parseFloat(fields[cifCols.iY]), parseFloat(fields[cifCols.iZ])]);
+      } else {
+        p = apply(toMembrane, [parseFloat(line.substring(30, 38)), parseFloat(line.substring(38, 46)), parseFloat(line.substring(46, 54))]);
+      }
+      return [format === 'cif' && cifCols ? writeCifCoords(line, p, cifCols.iX, cifCols.iY, cifCols.iZ) : writeCoords(line, p)];
     });
     insertRemarks(out, [
       'SPREAD MODE: ALIGNED - one rigid rotation/translation, no deformation.',
       'Y = membrane normal (extracellular up), y = 0 at the bilayer mid-plane.',
-    ]);
+    ], format);
     reportBase.crossings = bodies.map((b) => ({ crossing: b.id, start: resLabel(res[b.s]), end: resLabel(res[b.e]), tiltRemovedDeg: 0 }));
     return { pdb: out.join('\n'), report: reportBase };
   }
@@ -503,6 +595,13 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
     groups.push(makeGroup([b.id], b.s, b.e, straighten));
   }
 
+  // Scale constants for large proteins (e.g. PIEZO1 with 26+ crossings, 1280 residues).
+  // Large proteins need wider gaps to avoid overlap and fewer solver iterations to stay responsive.
+  const isLarge = bodies.length >= LARGE_CROSSINGS || n >= LARGE_RESIDUES;
+  const LOOP_SPAN_MAX = isLarge ? Math.min(120, LOOP_SPAN_MAX_BASE + bodies.length * 2) : LOOP_SPAN_MAX_BASE;
+  const TAIL_SPAN_MAX = isLarge ? Math.min(80, TAIL_SPAN_MAX_BASE + bodies.length) : TAIL_SPAN_MAX_BASE;
+  const TAIL_GUIDE = isLarge ? Math.min(80, TAIL_GUIDE_BASE + bodies.length) : TAIL_GUIDE_BASE;
+
   // exploded: a loop that cannot be closed without a clash keeps its two bodies together
   // (native geometry) and the layout is redone. unrolled: the row is kept; such a loop is
   // placed as well as CCD can and flagged as a schematic junction.
@@ -559,12 +658,35 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
       const xs: number[] = [0];
       for (let k = 1; k < gs.length; k++) {
         const loop = range(gs[k - 1].last + 1, gs[k].first - 1);
-        const want = Math.min(LOOP_SPAN_MAX, LOOP_SPAN_PER_A * contour(loop));
+        let want = Math.min(LOOP_SPAN_MAX, LOOP_SPAN_PER_A * contour(loop));
+        
+        // Cap 'want' by the physical maximum stretch of the loop to prevent tearing rigid domains.
+        // A rigid domain cannot stretch, only the flexible coil parts can.
+        if (loop.length > 0) {
+          const flexCount = loop.filter(flexible).length;
+          const nativeA = Q(res[gs[k - 1].last].C ?? res[gs[k - 1].last].CA!);
+          const nativeB = Q(res[gs[k].first].N ?? res[gs[k].first].CA!);
+          const max_span = dist(nativeA, nativeB) + flexCount * 2.5;
+          want = Math.min(want, max_span);
+        }
+
         xs.push(xs[k - 1] + Math.max(radius[k - 1] + radius[k] + margin, want));
       }
       const shift = (xs[0] + xs[xs.length - 1]) / 2;
       gs.forEach((g, k) => {
-        const target: V = [xs[k] - shift, g.c[1], 0];
+        let targetY = g.c[1];
+        const depths: number[] = [];
+        g.members.forEach(id => {
+          const b = bodies.find(x => x.id === id);
+          if (b) {
+            for (let i = b.s; i <= b.e; i++) {
+              const d = annot.get(mapKey(res[i].resSeq, res[i].iCode))?.depth;
+              if (typeof d === 'number') depths.push(d);
+            }
+          }
+        });
+        if (depths.length > 0) targetY = median(depths);
+        const target: V = [xs[k] - shift, targetY, 0];
         const entry = Q(res[g.first].N ?? res[g.first].CA!);
         const exit = Q(res[g.last].C ?? res[g.last].CA!);
         const prevExit = k ? apply(T[k - 1], Q(res[gs[k - 1].last].C ?? res[gs[k - 1].last].CA!)) : null;
@@ -609,8 +731,10 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
     for (let k = 0; k + 1 < gs.length; k++) {
       const g = gs[k], h = gs[k + 1];
       const loopIdx = range(g.last + 1, h.first - 1);
-      const entry: LoopReport = { from: resLabel(res[g.last]), to: resLabel(res[h.first]), residues: loopIdx.length,
-                                  flexible: loopIdx.filter(flexible).length, closed: false, closureRmsd: null };
+      const entry: LoopReport = {
+        from: resLabel(res[g.last]), to: resLabel(res[h.first]), residues: loopIdx.length,
+        flexible: loopIdx.filter(flexible).length, closed: false, closureRmsd: null
+      };
       loops.push(entry);
       const breakAt = [...loopIdx, h.first].find((i) => !bonded(i));
       if (breakAt !== undefined) {
@@ -637,7 +761,7 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
         const yLo = minHeight;
         const yHi = Math.max(yLo + loopHeight, yLo + 10);
         targets = residueTargets(loopIdx, guideCurve(A, B, currentSide, contour(loopIdx) + STEP_COIL,
-                                                     1, yLo, yHi, LOOP_SPAN_MAX), true);
+          1, yLo, yHi, LOOP_SPAN_MAX), true);
       }
       const best = solveChain(ch, targets, F, gridWithout(loopIdx[0], loopIdx[loopIdx.length - 1]), placed, 1000 + k);
       entry.closureRmsd = Math.round(best.rmsd * 100) / 100;
@@ -730,7 +854,7 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
       const yLo = minHeight;
       const yHi = Math.max(yLo + loopHeight, yLo + 10);
       const targets = residueTargets(guided, guideCurve(A, null, sideOf(A[1]), contour(guided),
-                                                        reverse ? -1 : 1, yLo, yHi, TAIL_SPAN_MAX), false);
+        reverse ? -1 : 1, yLo, yHi, TAIL_SPAN_MAX), false);
       const lo = Math.min(...guided), hi = Math.max(...guided);
       const best = solveChain(ch, targets, null, gridWithout(Math.min(lo, ...all), Math.max(hi, ...all)), placed, reverse ? 7 : 11);
       placeChain(ch, best.P, placed, resT);
@@ -819,7 +943,7 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
    *  Restarts from random torsions (fixed seed: same input, same output), then Monte
    *  Carlo moves that remove heavy-atom clashes with everything already placed. */
   function solveChain(ch: Chain, targets: V[] | null, F: V[] | null, grid: Grid,
-                      placed: Map<Atom, V>, seed: number) {
+    placed: Map<Atom, V>, seed: number) {
     const m = ch.idx.length;
     const tors = ch.tors;
     const rotate = (P: V[], tor: Tor, th: number) => {
@@ -893,9 +1017,11 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
       ((x.rmsd <= 0.3 ? 0 : 1) - (y.rmsd <= 0.3 ? 0 : 1) || x.clashes - y.clashes
         || (x.rmsd <= 0.3 ? x.dev - y.dev : x.rmsd - y.rmsd)) < 0;
     const done = (b: Cand) => b.rmsd <= 0.3 && b.clashes === 0 && (!targets || b.dev < GOOD_PATH_DEV);
-    // fewer restarts for long chains (cost grows with length^2)
-    const restarts = Math.max(6, Math.min(targets ? GUIDED_RESTARTS : CCD_RESTARTS,
-                                          Math.round(CCD_RESTARTS * 30 / Math.max(30, m))));
+    // fewer restarts for long chains (cost grows with length^2);
+    // for large proteins, scale down further to keep interactive responsiveness.
+    const largeFactor = isLarge ? 0.5 : 1;
+    const restarts = Math.max(4, Math.min(targets ? Math.round(GUIDED_RESTARTS * largeFactor) : Math.round(CCD_RESTARTS * largeFactor),
+      Math.round(CCD_RESTARTS * 30 / Math.max(30, m))));
     let best: Cand = { P: ch.start, rmsd: Infinity, clashes: Infinity, dev: Infinity };
     for (let attempt = 0; attempt < restarts && !done(best); attempt++) {
       const P = ch.start.map((p) => [...p] as V);
@@ -957,12 +1083,22 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
     if (isAminoAcid(r)) { drop(`chain ${r.chain} residues`); continue; }
     hetero.set(resLabel(r) + r.resName, r.atoms.filter((a) => a.model === 0));
   }
+  // Use a spatial grid for ligand-chain contacts to avoid O(N²) for large proteins.
+  const chainGrid = new Grid(5.0);
+  for (const { a, i } of chainAtoms) chainGrid.add(Q(a), i);
   const keptLigands: string[] = [];
   for (const [label, latoms] of hetero) {
     let best = { d: 4.5, i: -1 };
-    for (const la of latoms) for (const { a, i } of chainAtoms) {
-      const d = dist(Q(la), Q(a));
-      if (d < best.d) best = { d, i };
+    for (const la of latoms) {
+      const lp = Q(la);
+      // Search the grid neighbourhood instead of every chain atom.
+      const [cx, cy, cz] = [Math.floor(lp[0] / 5), Math.floor(lp[1] / 5), Math.floor(lp[2] / 5)];
+      for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++) for (let gz = cz - 1; gz <= cz + 1; gz++) {
+        for (const q of (chainGrid as any).cells.get(`${gx}|${gy}|${gz}`) ?? []) {
+          const d = dist(lp, q.p);
+          if (d < best.d) best = { d, i: q.i };
+        }
+      }
     }
     if (best.i < 0 || !resT[best.i]) { drop('ligands not in contact with the chain'); continue; }
     for (const la of latoms) placed.set(la, apply(resT[best.i]!, Q(la)));
@@ -1003,11 +1139,18 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
   const header = lines.filter((l, li) => li < (atoms[0]?.li ?? lines.length)
     && !/^(END|MASTER|CONECT|ANISOU|MODEL|ENDMDL)/.test(l) && l.trim() !== '');
   const body: string[] = [];
-  for (const r of res) for (const a of r.atoms) if (a.model === 0) body.push(writeCoords(lines[a.li], placed.get(a)!));
-  body.push(`TER   ${' '.repeat(5)}      ${res[n - 1].resName.padStart(3)} ${chainId}${String(res[n - 1].resSeq).padStart(4)}${res[n - 1].iCode || ' '}`);
-  for (const latoms of hetero.values()) for (const a of latoms) if (placed.has(a)) body.push(writeCoords(lines[a.li], placed.get(a)!));
-  const crossings = bodies.map((b) => ({ crossing: b.id, start: resLabel(res[b.s]), end: resLabel(res[b.e]),
-    tiltRemovedDeg: groups.find((g) => g.members.includes(b.id))!.members.length > 1 ? 0 : Math.round(tiltOf.get(b.id)! * 10) / 10 }));
+  const writer = format === 'cif' && cifCols ? (line: string, p: V) => writeCifCoords(line, p, cifCols.iX, cifCols.iY, cifCols.iZ) : writeCoords;
+  for (const r of res) for (const a of r.atoms) if (a.model === 0) body.push(writer(lines[a.li], placed.get(a)!));
+  if (format === 'pdb') {
+    body.push(`TER   ${' '.repeat(5)}      ${res[n - 1].resName.padStart(3)} ${chainId}${String(res[n - 1].resSeq).padStart(4)}${res[n - 1].iCode || ' '}`);
+  } else {
+    body.push('#'); // Simple CIF delimiter if needed
+  }
+  for (const latoms of hetero.values()) for (const a of latoms) if (placed.has(a)) body.push(writer(lines[a.li], placed.get(a)!));
+  const crossings = bodies.map((b) => ({
+    crossing: b.id, start: resLabel(res[b.s]), end: resLabel(res[b.e]),
+    tiltRemovedDeg: groups.find((g) => g.members.includes(b.id))!.members.length > 1 ? 0 : Math.round(tiltOf.get(b.id)! * 10) / 10
+  }));
   const remarks = [
     mode === 'exploded'
       ? 'SPREAD MODE: EXPLODED - bodies pushed apart in the membrane plane.'
@@ -1017,12 +1160,12 @@ export function spreadStructureWithReport(pdbData: string, consensusMap: Consens
     'loops are re-closed by changing coil phi/psi only (CCD): bond lengths and',
     'angles are those of the input model.',
     ...(mode === 'unrolled' ? ['2D layout: loops and tails follow planar (z = 0) guide curves within',
-                               `${loopHeight} A of the membrane surface.`] : []),
+      `${loopHeight} A of the membrane surface.`] : []),
     ...loops.map((l) => `LOOP ${l.from}-${l.to}: ${l.residues} res, closure ${l.closureRmsd ?? 'n/a'} A` +
       (l.schematic ? ` SCHEMATIC (C-N ${l.stretchedBond ?? '?'} A)` : '')),
   ];
-  const out = [...header, ...body, 'END'];
-  insertRemarks(out, remarks);
+  const out = format === 'pdb' ? [...header, ...body, 'END'] : [...header, ...body];
+  insertRemarks(out, remarks, format);
   return {
     pdb: out.join('\n'),
     report: {
@@ -1064,7 +1207,7 @@ function curveAt(c: Curve, s: number): V {
  * instead of sticking out of the drawing.
  */
 function guideCurve(A: V, B: V | null, side: number, length: number, dir: number,
-                    yLo: number, yHi: number, maxWidth: number): Curve {
+  yLo: number, yHi: number, maxWidth: number): Curve {
   const s = side >= 0 ? 1 : -1;
   const legs = (h: number) => Math.abs(s * h - A[1]) + (B ? Math.abs(s * h - B[1]) : 0);
   const x0 = A[0];
@@ -1117,7 +1260,7 @@ const isHydrogen = (a: Atom) => /^(\d?H|D)/.test(a.name) && a.resName !== 'HG';
 
 class Grid {
   private cells = new Map<string, { p: V; i: number }[]>();
-  constructor(private size: number) {}
+  constructor(private size: number) { }
   private key(x: number, y: number, z: number) { return `${x}|${y}|${z}`; }
   add(p: V, i: number) {
     const k = this.key(Math.floor(p[0] / this.size), Math.floor(p[1] / this.size), Math.floor(p[2] / this.size));
@@ -1150,7 +1293,17 @@ function writeCoords(line: string, p: V): string {
   return line.substring(0, 30).padEnd(30) + f(p[0]) + f(p[1]) + f(p[2]) + line.substring(54);
 }
 
-function insertRemarks(out: string[], texts: string[]) {
-  const at = Math.max(0, out.findIndex((l) => /^(ATOM  |HETATM|MODEL)/.test(l)));
-  out.splice(at, 0, ...texts.map((t) => `REMARK 999 ${t}`.slice(0, 80)));
+function writeCifCoords(line: string, p: V, iX: number, iY: number, iZ: number): string {
+  const fields = line.trim().split(/\s+/);
+  if (Math.max(iX, iY, iZ) >= fields.length) return line;
+  fields[iX] = p[0].toFixed(3);
+  fields[iY] = p[1].toFixed(3);
+  fields[iZ] = p[2].toFixed(3);
+  return fields.join(' ');
+}
+
+function insertRemarks(out: string[], texts: string[], format: 'pdb' | 'cif') {
+  const at = Math.max(0, out.findIndex((l) => format === 'pdb' ? /^(ATOM  |HETATM|MODEL)/.test(l) : /^_atom_site\.|^(ATOM|HETATM)/.test(l)));
+  const prefix = format === 'pdb' ? 'REMARK 999 ' : '# ';
+  out.splice(at, 0, ...texts.map((t) => `${prefix}${t}`.slice(0, 80)));
 }

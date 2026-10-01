@@ -18,8 +18,9 @@ THE FLOW
   1. Parse the chain once -> ResidueFrame, positions 0..N-1.
   2. TM block (UniProt / Kyte-Doolittle / 3D slab) and SS block (DSSP / STRIDE) run
      at the same time; each reports one value per position.
-  3. Membrane geometry (membrane.py): file planes (OPM/PPM DUM atoms) > axes of the
-     TM segments. Used for depth / zone, the hairpin guard and interfacial helices -
+  3. Membrane geometry (membrane.py): file planes (OPM/PPM DUM atoms) > placement fitted
+     by the TM provider (3D Energy, planar or curved) > axes of the TM segments.
+     Used for depth / zone, the hairpin guard and interfacial helices -
      it never moves a TM boundary.
   4. Optional treat_turn_as_helix (see _promote_turns).
   5. Residue map (consensus.build_consensus_map), loop i = 0..N-1:
@@ -132,7 +133,8 @@ class TopologyOrchestrator:
 
         # 2. membrane geometry (depth / zone / hairpin guard - never boundaries)
         breaks = frame.chain_breaks()
-        membrane = build_membrane(frame, segments, params.membrane_thickness / 2.0)
+        membrane = build_membrane(frame, segments, params.membrane_thickness / 2.0,
+                                  prediction=tm_pred)
         if membrane is None:
             warns.append("no membrane geometry (coordinates missing): hairpins inside one TM "
                          "segment cannot be detected")
@@ -680,7 +682,8 @@ class TopologyOrchestrator:
                 zones = [membrane.zone(k) for k in range(i, j)]
                 v = coords[j - 1] - coords[i]
                 norm = float(np.linalg.norm(v))
-                parallel = norm > 0 and abs(float(v @ membrane.normal)) / norm < 0.5
+                local_normal = membrane.normal_at((coords[i] + coords[j - 1]) / 2.0)
+                parallel = norm > 0 and abs(float(v @ local_normal)) / norm < 0.5
                 if parallel and zones.count("EDGE") >= 0.6 * (j - i):
                     for k in range(i, j):
                         out[k] = f"{labels[i]} {L.INTERFACIAL}"

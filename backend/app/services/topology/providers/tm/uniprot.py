@@ -137,6 +137,55 @@ def fetch_uniprot_entry(accession: str) -> dict:
         raise HTTPException(status_code=502, detail="UniProt API returned invalid JSON") from err
 
 
+_TM_NAME_RE = re.compile(r"Name=([^;\s]+)")
+MIN_REPORTED_RUN = 3        # numbering runs shorter than this (insertion codes...) are not reported
+
+
+def _tm_name(feature: dict, index: int) -> str:
+    """'Helical; Name=17' -> 'TM17'; unnamed helices get their order in the entry."""
+    m = _TM_NAME_RE.search(feature.get("description") or "")
+    return f"TM{m.group(1)}" if m else f"TM{index}"
+
+
+def _compress_names(names: list[str]) -> str:
+    """['TM1', 'TM2', 'TM3', 'TM7'] -> 'TM1-TM3, TM7' (only numeric names are joined)."""
+    out: list[str] = []
+    run: list[int] = []
+
+    def flush():
+        if run:
+            out.append(f"TM{run[0]}" if len(run) == 1 else f"TM{run[0]}-TM{run[-1]}")
+            run.clear()
+
+    for name in names:
+        num = name[2:]
+        if num.isdigit() and run and int(num) == run[-1] + 1:
+            run.append(int(num))
+        elif num.isdigit():
+            flush()
+            run.append(int(num))
+        else:
+            flush()
+            out.append(name)
+    flush()
+    return ", ".join(out)
+
+
+def _numbering_runs(frame: ResidueFrame, uniprot_pos: list[Optional[int]]):
+    """Stretches where (UniProt position - author resseq) is constant:
+    [(delta, first frame position, last frame position)]."""
+    runs: list[list[int]] = []
+    for p, u in enumerate(uniprot_pos):
+        if u is None:
+            continue
+        d = u - frame.residues[p].resseq
+        if runs and runs[-1][0] == d:
+            runs[-1][2] = p
+        else:
+            runs.append([d, p, p])
+    return [tuple(r) for r in runs]
+
+
 def _feature_bounds(feature: dict) -> Optional[tuple[int, int]]:
     loc = feature.get("location") or {}
     start = _int_or_none((loc.get("start") or {}).get("value"))
@@ -199,32 +248,69 @@ class UniprotTMProvider(TMProvider):
                          f"{mapping.matched}/{len(frame)} residues)")
 
         pos_of_u = np.full(len(useq) + 2, -1, dtype=int)
+        uniprot_pos: list[Optional[int]] = [None] * len(frame)
         for p, j in enumerate(mapping.ref_index):
             if j is not None:
                 pos_of_u[j + 1] = p
+                uniprot_pos[p] = j + 1
+
+        # Author numbering is what every region of the result is reported in. When it does
+        # not follow UniProt (8ZU3 / 9VMX: author 767-892 = UniProt 789-914), say so - a
+        # TM shown at 795-806 is UniProt TM17 (817-828), not a mapping error.
+        runs = _numbering_runs(frame, uniprot_pos)
+        shifted = [(d, a, b) for d, a, b in runs if d != 0 and b - a + 1 >= MIN_REPORTED_RUN]
+        if shifted:
+            parts = [f"author {frame.residues[a].label}-{frame.residues[b].label} = UniProt "
+                     f"{uniprot_pos[a]}-{uniprot_pos[b]} ({d:+d})" for d, a, b in shifted[:6]]
+            more = f" and {len(shifted) - 6} more stretch(es)" if len(shifted) > 6 else ""
+            warns.append(f"UniProt {acc}: chain {frame.chain_id} author residue numbers differ "
+                         f"from UniProt numbering - {'; '.join(parts)}{more}. Residues are "
+                         "matched by sequence alignment; positions in this result are AUTHOR "
+                         "numbers (the TM names below give the UniProt range)")
 
         n = len(frame)
         labels = [UNASSIGNED] * n
         segments: list[tuple[int, int]] = []
         display: list[tuple[int, TopologyRegion]] = []
         outside = 0
+        tm_total = 0
+        tm_missing: list[str] = []                    # not resolved at all -> skipped
+        tm_partial: list[str] = []                    # only partly resolved -> kept
+        tm_shifted: list[str] = []                    # resolved, author numbers != UniProt
         features = [f for f in data.get("features", []) if f.get("type") in FEATURE_TYPES]
+        tm_names = {id(f): _tm_name(f, k + 1) for k, f in enumerate(sorted(
+            (f for f in features if f["type"] == "Transmembrane"),
+            key=lambda f: (_feature_bounds(f) or (0, 0))[0]))}
         features.sort(key=lambda f: (PAINT_ORDER[f["type"]], (_feature_bounds(f) or (0, 0))[0]))
         for f in features:
             bounds = _feature_bounds(f)
             if bounds is None:
                 continue
+            ftype = f["type"]
             u0, u1 = max(1, bounds[0]), min(len(useq), bounds[1])
             hits = pos_of_u[u0:u1 + 1] if u0 <= u1 else np.array([], dtype=int)
             hits = hits[hits >= 0]
+            if ftype == "Transmembrane":
+                tm_total += 1
             if hits.size == 0:
                 outside += 1          # feature not resolved in this model: do NOT snap it
+                if ftype == "Transmembrane":
+                    tm_missing.append(tm_names[id(f)])
                 continue
             lo, hi = int(hits.min()), int(hits.max())
-            ftype, desc = f["type"], (f.get("description") or f["type"])
+            desc = f.get("description") or ftype
             if ftype == "Transmembrane":
+                name = tm_names[id(f)]
+                desc = (f"{desc} (UniProt {u0}-{u1})" if "Name=" in desc
+                        else f"{desc} ({name}, UniProt {u0}-{u1})")
                 label = TM
                 segments.append((lo, hi))
+                if hits.size < u1 - u0 + 1:
+                    tm_partial.append(f"{name} {u0}-{u1}: {hits.size}/{u1 - u0 + 1} resolved")
+                a_lo, a_hi = frame.residues[lo], frame.residues[hi]
+                if (a_lo.resseq, a_hi.resseq) != (uniprot_pos[lo], uniprot_pos[hi]):
+                    tm_shifted.append(f"{name} {uniprot_pos[lo]}-{uniprot_pos[hi]} = author "
+                                      f"{a_lo.label}-{a_hi.label}")
             elif ftype == "Intramembrane":
                 label = INTRA
             elif ftype == "Signal":
@@ -242,9 +328,23 @@ class UniprotTMProvider(TMProvider):
                 description=desc, side=side if ftype != "Transmembrane" else "membrane",
                 start_icode=frame.residues[lo].icode or None,
                 end_icode=frame.residues[hi].icode or None)))
-        if outside:
-            warns.append(f"UniProt {acc}: {outside} topology feature(s) lie outside the residues "
-                         "resolved in this structure and were skipped")
+        if tm_total:
+            msg = (f"UniProt {acc}: {tm_total - len(tm_missing)} of {tm_total} UniProt TM helices "
+                   f"are resolved in chain {frame.chain_id}")
+            if tm_missing:
+                msg += (f"; not resolved (no coordinates, skipped): "
+                        f"{_compress_names(tm_missing)}")
+            warns.append(msg)
+        other_missing = outside - len(tm_missing)
+        if other_missing:
+            warns.append(f"UniProt {acc}: {other_missing} other topology feature(s) lie outside "
+                         "the residues resolved in this structure and were skipped")
+        if tm_partial:
+            warns.append(f"UniProt {acc}: partly resolved TM helices, drawn over their resolved "
+                         f"residues only - {'; '.join(tm_partial)}")
+        if tm_shifted:
+            warns.append(f"UniProt {acc}: TM helices whose author numbers differ from UniProt - "
+                         f"{'; '.join(tm_shifted)}")
 
         display.sort(key=lambda item: item[0])
         return TMPrediction(
