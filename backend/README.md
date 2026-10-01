@@ -1,91 +1,91 @@
 # Protein-Visualize Backend
 
-This is the FastAPI backend for the Protein-Visualize application. It is responsible for parsing protein structures, calculating secondary structures (using DSSP/STRIDE), and predicting transmembrane (TM) topologies.
+This is the FastAPI backend for the Protein-Visualize application. It provides powerful structural biology tools for computing Secondary Structure (SS) assignments and predicting Transmembrane (TM) topologies using both geometric and physics-based models.
 
-## 🏗 Architecture
+## 🏗️ Architecture
 
-The backend follows **SOLID** and **Object-Oriented Design (OOD)** principles, separating concerns into distinct layers:
+The backend follows the **Strategy Pattern** and a robust **Orchestrator** model. It decouples the specific prediction algorithms (Providers) from the consensus builder (Orchestrator).
 
 ```text
 backend/app/
-├── api/                  # Controllers: Route definitions and Dependency Injection
-├── core/                 # Config & Constants: Hydropathy scales, default parameters
-├── schemas/              # Data Models: Pydantic schemas (DTOs) for request/response validation
-└── services/             # Business Logic: Topology predictors, core algorithms
+├── api/                  # Controllers: Route definitions
+├── core/                 # Config & Constants: Hydropathy scales (GES, Kyte-Doolittle)
+├── schemas/              # Data Models: Pydantic DTOs for request/response
+└── services/
     └── topology/
-        ├── base.py                 # Abstract Base Class for predictors
-        ├── sequence_predictor.py   # Kyte-Doolittle TM scan + DSSP rescue (Sequence-based)
-        └── structure_predictor.py  # Slab-geometry + SS-element parsing (Structure-based)
+        ├── service.py             # Factory registering TM & SS Algorithms
+        ├── topology_predictor.py  # TopologyOrchestrator: Merges SS and TM data
+        ├── membrane_energy.py     # Core physics engine for the 3D Energy model (SASA, FFT)
+        └── providers/             # Strategy implementations
+            ├── ss/                # Secondary Structure (DSSP, STRIDE)
+            └── tm/                # Transmembrane Predictors (Sequence, Geometry, Energy, UniProt)
 ```
 
-## 🚀 How to Extend and Add Your Own Algorithm
+## 🧬 Transmembrane (TM) Algorithms
 
-The application uses the **Strategy Pattern** to swap out topology prediction algorithms dynamically. If you want to add your own algorithm (for instance, an ML-based predictor or AlphaFold integration), you do not need to modify existing complex code. You simply extend the `BaseTopologyPredictor`.
+The application supports multiple algorithms for identifying transmembrane regions, allowing users to choose the most suitable method for their data (from sequence-only to full-atom physics).
 
-### Step 1: Create Your Predictor Class
+### 1. 3D Energy (Implicit Membrane Model)
+This is our most advanced, **completely self-implemented** biophysics algorithm. It determines the globally optimal membrane placement by minimizing the transfer free energy of the protein into a lipid bilayer.
+* **SASA Calculation:** Implements the Shrake-Rupley algorithm via vectorised NumPy operations to estimate the Solvent Accessible Surface Area for each atom.
+* **Energy Scale:** Computes implicit transfer free energy using the Goldman-Engelman-Steitz (GES) hydrophobicity scale and a Wimley-White interface penalty.
+* **FFT Optimization:** It samples rotational states using a Fibonacci sphere and utilizes 1D Fast Fourier Transform (`np.fft.rfft`) for a lightning-fast exhaustive grid search along the Z-axis (translation and thickness).
 
-Create a new file in `app/services/topology/` (e.g., `my_custom_predictor.py`) and inherit from `BaseTopologyPredictor`.
+### 2. 3D Slab Geometry
+A fast geometric heuristic that identifies the membrane by clustering hydrophobic residues in 3D space.
+* **Fibonacci Sphere Sampling:** Tests hundreds of possible membrane normal vectors.
+* **Slab Scoring:** Scores each orientation based on the density of hydrophobic C-alpha atoms inside the defined slab minus the penalty for charged residues.
+* **Consensus Mapping:** After finding the optimal plane, it slices the sequence and ensures runs of residues spanning across the slab are classified as TM helices/strands.
 
-```python
-from pathlib import Path
-from typing import Optional
-from app.services.topology.base import BaseTopologyPredictor
-from app.schemas.topology import TMParams, TopologyResponse, TopologyRegion
+### 3. Kyte-Doolittle (Sequence-based)
+A classic 1D sliding-window hydropathy scan. 
+* Operates solely on the primary amino acid sequence.
+* Uses a **hysteresis** thresholding system (upper and lower bounds) to cleanly separate hydrophobic core segments without being interrupted by single hydrophilic mutations.
 
-class MyCustomPredictor(BaseTopologyPredictor):
-    def predict(self, file_path: Path, labeler: str = "DSSP", params: Optional[TMParams] = None, **kwargs) -> TopologyResponse:
-        # 1. Parse the structure at file_path
-        # 2. Run your custom algorithm
-        
-        # Example dummy regions
-        regions = [
-            TopologyRegion(type="Topological domain", start=1, end=20, description="Extracellular"),
-            TopologyRegion(type="Transmembrane", start=21, end=41, description="Transmembrane Alpha Helix"),
-            TopologyRegion(type="Topological domain", start=42, end=60, description="Cytoplasmic"),
-        ]
-        
-        # 3. Return the standard Pydantic response
-        return TopologyResponse(
-            uniprot_id="CUSTOM",
-            protein_name="Custom Prediction",
-            gene_name="",
-            organism="Computed",
-            membrane_score=1.0,
-            membrane_normal=[0.0, 0.0, 1.0],  # Optional
-            labeler=labeler,
-            parameters_used=params.to_response_dict() if params else {},
-            regions=regions
-        )
-```
+### 4. UniProt API (Database Lookup)
+Fetches curated annotations directly from the UniProt database using the protein's accession ID. Reliable for established proteins, returning exact boundaries for Extracellular, Transmembrane, and Cytoplasmic domains.
 
-### Step 2: Register Your Predictor
+## 🛠️ How to Add a New Algorithm
 
-Open `app/api/dependencies.py`. Modify the `get_topology_predictor` function to inject your custom class when a specific `algorithm` string is provided by the frontend.
+The architecture relies heavily on **Providers**. If you want to add a new algorithm (e.g., an ML-based predictor), you do not need to rewrite the orchestration logic.
 
-```python
-def get_topology_predictor(algorithm: str = "dssp_slab") -> BaseTopologyPredictor:
-    if algorithm == "my_custom_algo":
-        from app.services.topology.my_custom_predictor import MyCustomPredictor
-        return MyCustomPredictor()
-    
-    # ... existing logic ...
-```
+1. **Create a Provider:** 
+   In `app/services/topology/providers/tm/`, create a new class implementing `TMProvider`.
+   ```python
+   from app.services.topology.providers.tm.base import TMProvider
+   
+   class MyMLProvider(TMProvider):
+       def extract_tm_segments(self, file_path, params):
+           # Your AI/ML logic here
+           return [ ... list of segments ... ]
+   ```
 
-### Step 3: Call Your Algorithm from the Frontend
+2. **Register it:** 
+   Open `app/services/topology/service.py` and map your new algorithm key in the `TM_ALGORITHMS` dictionary.
+   ```python
+   TM_ALGORITHMS = {
+       "kyte_doolittle_seq": SequenceTMProvider,
+       "3d_slab_geom": _geometry_provider,
+       "3d_energy": _energy_provider,
+       "my_ml_algo": MyMLProvider,  # <--- Registered here
+   }
+   ```
 
-Your new algorithm is now ready to use! In the frontend, just make an API call to `/api/secondary-structure/predict-topology/YOUR_FILE.pdb?algorithm=my_custom_algo`.
+3. **Call from Frontend:** 
+   The frontend can now pass `algorithm=my_ml_algo` in the API request, and the `TopologyOrchestrator` will automatically route the request, merge the TM predictions with the chosen SS provider (DSSP/STRIDE), and return the standard JSON output.
 
-## ⚙️ Development Setup
+## 🚀 Development Setup
 
 To run the backend locally:
 
-1. Install requirements:
+1. Create a virtual environment and install dependencies:
    ```bash
+   python -m venv .venv
+   .venv\Scripts\activate
    pip install -r requirements.txt
    ```
-2. Start the FastAPI server (using Uvicorn):
+2. Start the FastAPI server:
    ```bash
-   npm run dev 
-   # or natively: uvicorn app.main:app --reload --port 8000
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
-3. Open `http://localhost:8000/docs` to view the Swagger UI and test the endpoints.
+3. Open `http://localhost:8000/docs` to view the interactive Swagger UI.

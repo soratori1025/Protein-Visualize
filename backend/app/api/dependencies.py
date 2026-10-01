@@ -22,30 +22,27 @@ def get_tm_params(
     return TMParams(**overrides)
 
 def get_topology_orchestrator(
-    tm_algo: str = Query("3d_slab_geom", description="TM Algorithm: kyte_doolittle_seq, 3d_slab_geom, uniprot_api"),
+    tm_algo: str = Query("3d_slab_geom", description="TM Algorithm: kyte_doolittle_seq, 3d_slab_geom, uniprot_api, 3d_energy, tmhmm"),
     ss_algo: str = Query("dssp", description="SS Algorithm: dssp, stride, none"),
     flow_type: str = Query("ss_then_tm", description="Flow Type: ss_then_tm, tm_then_ss, parallel_merge")
 ):
     from app.services.topology.orchestrator import TopologyOrchestrator
+    from app.services.topology.service import TM_ALGORITHMS, SS_ALGORITHMS
+    from fastapi import HTTPException
     
+    tm_key = tm_algo.strip().lower()
+    ss_key = ss_algo.strip().lower()
+    
+    if tm_key not in TM_ALGORITHMS:
+        raise HTTPException(status_code=400, detail=f"Unknown tm_algo '{tm_algo}'")
+    if ss_key not in SS_ALGORITHMS:
+        raise HTTPException(status_code=400, detail=f"Unknown ss_algo '{ss_algo}'")
+        
     # Select TM Provider
-    if tm_algo == "kyte_doolittle_seq":
-        from app.services.topology.providers.tm.sequence import SequenceTMProvider
-        tm_provider = SequenceTMProvider()
-    elif tm_algo == "uniprot_api":
-        from app.services.topology.providers.tm.uniprot import UniprotTMProvider
-        tm_provider = UniprotTMProvider()
-    else:
-        from app.services.topology.providers.tm.geometry import GeometryTMProvider
-        tm_provider = GeometryTMProvider()
+    tm_provider = TM_ALGORITHMS[tm_key]()
         
     # Select SS Provider
-    ss_provider = None
-    if ss_algo == "dssp":
-        from app.services.topology.providers.ss.dssp import DSSPProvider
-        ss_provider = DSSPProvider()
-    elif ss_algo == "stride":
-        from app.services.topology.providers.ss.stride import STRIDEProvider
-        ss_provider = STRIDEProvider()
+    ss_factory = SS_ALGORITHMS[ss_key]
+    ss_provider = ss_factory() if ss_factory else None
 
     return TopologyOrchestrator(tm_provider, ss_provider, flow_type)

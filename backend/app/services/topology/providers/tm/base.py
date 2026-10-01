@@ -23,6 +23,15 @@ class TMPrediction(BaseModel):
     membrane_score: float = 0.0
     labeler: str = ""
     warnings: List[str] = Field(default_factory=list)
+    # Optional membrane geometry from a provider that FITS the bilayer (3D Energy). When
+    # given, the orchestrator uses it for depth / zone / hairpin / interfacial checks
+    # instead of re-estimating a plane from the TM segment axes (which cannot follow a
+    # curved membrane such as the Piezo dome). All per-position, like ``labels``.
+    depth: Optional[List[float]] = None                   # signed depth of each CA (A)
+    half_thickness: Optional[float] = None                # hydrophobic half-thickness (A)
+    membrane_center: Optional[List[float]] = None         # a point on the mid-surface
+    sphere_center: Optional[List[float]] = None           # curved membranes only
+    membrane_radius: Optional[float] = None               # curved: mid-surface radius (A)
 
 
 class TMProvider(ABC):

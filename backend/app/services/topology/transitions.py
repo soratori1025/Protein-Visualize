@@ -3,7 +3,8 @@ Membrane transitions: what does the chain do between two consecutive SS fragment
 
     A (helix/strand) -> gap -> B (helix/strand)
 
-decided from membrane GEOMETRY first (signed depth along the membrane normal),
+decided from membrane GEOMETRY first (signed depth along the membrane normal - the
+local normal when the membrane is curved),
 DSSP/STRIDE and the gap length only refine. State machine:
 
   1. structural fragments?    A and B >= MIN_FRAGMENT_LEN residues, no chain break
@@ -68,13 +69,19 @@ class TransitionEvidence:
 
 
 def _tilt_deg(coords, membrane: MembraneFrame, a: int, b: int) -> Optional[float]:
+    """Angle between the fragment axis and the membrane normal AT the fragment. For a
+    plane that is the one normal; on a curved membrane (3D Energy sphere, e.g. the Piezo
+    dome) the normal turns by up to ~35 deg across one subunit, so the global normal
+    would make an upright helix at the rim look tilted (and an interfacial one upright)."""
     if coords is None or b - a < 3:
         return None
     v = coords[b] - coords[a]
     norm = float(np.linalg.norm(v))
     if not np.isfinite(norm) or norm == 0:
         return None
-    cos = abs(float(v @ membrane.normal)) / norm
+    normal_at = getattr(membrane, "normal_at", None)
+    normal = normal_at((coords[a] + coords[b]) / 2.0) if normal_at else membrane.normal
+    cos = abs(float(v @ normal)) / norm
     return float(np.degrees(np.arccos(min(1.0, cos))))
 
 

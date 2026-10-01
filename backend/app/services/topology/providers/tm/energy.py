@@ -12,7 +12,12 @@ Differences from the 3D slab (`GeometryTMProvider`, which is kept unchanged):
   * the hydrophobic thickness is fitted (20-40 A) together with the normal and centre;
   * every protein chain of the model takes part in the fit; the chain asked for is
     labelled;
-  * the membrane/soluble decision is a transfer free energy in kcal/mol.
+  * the membrane/soluble decision is a transfer free energy in kcal/mol;
+  * predicted models: residues with pLDDT < 50 are left out of the fit, and in-membrane
+    runs made mostly of them are not reported as TM;
+  * proteins that bend the bilayer (Piezo) get a spherical membrane (PPM 3.0 style) when
+    it fits clearly better than a plane; the fitted geometry (depth of every residue,
+    thickness, curvature) is returned so the orchestrator does not re-estimate a plane.
 
 Labels use the same post-processing as the slab (chain breaks, jitter vs. turns, split at
 turns, short / non-crossing / hydrophilic runs) so both providers are comparable.
@@ -30,6 +35,26 @@ from app.services.topology import labels as L
 from app.services.topology import membrane_energy as ME
 from app.services.topology.providers.tm.base import TMPrediction, TMProvider
 from app.services.topology.residues import ResidueFrame, load_residue_frame
+
+
+def _drop_low_confidence(classes, frame, d, T, predicted: bool = False):
+    """Predicted models: an in-membrane run made mostly of residues with pLDDT <
+    MIN_PLDDT is a low-confidence loop that happens to cross the bilayer, not a TM."""
+    b = getattr(frame, "b_factors", None)
+    predicted = predicted or bool(getattr(frame, "predicted_model", False))
+    if not predicted or b is None or len(b) != len(classes):
+        return classes, 0
+    b = np.asarray(b, dtype=float)
+    if np.nanmax(b) <= 1.0:
+        b = b * 100.0
+    out, dropped = list(classes), 0
+    for s, e in T._runs_where([c == T.TM_LABEL for c in out], T._chain_breaks(frame.coords)):
+        if np.mean(b[s:e + 1] < ME.MIN_PLDDT) > 0.5:
+            side = T._side_for(np.asarray(d)[s:e + 1])
+            for k in range(s, e + 1):
+                out[k] = side
+            dropped += 1
+    return out, dropped
 
 
 class EnergyTMProvider(TMProvider):
@@ -50,18 +75,29 @@ class EnergyTMProvider(TMProvider):
         pl = fit.placement
         warnings = list(fit.warnings)
         dg, half = pl.energy, pl.half_thickness
-        labeler = (f"{self.LABELER} (dG {dg:.1f} kcal/mol, hydrophobic thickness "
-                   f"{2 * half:.1f} A, {fit.mode}"
-                   + (f", {fit.n_chains} chains" if fit.n_chains > 1 else "") + ")")
+        labeler = (
+            f"{self.LABELER} (dG {dg:.1f} kcal/mol, hydrophobic thickness "
+            f"{2 * half:.1f} A, {fit.mode}"
+            + (f", curved R={pl.radius:.0f} A" if (pl.curved and pl.radius is not None) else "")
+            + (f", {fit.n_chains} chains" if fit.n_chains > 1 else "")
+            + ")"
+        )
         normal = [round(float(a), 4) for a in pl.normal]
         d = pl.depth(coords)
         residues_data = frame.residues_data()
+        geometry = dict(  # handed to the orchestrator's membrane layer
+            depth=[round(float(x), 3) for x in d],
+            half_thickness=float(half),
+            membrane_center=[float(x) for x in pl.center],
+            sphere_center=[float(x) for x in pl.sphere_center] if (pl.curved and pl.sphere_center is not None) else None,
+            membrane_radius=float(pl.radius) if (pl.curved and pl.radius is not None) else None,
+        )
 
         if dg > ME.MAX_MEMBRANE_DG:
             labels = T._apply_positive_inside_rule(T._sides_by_sign(d), residues_data)
             return TMPrediction(
                 labels=labels, segments=[], membrane_score=-dg, membrane_normal=normal,
-                labeler=labeler,
+                labeler=labeler, **geometry,
                 warnings=warnings + [f"dG_transfer {dg:.1f} kcal/mol > {ME.MAX_MEMBRANE_DG} "
                                      "- treated as soluble (no TM segments)"])
 
@@ -72,6 +108,10 @@ class EnergyTMProvider(TMProvider):
         classes = T._split_at_turns(classes, d, half, breaks=breaks)
         classes = T._drop_short_tm(classes, d=d, breaks=breaks)
         classes, n_dropped = T._drop_non_crossing(classes, d, half, raw_kd, breaks=breaks)
+        classes, n_low = _drop_low_confidence(classes, frame, d, T, fit.predicted)
+        if n_low:
+            warnings.append(f"{n_low} in-membrane run(s) dropped: mostly pLDDT < "
+                            f"{ME.MIN_PLDDT:.0f} in this predicted model")
         if n_dropped:
             warnings.append(f"{n_dropped} in-membrane run(s) dropped: they do not cross the "
                             "membrane or are strongly hydrophilic")
@@ -88,4 +128,5 @@ class EnergyTMProvider(TMProvider):
             membrane_score=-dg,
             labeler=labeler,
             warnings=warnings,
+            **geometry,
         )

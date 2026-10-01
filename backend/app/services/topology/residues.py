@@ -1,30 +1,3 @@
-"""
-Canonical residue frame shared by every TM and SS provider.
-
-Why this module exists
-----------------------
-Each block of the topology pipeline used to index residues its own way:
-
-  * TM providers returned author residue numbers (int only: no chain, no insertion
-    code) and each provider parsed the file itself with its own residue filter
-    (the UniProt provider even kept HETATM ions whose residue name is "CA");
-  * DSSP / STRIDE returned whatever numbering the tool printed - author numbers,
-    sequential numbers, label_seq_id for mmCIF, "100A"-style strings, all chains;
-  * the orchestrator rebuilt residue lists with ``range(start, end + 1)``, inventing
-    residues that are not in the model and grouping by list adjacency.
-
-That mismatch is NOT a constant offset (gaps, insertion codes, chains, tags and
-different residue filters all break any single shift), so "add an offset before
-merging" cannot fix it. Instead the structure is parsed ONCE into a ResidueFrame -
-the ordered list of observed amino-acid residues of one chain - and every block
-reports on frame POSITIONS 0..n-1:
-
-  * TM providers return one label per position,
-  * SS output is mapped onto positions by residue key (chain, resseq, icode) and
-    VERIFIED against the residue identity; if the numbering does not agree the
-    mapping falls back to a sequence alignment (see ``map_to_reference``),
-  * author numbers reappear only when regions are emitted at the very end.
-"""
 from __future__ import annotations
 
 import re
@@ -155,7 +128,8 @@ class ResidueFrame:
         Without an insertion code the range covers every insertion of the boundary
         residue (100, 100A, 100B ...). Returns None when no observed residue lies in
         the range (the region is outside the model and must not be painted)."""
-        lo = hi = None
+        lo: Optional[int] = None
+        hi: Optional[int] = None
         for i, r in enumerate(self.residues):
             if not (start <= r.resseq <= end):
                 continue
@@ -165,7 +139,9 @@ class ResidueFrame:
                 continue
             lo = i if lo is None else lo
             hi = i
-        return None if lo is None else (lo, hi)
+        if lo is None or hi is None:
+            return None
+        return (lo, hi)
 
     def chain_breaks(self) -> np.ndarray:
         """breaks[i] is True when residue i is not bonded to residue i-1 (breaks[0] True)."""
@@ -241,22 +217,32 @@ def load_residue_frame(file_path: Path, chain_id: Optional[str] = None) -> Resid
                         predicted_model=_looks_predicted(file_path), source_path=file_path)
 
 
-_PREDICTED_MARKERS = ("ALPHAFOLD", "ESMFOLD", "COLABFOLD", "_MA_QA_METRIC", "ROSETTAFOLD", "OPENFOLD")
+_PREDICTED_MARKERS = ("ALPHAFOLD", "ESMFOLD", "COLABFOLD", "_MA_QA_METRIC", "ROSETTAFOLD", "OPENFOLD",
+                      "BOLTZ", "CHAI-1")
+_EXPERIMENTAL_METHODS = ("X-RAY", "ELECTRON", "NMR", "NEUTRON", "FIBER", "POWDER", "EPR",
+                         "INFRARED", "FLUORESCENCE")
 
 
-def _looks_predicted(file_path: Path, max_lines: int = 400) -> bool:
-    """True for predicted models whose B-factor column is pLDDT (header markers)."""
+def _looks_predicted(file_path: Path) -> bool:
+    """True for predicted models whose B-factor column is pLDDT.
+
+    The whole file is scanned: in a ModelCIF of a long protein the _ma_qa_metric block comes
+    after the sequence loops, far beyond the first few hundred lines (PIEZO1, 2521 residues).
+    An experimental method record (_exptl.method / EXPDTA) always wins - cryo-EM entries
+    often cite AlphaFold as their starting model, and their B-factors are not pLDDT."""
+    found = False
     try:
         with open(file_path, errors="replace") as fh:
-            for i, line in enumerate(fh):
-                if i >= max_lines:
-                    break
+            for line in fh:
                 upper = line.upper()
-                if any(m in upper for m in _PREDICTED_MARKERS):
-                    return True
+                if upper.startswith(("_EXPTL.METHOD", "EXPDTA")) and \
+                        any(m in upper for m in _EXPERIMENTAL_METHODS):
+                    return False
+                if not found and any(m in upper for m in _PREDICTED_MARKERS):
+                    found = True
     except OSError:
         pass
-    return False
+    return found
 
 
 # =============================================================================
@@ -315,7 +301,7 @@ def align_sequences(a: str, b: str, match: int = 2, mismatch: int = -1,
         vstack = np.stack([M + gap_open, X + gap_extend, Y + gap_open])
         pX[i] = np.argmax(vstack, axis=0)
         newX = vstack.max(axis=0)
-        newX[0] = 0                                  # free leading a residues
+        newX[0] = 0                                     # free leading a residues
         pX[i, 0] = 1
 
         # horizontal: Y[j] = max_{k<j} (max(M[k], X[k]) + open + (j-1-k)*extend)
@@ -394,7 +380,10 @@ class ReferenceMapping:
         return self.matched / len(self.ref_index) if self.ref_index else 0.0
 
 
-def _identity(frame: ResidueFrame, ref_aa: Sequence[Optional[str]], ref_index) -> Optional[float]:
+def _identity(frame: ResidueFrame, ref_aa: Optional[Sequence[Optional[str]]],
+              ref_index: Sequence[Optional[int]]) -> Optional[float]:
+    if ref_aa is None:
+        return None
     same = total = 0
     for p, j in enumerate(ref_index):
         if j is None:
@@ -406,6 +395,41 @@ def _identity(frame: ResidueFrame, ref_aa: Sequence[Optional[str]], ref_index) -
         same += x == y
     return same / total if total else None
 
+def _close_bonded_gaps(frame: "ResidueFrame", ref_seq: str, idx: list) -> int:
+    """Resolve alignment TIES at the edge of an unresolved loop: two covalently bonded
+    residues that landed on non-consecutive reference positions are moved together
+    (shorter contiguous run slides) - only if every moved residue is IDENTICAL at its
+    new position. Returns the number of residues moved; ``idx`` is updated in place."""
+    seq = frame.sequence
+    m = len(ref_seq)
+    moved = 0
+    for f0, f1 in frame.fragments():
+        p = f0 + 1
+        while p <= f1:
+            a, b = idx[p - 1], idx[p]
+            if a is None or b is None or b == a + 1:
+                p += 1
+                continue
+            t = p                               # contiguous tail p..t
+            while t + 1 <= f1 and idx[t + 1] is not None and idx[t + 1] == idx[t] + 1:
+                t += 1
+            h = p - 1                           # contiguous head h..p-1
+            while h - 1 >= f0 and idx[h - 1] is not None and idx[h - 1] == idx[h] - 1:
+                h -= 1
+            options = []
+            if all(a + 1 + (k - p) < m and ref_seq[a + 1 + (k - p)] == seq[k] for k in range(p, t + 1)):
+                options.append((t - p + 1, [(k, a + 1 + (k - p)) for k in range(p, t + 1)]))
+            if all(b - 1 - (p - 1 - k) >= 0 and ref_seq[b - 1 - (p - 1 - k)] == seq[k]
+                   for k in range(h, p)) and (h == f0 or idx[h - 1] is None
+                                              or idx[h - 1] < b - 1 - (p - 1 - h)):
+                options.append((p - h, [(k, b - 1 - (p - 1 - k)) for k in range(h, p)]))
+            if options:
+                size, moves = min(options, key=lambda o: o[0])
+                for k, j in moves:
+                    idx[k] = j
+                moved += size
+            p = t + 1
+    return moved
 
 def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
                      ref_aa: Optional[Sequence[Optional[str]]] = None,
@@ -422,7 +446,8 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
     have_aa = ref_aa is not None and any(ref_aa)
     warns: list[str] = []
     if n == 0 or m == 0:
-        return ReferenceMapping([None] * n, "none", 0, None, [f"{source}: nothing to map"])
+        empty_ref: list[Optional[int]] = [None] * n
+        return ReferenceMapping(empty_ref, "none", 0, None, [f"{source}: nothing to map"])
 
     first_idx: dict[tuple[int, str], int] = {}
     duplicates = 0
@@ -454,14 +479,16 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
         if best is None or matched > best.matched:
             best = cand
 
-    if have_aa:
+    if have_aa and ref_aa is not None:
         ref_seq = "".join((ref_aa[j] or "X") for j in range(m))
         pairs = align_sequences(frame.sequence, ref_seq)
-        idx = [None] * n
+        align_idx: list[Optional[int]] = [None] * n
         for p, j in pairs:
-            idx[p] = j
+            align_idx[p] = j
+        _close_bonded_gaps(frame, ref_seq, align_idx)
+        pairs = [(p, j) for p, j in enumerate(align_idx) if j is not None]
         matched = len(pairs)
-        ident = _identity(frame, ref_aa, idx)
+        ident = _identity(frame, ref_aa, align_idx)
         if ident is not None and ident >= MIN_ALIGNMENT_IDENTITY:
             deltas = {ref_keys[j][0] - frame.residues[p].resseq for p, j in pairs}
             if len(deltas) == 1:
@@ -479,10 +506,11 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
                                  f"(identity {best.identity or 0:.0%}); re-mapped by {method}")
                 else:
                     warns.append(f"{source}: residue numbers absent or unmatched; mapped by {method}")
-            return ReferenceMapping(idx, method, matched, ident, warns)
+            return ReferenceMapping(align_idx, method, matched, ident, warns)
         warns.append(f"{source}: sequence does not match chain {frame.chain_id} "
                      f"(best identity {ident or 0:.0%})")
-        return ReferenceMapping([None] * n, "unmapped", 0, ident, warns)
+        unmapped_idx: list[Optional[int]] = [None] * n
+        return ReferenceMapping(unmapped_idx, "unmapped", 0, ident, warns)
 
     # No residue names: numbering cannot be verified.
     if duplicates:
@@ -491,12 +519,14 @@ def map_to_reference(frame: ResidueFrame, ref_keys: Sequence[tuple[int, str]],
     if allow_order_fallback and m == n:
         warns.append(f"{source}: residue numbers do not match; mapped by ORDER (same count, "
                      "unverified - expose residue names in the tool output to verify)")
-        return ReferenceMapping(list(range(n)), "residue order", n, None, warns)
+        order_idx: list[Optional[int]] = list(range(n))
+        return ReferenceMapping(order_idx, "residue order", n, None, warns)
     if best is not None:
         warns.append(f"{source}: only {best.matched}/{n} residues matched by number")
         best.warnings = warns
         return best
-    return ReferenceMapping([None] * n, "unmapped", 0, None, warns)
+    fallback_idx: list[Optional[int]] = [None] * n
+    return ReferenceMapping(fallback_idx, "unmapped", 0, None, warns)
 
 
 # =============================================================================

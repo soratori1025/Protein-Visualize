@@ -13,6 +13,7 @@ import './TransmembraneTopologyDiagram.css';
 import { ConsensusAnalysisMap } from './ConsensusAnalysisMap';
 import { TopologyCustomizeDrawer } from './components/TopologyCustomizeDrawer';
 import { TopologyToolbar } from './components/TopologyToolbar';
+import { TopologySummaryPanel } from './components/TopologySummaryPanel';
 
 import {
   FigureTheme,
@@ -70,7 +71,7 @@ export function TransmembraneTopologyDiagram({
 
   const [internalTopologySource, setInternalTopologySource] = useState<TopologySource>('uniprot');
   const topologySource = propsTopologySource ?? internalTopologySource;
-  
+
   const handleTopologySourceChange = (source: TopologySource) => {
     if (onTopologySourceChange) onTopologySourceChange(source);
     else setInternalTopologySource(source);
@@ -78,7 +79,7 @@ export function TransmembraneTopologyDiagram({
 
   const [internalTmAlgorithm, setInternalTmAlgorithm] = useState<string>('3d_slab_geom');
   const tmAlgorithm = propsTmAlgorithm ?? internalTmAlgorithm;
-  
+
   const handleTmAlgorithmChange = (algo: string) => {
     if (onTmAlgorithmChange) onTmAlgorithmChange(algo);
     else setInternalTmAlgorithm(algo);
@@ -317,28 +318,28 @@ export function TransmembraneTopologyDiagram({
   const handleExport = useCallback(
     async (format: 'png' | 'jpeg' | '3line' | 'gff3') => {
       const id = activeTopologyData?.uniprot_id || chain?.id || 'topology';
-      
+
       if (format === '3line' || format === 'gff3') {
         setExporting(true);
         try {
           const regions = activeTopologyData?.regions || [];
           const sequence = chain?.sequence || '';
-          
+
           if (format === '3line') {
             const topArr = new Array(sequence.length).fill('U');
-            
+
             regions.forEach(r => {
               // Convert 1-based start/end to 0-based indexing
               const s = Math.max(0, r.start - 1);
               const e = Math.min(sequence.length - 1, r.end - 1);
-              
+
               let char = 'U';
               if (r.type === 'Transmembrane') char = 'M';
               else if (r.type === 'Topological domain') {
                 if (r.side === 'Cytoplasmic' || r.description?.toLowerCase().includes('cytoplasm')) char = 'I';
                 else if (r.side === 'Extracellular' || r.description?.toLowerCase().includes('extracellular')) char = 'O';
               }
-              
+
               for (let i = s; i <= e; i++) {
                 if (char !== 'U') topArr[i] = char;
               }
@@ -359,7 +360,7 @@ export function TransmembraneTopologyDiagram({
               let attributes = `ID=region_${i + 1}`;
               if (r.description) attributes += `;Note=${r.description.replace(/;/g, ',')}`;
               if (r.side) attributes += `;Side=${r.side}`;
-              
+
               content += `${id}\t${source}\t${type}\t${r.start}\t${r.end}\t.\t.\t.\t${attributes}\n`;
             });
             const blob = new Blob([content], { type: 'text/plain' });
@@ -464,7 +465,7 @@ export function TransmembraneTopologyDiagram({
 
   helices.forEach((h) => {
     let x = leftMargin + h.column * colSpacing;
-    
+
     // Stagger the halves of a discontinuous helix so they don't perfectly align
     if (h.isSplit) {
       x += h.partIndex === 0 ? -12 : 12;
@@ -504,7 +505,7 @@ export function TransmembraneTopologyDiagram({
   const lastHelix = helices[helices.length - 1];
 
   return (
-    <div 
+    <div
       className="tm-topology-panel panel"
       style={{
         '--hover-brightness': hoverBrightness,
@@ -522,16 +523,13 @@ export function TransmembraneTopologyDiagram({
           <h2>Transmembrane secondary structure map</h2>
           <p className="panel-subtitle">
             {isCalculatedTopology(activeTopologyData)
-              ? `${activeTopologyData.labeler} · chain ${activeTopologyData.chain_id ?? '?'} · ${helixCount} crossings, ${
-                  loops.length
-                } loops${activeTopologyData.domain_type ? ` · ${activeTopologyData.domain_type.replace('_', ' ')}` : ''}${
-                  activeTopologyData.membrane ? ` · membrane: ${activeTopologyData.membrane.source}` : ''
-                }`
+              ? `${activeTopologyData.labeler} · chain ${activeTopologyData.chain_id ?? '?'} · ${helixCount} crossings, ${loops.length
+              } loops${activeTopologyData.domain_type ? ` · ${activeTopologyData.domain_type.replace('_', ' ')}` : ''}${activeTopologyData.membrane ? ` · membrane: ${activeTopologyData.membrane.source}` : ''
+              }`
               : activeTopologyData
-              ? `${activeTopologyData.protein_name}${
-                  activeTopologyData.gene_name ? ` (${activeTopologyData.gene_name})` : ''
+                ? `${activeTopologyData.protein_name}${activeTopologyData.gene_name ? ` (${activeTopologyData.gene_name})` : ''
                 } · ${activeTopologyData.uniprot_id} · ${helixCount} helices, ${loops.length} loops · UniProt numbering`
-              : 'Transmembrane helices, extracellular and cytoplasmic loops, re-entrant segments.'}
+                : 'Transmembrane helices, extracellular and cytoplasmic loops, re-entrant segments.'}
           </p>
         </div>
 
@@ -575,7 +573,7 @@ export function TransmembraneTopologyDiagram({
           slabParamsActive={slabParamsActive}
           crossParamsActive={crossParamsActive}
         />
-        
+
       </div>
       {/* Color drawer */}
       {colorDrawerOpen && (
@@ -606,14 +604,14 @@ export function TransmembraneTopologyDiagram({
         />
       )}
       {isCalculatedTopology(activeTopologyData) && activeTopologyData.consensus_map && (
-        <ConsensusAnalysisMap 
-          consensusMap={activeTopologyData.consensus_map} 
+        <ConsensusAnalysisMap
+          consensusMap={activeTopologyData.consensus_map}
           customHelixColors={Object.fromEntries(helices.map(h => [h.helixNumber.toString(), h.color]))}
           customRegionColors={customRegionColors}
           figureTheme={figureTheme}
         />
       )}
-      
+
       {activeError && <div className="tm-error-banner">{activeError}</div>}
       {overlayError && <div className="tm-error-banner">Overlay: {overlayError}</div>}
       {calcWarnings.length > 0 && (
@@ -690,7 +688,7 @@ export function TransmembraneTopologyDiagram({
                 </linearGradient>
               );
             })}
-          
+
             <pattern id="hatch-warning" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
               <line x1="0" y1="0" x2="0" y2="8" stroke="#ff0000" strokeWidth="3" opacity="0.8" />
             </pattern>
@@ -770,13 +768,13 @@ export function TransmembraneTopologyDiagram({
                       <stop offset="0%" stopColor={loopColorStart} />
                       <stop offset="100%" stopColor={loopColorEnd} />
                     </linearGradient>
-                  
-            <pattern id="hatch-warning" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-              <line x1="0" y1="0" x2="0" y2="8" stroke="#ff0000" strokeWidth="3" opacity="0.8" />
-            </pattern>
 
-          </defs>
-                  
+                    <pattern id="hatch-warning" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                      <line x1="0" y1="0" x2="0" y2="8" stroke="#ff0000" strokeWidth="3" opacity="0.8" />
+                    </pattern>
+
+                  </defs>
+
                   <path d={pathD} fill="none" stroke={`url(#loop-grad-${loop.id})`} strokeWidth={2.6} strokeLinecap="round" />
 
                   {!hideLabel && (
@@ -813,7 +811,7 @@ export function TransmembraneTopologyDiagram({
                           >
                             {sh.type === 'turn' || sh.type === 'Turn' ? (
                               <polygon
-                                points={`0,10.5 ${w/2},0 ${w},10.5 ${w/2},21`}
+                                points={`0,10.5 ${w / 2},0 ${w},10.5 ${w / 2},21`}
                                 fill={isPub ? '#f472b6' : '#db2777'}
                                 stroke={isPub ? '#831843' : '#fbcfe8'}
                                 strokeWidth="1"
@@ -858,7 +856,7 @@ export function TransmembraneTopologyDiagram({
             })}
           </g>
 
-          
+
           {/* N-terminus and C-terminus tails */}
           {(() => {
             if (helices.length === 0) return null;
@@ -883,23 +881,23 @@ export function TransmembraneTopologyDiagram({
                   strokeWidth="2.6"
                 />
                 <text x="20" y={first.entrySide === 'out' ? membraneTopY - 70 : membraneBottomY + 75} textAnchor="middle" style={{ fill: isPub ? '#1e293b' : '#e2e8f0', fontSize: '11px', fontWeight: 'bold' }}>N (NH2)</text>
-                
+
                 {nFeatures.map((f, i) => {
-                   const y = first.entrySide === 'out' ? membraneTopY - 45 : membraneBottomY + 45;
-                   const x = 30 + i * 50;
-                   return (
-                     <g key={`n-${i}`} transform={`translate(${x}, ${y})`} onMouseEnter={(e) => {
-                       e.stopPropagation();
-                       setHoveredElement({ title: `${f.type}: ${f.label}`, range: `Residues ${f.startRes}-${f.endRes}`, length: f.endRes - f.startRes + 1, details: 'N-terminus' });
-                     }} onMouseLeave={() => setHoveredElement(null)}>
-                       {f.type === 'turn' || f.type === 'Turn' ? (
-                         <polygon points="0,9 22.5,0 45,9 22.5,18" fill={isPub ? '#f472b6' : '#db2777'} stroke={isPub ? '#831843' : '#fbcfe8'} strokeWidth="1" />
-                       ) : (
-                         <rect x="0" y="0" width="45" height="18" rx={f.type === 'Helix' ? 9 : 4} fill="url(#short-helix-grad)" stroke={isPub ? '#475569' : '#0f172a'} />
-                       )}
-                       <text x="22.5" y="13" textAnchor="middle" style={{ fill: (f.type === 'turn' || f.type === 'Turn') ? (isPub ? '#831843' : '#fbcfe8') : '#0f172a', fontSize: '9px' }}>{f.label.substring(0, 7)}</text>
-                     </g>
-                   );
+                  const y = first.entrySide === 'out' ? membraneTopY - 45 : membraneBottomY + 45;
+                  const x = 30 + i * 50;
+                  return (
+                    <g key={`n-${i}`} transform={`translate(${x}, ${y})`} onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      setHoveredElement({ title: `${f.type}: ${f.label}`, range: `Residues ${f.startRes}-${f.endRes}`, length: f.endRes - f.startRes + 1, details: 'N-terminus' });
+                    }} onMouseLeave={() => setHoveredElement(null)}>
+                      {f.type === 'turn' || f.type === 'Turn' ? (
+                        <polygon points="0,9 22.5,0 45,9 22.5,18" fill={isPub ? '#f472b6' : '#db2777'} stroke={isPub ? '#831843' : '#fbcfe8'} strokeWidth="1" />
+                      ) : (
+                        <rect x="0" y="0" width="45" height="18" rx={f.type === 'Helix' ? 9 : 4} fill="url(#short-helix-grad)" stroke={isPub ? '#475569' : '#0f172a'} />
+                      )}
+                      <text x="22.5" y="13" textAnchor="middle" style={{ fill: (f.type === 'turn' || f.type === 'Turn') ? (isPub ? '#831843' : '#fbcfe8') : '#0f172a', fontSize: '9px' }}>{f.label.substring(0, 7)}</text>
+                    </g>
+                  );
                 })}
 
                 {/* C-terminus */}
@@ -910,23 +908,23 @@ export function TransmembraneTopologyDiagram({
                   strokeWidth="2.6"
                 />
                 <text x={canvasWidth - 30} y={last.exitSide === 'out' ? membraneTopY - 70 : membraneBottomY + 75} textAnchor="middle" style={{ fill: isPub ? '#1e293b' : '#e2e8f0', fontSize: '11px', fontWeight: 'bold' }}>C (COOH)</text>
-                
+
                 {cFeatures.map((f, i) => {
-                   const y = last.exitSide === 'out' ? membraneTopY - 45 : membraneBottomY + 45;
-                   const x = canvasWidth - 80 - i * 50;
-                   return (
-                     <g key={`c-${i}`} transform={`translate(${x}, ${y})`} onMouseEnter={(e) => {
-                       e.stopPropagation();
-                       setHoveredElement({ title: `${f.type}: ${f.label}`, range: `Residues ${f.startRes}-${f.endRes}`, length: f.endRes - f.startRes + 1, details: 'C-terminus' });
-                     }} onMouseLeave={() => setHoveredElement(null)}>
-                       {f.type === 'turn' || f.type === 'Turn' ? (
-                         <polygon points="0,9 22.5,0 45,9 22.5,18" fill={isPub ? '#f472b6' : '#db2777'} stroke={isPub ? '#831843' : '#fbcfe8'} strokeWidth="1" />
-                       ) : (
-                         <rect x="0" y="0" width="45" height="18" rx={f.type === 'Helix' ? 9 : 4} fill="url(#short-helix-grad)" stroke={isPub ? '#475569' : '#0f172a'} />
-                       )}
-                       <text x="22.5" y="13" textAnchor="middle" style={{ fill: (f.type === 'turn' || f.type === 'Turn') ? (isPub ? '#831843' : '#fbcfe8') : '#0f172a', fontSize: '9px' }}>{f.label.substring(0, 7)}</text>
-                     </g>
-                   );
+                  const y = last.exitSide === 'out' ? membraneTopY - 45 : membraneBottomY + 45;
+                  const x = canvasWidth - 80 - i * 50;
+                  return (
+                    <g key={`c-${i}`} transform={`translate(${x}, ${y})`} onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      setHoveredElement({ title: `${f.type}: ${f.label}`, range: `Residues ${f.startRes}-${f.endRes}`, length: f.endRes - f.startRes + 1, details: 'C-terminus' });
+                    }} onMouseLeave={() => setHoveredElement(null)}>
+                      {f.type === 'turn' || f.type === 'Turn' ? (
+                        <polygon points="0,9 22.5,0 45,9 22.5,18" fill={isPub ? '#f472b6' : '#db2777'} stroke={isPub ? '#831843' : '#fbcfe8'} strokeWidth="1" />
+                      ) : (
+                        <rect x="0" y="0" width="45" height="18" rx={f.type === 'Helix' ? 9 : 4} fill="url(#short-helix-grad)" stroke={isPub ? '#475569' : '#0f172a'} />
+                      )}
+                      <text x="22.5" y="13" textAnchor="middle" style={{ fill: (f.type === 'turn' || f.type === 'Turn') ? (isPub ? '#831843' : '#fbcfe8') : '#0f172a', fontSize: '9px' }}>{f.label.substring(0, 7)}</text>
+                    </g>
+                  );
                 })}
               </g>
             );
@@ -956,7 +954,7 @@ export function TransmembraneTopologyDiagram({
               const isAAbove = a.topY < b.topY;
               const ptA = getCapCenter(a, isAAbove); // bottom of a, or top of a
               const ptB = getCapCenter(b, !isAAbove); // top of b, or bottom of b
-              
+
               const midY = (ptA.y + ptB.y) / 2;
 
               return (
@@ -990,7 +988,7 @@ export function TransmembraneTopologyDiagram({
 
               const isBeta = h.isBeta ?? isBetaStrandDescription(h.description);
               const isAlpha = !isBeta;
-              
+
               const pointsDown = pos.nEndY < pos.cEndY;
               const headH = Math.min(20, cylHeight / 2);
               const arrowPath = pointsDown
@@ -1044,23 +1042,23 @@ export function TransmembraneTopologyDiagram({
                       {h.observedSpans && h.observedSpans.length > 1 && (
                         <line x1={cx} y1={6} x2={cx} y2={cylHeight - 6} stroke={darken(baseColor, 0.3)} strokeWidth={2} strokeDasharray="4 4" />
                       )}
-                      
+
                       {h.observedSpans && h.observedSpans.length > 1 ? (
                         h.observedSpans.map((span, idx) => {
                           const nAtBottom = pos.nEndY > pos.cEndY;
                           const fStart = (span.start - h.startRes) / Math.max(1, h.endRes - h.startRes);
                           const fEnd = (span.end - h.startRes) / Math.max(1, h.endRes - h.startRes);
-                          
+
                           let yStart = nAtBottom ? (1 - fStart) * cylHeight : fStart * cylHeight;
                           let yEnd = nAtBottom ? (1 - fEnd) * cylHeight : fEnd * cylHeight;
                           if (yStart > yEnd) { const t = yStart; yStart = yEnd; yEnd = t; }
-                          
+
                           yStart = Math.max(6, yStart);
                           yEnd = Math.min(cylHeight - 6, yEnd);
                           const hSpan = Math.max(0, yEnd - yStart);
-                          
+
                           if (hSpan === 0) return null;
-                          
+
                           const renderSpan = () => {
                             if (visualStyle === 'ribbon') return renderRibbon(helixWidth, hSpan, baseColor, h.id, yStart);
                             if (visualStyle === 'wire') return <line x1={cx} y1={yStart} x2={cx} y2={yStart + hSpan} stroke={baseColor} strokeWidth={6} strokeLinecap="round" />;
@@ -1082,7 +1080,7 @@ export function TransmembraneTopologyDiagram({
                               </>
                             );
                           };
-                          
+
                           return <React.Fragment key={`span-${idx}`}>{renderSpan()}</React.Fragment>;
                         })
                       ) : (
@@ -1110,7 +1108,7 @@ export function TransmembraneTopologyDiagram({
                           );
                         })()
                       )}
-                      
+
                       {visualStyle === 'cylinder' && (
                         <>
                           <ellipse
@@ -1142,53 +1140,53 @@ export function TransmembraneTopologyDiagram({
                     />
                   )}
 
-                  
+
                   {/* Disagreement Overlay */}
                   {overlayType !== 'none' && overlaySS && (() => {
-                     const ssResidues = overlaySS.residues
-                       .filter(r => r.chain_id === chain?.id && r.residue_number >= h.startRes && r.residue_number <= h.endRes)
-                       .sort(compareResidues);
-                     // The cylinder is drawn top-to-bottom; when the N-terminus sits at the
-                     // bottom (entry from the cytoplasm) residue order runs bottom-to-top.
-                     const nAtBottom = pos.nEndY > pos.cEndY;
-                     if (ssResidues.length === 0) return null;
-                     const targetCodes = isBeta ? ['E', 'B'] : ['H', 'G', 'I'];
-                     const mismatched = ssResidues.filter(r => !targetCodes.includes(r.code.toUpperCase()));
-                     if (mismatched.length === 0) return null;
-                     
-                     // Draw bands for mismatched regions
-                     const bands = [];
-                     let startIdx = -1;
-                     for (let i = 0; i < ssResidues.length; i++) {
-                       const isMismatch = !targetCodes.includes(ssResidues[i].code.toUpperCase());
-                       if (isMismatch && startIdx === -1) startIdx = i;
-                       if (!isMismatch && startIdx !== -1) {
-                         bands.push({ start: startIdx, end: i - 1 });
-                         startIdx = -1;
-                       }
-                     }
-                     if (startIdx !== -1) bands.push({ start: startIdx, end: ssResidues.length - 1 });
-                     
-                     return bands.map((band, idx) => {
-                       const f0 = band.start / ssResidues.length;
-                       const f1 = (band.end + 1) / ssResidues.length;
-                       const top = nAtBottom ? 1 - f1 : f0;
-                       const yStart = 6 + top * (cylHeight - 12);
-                       const yHeight = Math.max(2, (f1 - f0) * (cylHeight - 12));
-                       return (
-                         <rect
-                           key={`mismatch-${idx}`}
-                           x="0"
-                           y={yStart}
-                           width={helixWidth}
-                           height={yHeight}
-                           fill="url(#hatch-warning)"
-                           style={{ pointerEvents: 'none' }}
-                         />
-                       );
-                     });
+                    const ssResidues = overlaySS.residues
+                      .filter(r => r.chain_id === chain?.id && r.residue_number >= h.startRes && r.residue_number <= h.endRes)
+                      .sort(compareResidues);
+                    // The cylinder is drawn top-to-bottom; when the N-terminus sits at the
+                    // bottom (entry from the cytoplasm) residue order runs bottom-to-top.
+                    const nAtBottom = pos.nEndY > pos.cEndY;
+                    if (ssResidues.length === 0) return null;
+                    const targetCodes = isBeta ? ['E', 'B'] : ['H', 'G', 'I'];
+                    const mismatched = ssResidues.filter(r => !targetCodes.includes(r.code.toUpperCase()));
+                    if (mismatched.length === 0) return null;
+
+                    // Draw bands for mismatched regions
+                    const bands = [];
+                    let startIdx = -1;
+                    for (let i = 0; i < ssResidues.length; i++) {
+                      const isMismatch = !targetCodes.includes(ssResidues[i].code.toUpperCase());
+                      if (isMismatch && startIdx === -1) startIdx = i;
+                      if (!isMismatch && startIdx !== -1) {
+                        bands.push({ start: startIdx, end: i - 1 });
+                        startIdx = -1;
+                      }
+                    }
+                    if (startIdx !== -1) bands.push({ start: startIdx, end: ssResidues.length - 1 });
+
+                    return bands.map((band, idx) => {
+                      const f0 = band.start / ssResidues.length;
+                      const f1 = (band.end + 1) / ssResidues.length;
+                      const top = nAtBottom ? 1 - f1 : f0;
+                      const yStart = 6 + top * (cylHeight - 12);
+                      const yHeight = Math.max(2, (f1 - f0) * (cylHeight - 12));
+                      return (
+                        <rect
+                          key={`mismatch-${idx}`}
+                          x="0"
+                          y={yStart}
+                          width={helixWidth}
+                          height={yHeight}
+                          fill="url(#hatch-warning)"
+                          style={{ pointerEvents: 'none' }}
+                        />
+                      );
+                    });
                   })()}
-                  
+
                   <text
                     x={cx}
                     y={cy - 2}
@@ -1258,6 +1256,11 @@ export function TransmembraneTopologyDiagram({
           </div>
         )}
       </div>
+
+      {/* Summary Panel */}
+      {calculatedData && isCalculatedTopology(calculatedData) && (
+        <TopologySummaryPanel data={calculatedData} />
+      )}
     </div>
   );
 }

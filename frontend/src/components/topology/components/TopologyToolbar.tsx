@@ -103,7 +103,8 @@ export function TopologyToolbar({
                 <option value="uniprot_api">UniProt API</option>
                 <option value="kyte_doolittle_seq">Kyte Doolittle</option>
                 <option value="3d_slab_geom">3D Geometry</option>
-                <option value="3d_energy">3D Energy</option>
+                <option value="3d_energy">TMDet</option>
+                <option value="tmhmm">TMHMM</option>
               </select>
               {tmAlgorithm === 'uniprot_api' && (
                 <input type="text" className="tm-input-field" placeholder="UniProt ID (auto from file)" value={customUniprotId} onChange={(e) => setCustomUniprotId(e.target.value)} style={{ width: '150px', padding: '4px 8px' }} />

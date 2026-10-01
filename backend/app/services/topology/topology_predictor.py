@@ -71,6 +71,7 @@ SPLIT_TRAVEL_FRAC = 0.4       # a run is split at an apex when both arms travel
 APEX_BAND = 1.5               # A; residues this close to the apex depth are demoted
 MIN_RUN_SPAN_FRAC = 0.5       # a TM run must span >= this fraction of the thickness
 MIN_RUN_HYDROPATHY = -1.0     # mean raw Kyte-Doolittle of a TM run; below = hydrophilic
+MIN_OPEN_RUN_SPAN_FRAC = 0.25 # same for a run cut by a chain break / terminus
 ENGULF_FRACTION = 0.80        # warn when this much of the chain sits inside the slab
 DIRECTION_SPAN = 4            # residues; local chain direction = CA(i+2) - CA(i-2)
 SLAB_FIT_WINDOW = 7           # residues; hydropathy smoothing used to FIT the slab. The
@@ -496,12 +497,15 @@ def _drop_short_tm(classifications, min_core: int = MIN_TM_CORE, d=None, breaks=
 
 def _drop_non_crossing(classifications, d, half, raw_kd, breaks=None,
                        min_span_frac: float = MIN_RUN_SPAN_FRAC,
-                       min_hydropathy: float = MIN_RUN_HYDROPATHY):
+                       min_hydropathy: float = MIN_RUN_HYDROPATHY,
+                       open_span_frac: float = MIN_OPEN_RUN_SPAN_FRAC):
     """Demote in-slab runs that are not membrane crossings. Returns (labels, n_dropped).
 
     * span: a crossing must travel >= min_span_frac * thickness along the normal. Runs
       that lie along the interface or dip in and back out do not. Runs cut short by a
-      chain break or a chain terminus are exempt (the rest of the crossing is missing).
+      chain break or a chain terminus only need open_span_frac * thickness (the rest of
+      the crossing is missing) - enough to drop the tip of an in-plane helix that starts
+      right after an unresolved stretch and grazes the core (Piezo1 1513-1518).
     * hydropathy: a run whose mean raw Kyte-Doolittle value is below min_hydropathy is a
       polar strand that merely passes through the slab plane (typical for low-pLDDT
       AlphaFold tails). The threshold is lenient enough for beta-barrel strands.
@@ -514,7 +518,8 @@ def _drop_non_crossing(classifications, d, half, raw_kd, breaks=None,
         open_start = s > 0 and not (breaks is not None and breaks[s])
         open_end = e < n - 1 and not (breaks is not None and breaks[e + 1])
         span = float(d[s:e + 1].max() - d[s:e + 1].min())
-        too_flat = open_start and open_end and span < min_span_frac * 2.0 * half
+        need = min_span_frac if (open_start and open_end) else open_span_frac
+        too_flat = span < need * 2.0 * half
         too_polar = float(np.mean(raw_kd[s:e + 1])) < min_hydropathy
         if too_flat or too_polar:
             side = _side_for(d[s:e + 1])
