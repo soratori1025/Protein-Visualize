@@ -64,6 +64,10 @@ export function TopologyToolbar({
         <button className={`tm-tab-btn ${figureTheme === 'publication' ? 'active' : ''}`} onClick={() => setFigureTheme('publication')}>Light Mode</button>
         <button className={`tm-tab-btn ${figureTheme === 'lab' ? 'active' : ''}`} onClick={() => setFigureTheme('lab')}>Dark Mode</button>
       </div>
+      <div className="tm-preset-chip" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+        <button className={`tm-tab-btn ${topologySource === 'calculated' ? 'active' : ''}`} onClick={() => handleTopologySourceChange('calculated')} disabled={!filename} title={!filename ? 'Upload a structure file to calculate topology' : undefined}>Calculated (beta)</button>
+        <button className={`tm-tab-btn ${topologySource === 'uniprot' ? 'active' : ''}`} onClick={() => handleTopologySourceChange('uniprot')}>UniProt</button>
+      </div>
       <div style={{ display: 'flex', gap: '4px' }}>
         <button className="tm-color-toggle-btn" onClick={() => handleExport('png')} disabled={exporting}>
           <span>{exporting ? 'Exporting…' : 'Export PNG'}</span>
@@ -78,24 +82,40 @@ export function TopologyToolbar({
       <button className={`tm-color-toggle-btn ${colorDrawerOpen ? 'active' : ''}`} onClick={() => setColorDrawerOpen(open => !open)}>
         <span>{colorDrawerOpen ? 'Close customize bar' : 'Customize styles'}</span>
       </button>
+      {topologySource === 'uniprot' ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+          <input type="text" value={uniprotIdInput} onChange={(e) => setUniprotIdInput(e.target.value)} placeholder="e.g. P31645" className="tm-input-field" style={{ width: '96px', fontWeight: 700, textTransform: 'uppercase' }} onKeyDown={(e) => { if (e.key === 'Enter') fetchUniProtTopology(uniprotIdInput); }} />
+          <button onClick={() => fetchUniProtTopology(uniprotIdInput)} disabled={loadingUniProt} className="tm-add-btn" style={{ background: '#3b82f6' }}>{loadingUniProt ? 'Loading...' : 'Load UniProt'}</button>
+          <button onClick={() => setShowUniProtInfo(open => !open)} title="How the UniProt lookup works" className="tm-info-btn" style={{ background: showUniProtInfo ? '#38bdf8' : '#1e293b', color: showUniProtInfo ? '#0f172a' : '#94a3b8' }}>?</button>
+          {showUniProtInfo && (
+            <div className="tm-info-popover">
+              <strong>How the UniProt lookup works</strong>
+              Enter any UniProt accession (for example <code>P31645</code>) and press Load. The app reads that entry's curated Transmembrane, Topological domain and Intramembrane features and draws the map from them — no structure file needed. For a structure-derived estimate, switch to Calculated (beta).
+              <button onClick={() => setShowUniProtInfo(false)}>Close</button>
+            </div>
+          )}
+        </div>
+      ) : (
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid #333', padding: '8px', borderRadius: '4px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <select className="tm-input-field" value={tmAlgorithm} onChange={(e) => handleTmAlgorithmChange(e.target.value)} style={{ padding: '4px 8px' }}>
-                <option value="kyte_doolittle_seq">Kyte Doolittle</option>
-                <option value="3d_slab_geom">3D Geometry</option>
-                <option value="3d_energy">TMDet</option>
-                <option value="tmhmm">TMHMM</option>
-              </select>
+              <div className="tm-input-field" style={{ padding: '4px 8px', background: 'rgba(0,0,0,0.1)', cursor: 'default' }}>
+                UniProt API
+              </div>
+              {tmAlgorithm === 'uniprot_api' && (
+                <input type="text" className="tm-input-field" placeholder="UniProt ID (auto from file)" value={customUniprotId} onChange={(e) => setCustomUniprotId(e.target.value)} style={{ width: '150px', padding: '4px 8px' }} />
+              )}
               <select className="tm-input-field" value={ssAlgorithm} onChange={(e) => setSsAlgorithm(e.target.value)} style={{ padding: '4px 8px' }}>
                 <option value="dssp">DSSP</option>
                 <option value="stride">STRIDE</option>
-                <option value="none">None (Only TM boundaries)</option>
               </select>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button onClick={fetchCalculatedTopology} disabled={loadingCalculated || !filename} className="tm-add-btn">{loadingCalculated ? 'Computing…' : 'Recalculate'}</button>
               <button onClick={() => setShowAdvancedParams(!showAdvancedParams)} className="tm-add-btn" style={{ fontSize: '0.8em', opacity: 0.8 }} title="Tune biological thresholds for TM detection">{showAdvancedParams ? '▲ Parameters' : '▼ Parameters'}</button>
+              {tmAlgorithm === 'uniprot_api' && !customUniprotId && (
+                <span style={{ color: '#94a3b8', fontSize: '12px' }}>Empty = read from the file (DBREF / _struct_ref)</span>
+              )}
             </div>
           </div>
           {showAdvancedParams && (
@@ -122,6 +142,7 @@ export function TopologyToolbar({
             </div>
           )}
         </>
+      )}
     </div>
   );
 }

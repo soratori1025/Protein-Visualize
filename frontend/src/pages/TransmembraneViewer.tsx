@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SecondaryStructureTrack } from '../components/analysis/SecondaryStructureTrack';
 import { TransmembraneStructureTrack } from '../components/analysis/TransmembraneStructureTrack';
-import { TransmembraneTopologyAnalysisDiagram } from '../components/topology/TransmembraneTopologyAnalysisDiagram';
+import { TransmembraneTopologyViewerDiagram } from '../components/topology-viewer/TransmembraneTopologyViewerDiagram';
 import { getSecondaryCapabilities, runSecondaryStructure } from '../services/api';
 import type { SecondaryStructureResult, UniProtTopologyData } from '../types/secondaryStructure';
 import { useProtein } from '../contexts/ProteinContext';
@@ -9,7 +9,7 @@ import { Header } from '../components/layout/Header';
 
 type Method = 'DSSP' | 'STRIDE';
 
-export function TransmembraneAnalysis() {
+export function TransmembraneViewer() {
   const { protein, chainId, setChainId, selectedResidue, setSelectedResidue, status, setStatus, health, secondaryResult, setSecondaryResult, activeTopologyData, setActiveTopologyData } = useProtein();
   const [method, setMethod] = useState<Method>('DSSP');
   const [secondaryCapabilities, setSecondaryCapabilities] = useState<Record<string, { available: boolean; executable: string }>>({});
@@ -65,12 +65,12 @@ export function TransmembraneAnalysis() {
   return (
     <main className="app-shell">
       <Header 
-        title="Transmembrane Analysis" 
-        subtitle="Inspect secondary structure and transmembrane topology annotations." 
+        title="Transmembrane Viewer" 
+        subtitle="Visualize public UniProt topologies." 
       />
 
       <section className="tm-topology-section">
-        <TransmembraneTopologyAnalysisDiagram
+        <TransmembraneTopologyViewerDiagram
           chain={chain}
           secondaryResult={secondaryResult}
           selectedResidue={selectedResidue}

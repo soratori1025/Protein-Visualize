@@ -9,7 +9,7 @@ import type {
 import { compareResidues, isCalculatedTopology } from '../../types/secondaryStructure';
 import { exportSvgAsImage } from '../structure/exportDiagram';
 import { API_URL, runSecondaryStructure } from '../../services/api';
-import './TransmembraneTopologyAnalysisDiagram.css';
+import './TransmembraneTopologyViewerDiagram.css';
 import { ConsensusAnalysisMap } from './ConsensusAnalysisMap';
 
 export type FigureTheme = 'publication' | 'lab';

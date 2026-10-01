@@ -1,0 +1,1247 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Chain } from '../../types/protein';
+import type {
+  CalculatedTopologyData,
+  SecondaryStructureResult,
+  UniProtTopologyData,
+  UniProtTopologyRegion,
+} from '../../types/secondaryStructure';
+import { compareResidues, isCalculatedTopology } from '../../types/secondaryStructure';
+import { exportSvgAsImage } from '../structure/exportDiagram';
+import { API_URL, runSecondaryStructure } from '../../services/api';
+import './TransmembraneTopologyViewerDiagram.css';
+import { ConsensusAnalysisMap } from './ConsensusAnalysisMap';
+import { TopologyCustomizeDrawer } from './components/TopologyCustomizeDrawer';
+import { TopologyToolbar } from './components/TopologyToolbar';
+import { TopologySummaryPanel } from './components/TopologySummaryPanel';
+
+import {
+  FigureTheme,
+  TopologySource,
+  MembraneSide,
+  mixHex,
+  lighten,
+  darken,
+  renderRibbon,
+  getContrastTextColor,
+  buildPalette,
+  descriptionToSide,
+  regionSide,
+  opposite,
+  getNTermSide,
+  mentionsDiscontinuity,
+  isBetaStrandDescription,
+  isBetaSegment,
+  looksLikeHalfPair,
+  Props,
+  PALETTES,
+  DEFAULT_PRESETS,
+  OUT_WORDS,
+  IN_WORDS,
+  TMHelix,
+  TMLoop,
+  RawTM,
+  ExtraFeature,
+  TopologyModelInput,
+  CustomResidueColorRule,
+  buildTopologyModel,
+  getExtraFeatures
+} from './topologyUtils';
+
+export function TransmembraneTopologyViewerDiagram({
+  chain,
+  secondaryResult,
+  filename,
+  onSelectResidue,
+  selectedResidue,
+  uniprotId,
+  tmAlgorithm: propsTmAlgorithm,
+  onTmAlgorithmChange,
+  topologySource: propsTopologySource,
+  onTopologySourceChange,
+  onTopologyDataChange,
+  triggerTmRecalc,
+  distinguishTurns = false,
+  onLoadingChange
+}: Props) {
+  const [uniprotIdInput, setUniprotIdInput] = useState<string>('');
+  const [uniprotData, setUniprotData] = useState<UniProtTopologyData | null>(null);
+  const [loadingUniProt, setLoadingUniProt] = useState<boolean>(false);
+  const [uniprotError, setUniprotError] = useState<string | null>(null);
+
+  const [internalTopologySource, setInternalTopologySource] = useState<TopologySource>('uniprot');
+  const topologySource = propsTopologySource ?? internalTopologySource;
+
+  const handleTopologySourceChange = (source: TopologySource) => {
+    if (onTopologySourceChange) onTopologySourceChange(source);
+    else setInternalTopologySource(source);
+  };
+
+  const [internalTmAlgorithm, setInternalTmAlgorithm] = useState<string>('uniprot_api');
+  const tmAlgorithm = propsTmAlgorithm ?? internalTmAlgorithm;
+
+  const handleTmAlgorithmChange = (algo: string) => {
+    if (onTmAlgorithmChange) onTmAlgorithmChange(algo);
+    else setInternalTmAlgorithm(algo);
+  };
+
+  const [ssAlgorithm, setSsAlgorithm] = useState<string>('dssp');
+  const [customUniprotId, setCustomUniprotId] = useState<string>('');
+  const [overlayType, setOverlayType] = useState<'none' | 'dssp' | 'stride'>('none');
+  const [calculatedData, setCalculatedData] = useState<CalculatedTopologyData | null>(null);
+  const [overlayResult, setOverlayResult] = useState<SecondaryStructureResult | null>(null);
+  const [overlayError, setOverlayError] = useState<string | null>(null);
+  const [loadingCalculated, setLoadingCalculated] = useState<boolean>(false);
+  const [calculatedError, setCalculatedError] = useState<string | null>(null);
+  const [showUniProtInfo, setShowUniProtInfo] = useState<boolean>(false);
+
+  // --- Advanced TM parameters (user-tunable biological thresholds) ---
+  // Empty = use the backend default (app.core.constants). The values the backend
+  // actually used come back in `parameters_used` and are shown as placeholders, so
+  // the form can never silently disagree with the server.
+  const [showAdvancedParams, setShowAdvancedParams] = useState(false);
+  const [tmThickness, setTmThickness] = useState<string>('');
+  const [tmMinCrossSpan, setTmMinCrossSpan] = useState<string>('');
+  const [tmFullCrossFrac, setTmFullCrossFrac] = useState<string>('');
+  const [tmMinMembraneScore, setTmMinMembraneScore] = useState<string>('');
+  const [tmTreatTurnAsHelix, setTmTreatTurnAsHelix] = useState<boolean>(false);
+
+  const [colorDrawerOpen, setColorDrawerOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'preset' | 'helices' | 'residues' | 'effects' | 'regions'>('preset');
+  const [visualStyle, setVisualStyle] = useState<'cylinder' | 'ribbon' | 'wire' | 'flat' | 'beads'>('cylinder');
+  const [selectedPaletteKey, setSelectedPaletteKey] = useState<string>('PAPER_DEFAULT');
+  const [customHelixColors, setCustomHelixColors] = useState<Record<string, string>>({});
+  const [customRegionColors, setCustomRegionColors] = useState<Record<string, string>>({
+    Membrane: '#00d2d3',
+    ExtracellularText: '#ff9f43',
+    CytoplasmicText: '#5f27cd'
+  });
+  const [customResidueRules, setCustomResidueRules] = useState<CustomResidueColorRule[]>([]);
+  const [hoverBrightness, setHoverBrightness] = useState<number>(1.1);
+  const [hoverShadow, setHoverShadow] = useState<number>(0.3);
+
+  const [resStartInput, setResStartInput] = useState<string>('');
+  const [resEndInput, setResEndInput] = useState<string>('');
+  const [resColorInput, setResColorInput] = useState<string>('#ff0055');
+
+  const [hoveredElement, setHoveredElement] = useState<{
+    title: string;
+    range: string;
+    length: number;
+    details?: string;
+  } | null>(null);
+
+  const [figureTheme, setFigureTheme] = useState<FigureTheme>('publication');
+  const [exporting, setExporting] = useState<boolean>(false);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const fetchUniProtTopology = async (uniprotIdToFetch: string) => {
+    if (!uniprotIdToFetch.trim()) return;
+    setLoadingUniProt(true);
+    setUniprotError(null);
+    try {
+      const response = await fetch(`${API_URL}/api/secondary-structure/uniprot/${uniprotIdToFetch.trim()}`);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || `Could not load UniProt entry ${uniprotIdToFetch}`);
+      }
+      setUniprotData((await response.json()) as UniProtTopologyData);
+    } catch (err: any) {
+      setUniprotError(err.message || 'Could not load UniProt data');
+      setUniprotData(null);
+    } finally {
+      setLoadingUniProt(false);
+    }
+  };
+
+  const fetchCalculatedTopology = useCallback(async (
+    filenameToFetch: string,
+    tm: string,
+    ss: string,
+    cUni: string,
+    chainIdToFetch?: string
+  ) => {
+    if (!filenameToFetch.trim()) return;
+    setLoadingCalculated(true);
+    setCalculatedError(null);
+    try {
+      // One flow: TM block and DSSP/STRIDE merged residue by residue (consensus).
+      const qp = new URLSearchParams({ tm_algo: tm, ss_algo: ss, flow_type: 'consensus' });
+      // Without chain_id the backend analyses the first protein chain, which is not
+      // necessarily the chain selected here (SS overlay and 3D selection use this one).
+      if (chainIdToFetch) qp.set('chain_id', chainIdToFetch);
+      // Empty UniProt ID is allowed: the backend reads it from DBREF / _struct_ref.
+      if (tm === 'uniprot_api' && cUni.trim()) qp.set('uniprot_id', cUni.trim().toUpperCase());
+      const setNumber = (key: string, raw: string, integer = false) => {
+        if (!raw.trim()) return;
+        const value = integer ? parseInt(raw, 10) : parseFloat(raw);
+        if (!isNaN(value)) qp.set(key, String(value));
+      };
+      setNumber('thickness', tmThickness);
+      setNumber('min_membrane_score', tmMinMembraneScore);
+      if (tmTreatTurnAsHelix || distinguishTurns) {
+        qp.set('treat_turn_as_helix', 'true');
+      }
+      // hairpin guard (two helices under one TM segment): needs the SS result
+      if (ss !== 'none') {
+        setNumber('min_cross_span', tmMinCrossSpan);
+        setNumber('full_cross_frac', tmFullCrossFrac);
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/secondary-structure/predict-topology/${encodeURIComponent(filenameToFetch.trim())}?${qp.toString()}`
+      );
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || `Could not compute topology for ${filenameToFetch}`);
+      }
+      setCalculatedData((await response.json()) as CalculatedTopologyData);
+    } catch (err: any) {
+      setCalculatedError(err.message || 'Could not compute topology');
+      setCalculatedData(null);
+    } finally {
+      setLoadingCalculated(false);
+    }
+  }, [tmThickness, tmMinMembraneScore, tmTreatTurnAsHelix, tmMinCrossSpan, tmFullCrossFrac, distinguishTurns]);
+
+  useEffect(() => {
+    if (uniprotId) {
+      setUniprotIdInput(uniprotId);
+      fetchUniProtTopology(uniprotId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uniprotId]);
+
+  useEffect(() => {
+    if (triggerTmRecalc && triggerTmRecalc > 0) {
+      if (filename) {
+        setCalculatedData(null);
+        setCalculatedError(null);
+        fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain?.id);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerTmRecalc]);
+
+  // The calculated topology belongs to one chain: recompute when another chain is selected.
+  useEffect(() => {
+    if (topologySource !== 'calculated' || !filename || !chain?.id || loadingCalculated) return;
+    if (calculatedData?.chain_id && calculatedData.chain_id !== chain.id) {
+      fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chain?.id]);
+
+  // Prefill the UniProt accession of the uploaded structure (still editable).
+  useEffect(() => {
+    if (uniprotId && !customUniprotId) setCustomUniprotId(uniprotId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uniprotId]);
+
+  const activeTopologyData = topologySource === 'calculated' ? calculatedData : uniprotData;
+
+  // UniProt topology is in UniProt sequence numbering; the uploaded structure (its
+  // DSSP/STRIDE result, the 3D selection) is in the file's author numbering. The two
+  // only agree by chance, so structure-derived data is combined with the map only
+  // when the map itself comes from the structure (Calculated, or the SS fallback).
+  // To put UniProt features on the structure use Calculated -> "UniProt API": the
+  // backend aligns the UniProt sequence to the chain.
+  const numberingMatchesStructure = topologySource === 'calculated' || !activeTopologyData;
+  const structureSS = numberingMatchesStructure ? secondaryResult : null;
+  const selectResidue = numberingMatchesStructure ? onSelectResidue : undefined;
+
+  // The overlay uses the method picked in the overlay menu (it used to show whatever
+  // method was last run on the page, whatever the menu said).
+  useEffect(() => {
+    if (overlayType === 'none' || !filename) {
+      setOverlayResult(null);
+      setOverlayError(null);
+      return;
+    }
+    const wanted: 'DSSP' | 'STRIDE' = overlayType === 'dssp' ? 'DSSP' : 'STRIDE';
+    if (secondaryResult && secondaryResult.method.toUpperCase() === wanted) {
+      setOverlayResult(secondaryResult);
+      setOverlayError(null);
+      return;
+    }
+    let cancelled = false;
+    setOverlayError(null);
+    runSecondaryStructure(filename, wanted)
+      .then((result) => {
+        if (!cancelled) setOverlayResult(result);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setOverlayResult(null);
+        setOverlayError(err instanceof Error ? err.message : `${wanted} overlay failed`);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [overlayType, filename, secondaryResult]);
+  const overlaySS = numberingMatchesStructure ? overlayResult : null;
+
+  useEffect(() => {
+    if (onTopologyDataChange) {
+      onTopologyDataChange(activeTopologyData);
+    }
+  }, [activeTopologyData, onTopologyDataChange]);
+
+  const activeError = topologySource === 'calculated' ? calculatedError : uniprotError;
+  const activeLoading = topologySource === 'calculated' ? loadingCalculated : loadingUniProt;
+
+  useEffect(() => {
+    if (onLoadingChange) {
+      onLoadingChange(activeLoading);
+    }
+  }, [activeLoading, onLoadingChange]);
+
+  /* ---------------------------------------------------------------- *
+   * Build helices + loops
+   * ---------------------------------------------------------------- */
+
+  const { helices, loops, helixCount } = useMemo(
+    () =>
+      buildTopologyModel({
+        chain,
+        activeTopologyData,
+        secondaryResult,
+        structureSS,
+        topologySource,
+        selectedPaletteKey,
+        customHelixColors,
+        distinguishTurns
+      }),
+    [chain, secondaryResult, structureSS, activeTopologyData, topologySource, selectedPaletteKey, customHelixColors, distinguishTurns]
+  );
+
+  const handleExport = useCallback(
+    async (format: 'png' | 'jpeg' | '3line' | 'gff3') => {
+      const id = activeTopologyData?.uniprot_id || chain?.id || 'topology';
+
+      if (format === '3line' || format === 'gff3') {
+        setExporting(true);
+        try {
+          const regions = activeTopologyData?.regions || [];
+          const sequence = chain?.sequence || '';
+
+          if (format === '3line') {
+            const topArr = new Array(sequence.length).fill('U');
+
+            regions.forEach(r => {
+              // Convert 1-based start/end to 0-based indexing
+              const s = Math.max(0, r.start - 1);
+              const e = Math.min(sequence.length - 1, r.end - 1);
+
+              let char = 'U';
+              if (r.type === 'Transmembrane') char = 'M';
+              else if (r.type === 'Topological domain') {
+                if (r.side === 'Cytoplasmic' || r.description?.toLowerCase().includes('cytoplasm')) char = 'I';
+                else if (r.side === 'Extracellular' || r.description?.toLowerCase().includes('extracellular')) char = 'O';
+              }
+
+              for (let i = s; i <= e; i++) {
+                if (char !== 'U') topArr[i] = char;
+              }
+            });
+            const content = `>${id}\n${sequence}\n${topArr.join('')}\n`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${id}_topology.3line`;
+            a.click();
+            URL.revokeObjectURL(url);
+          } else if (format === 'gff3') {
+            let content = `##gff-version 3\n`;
+            regions.forEach((r, i) => {
+              const source = topologySource === 'calculated' ? 'Calculated' : 'UniProt';
+              const type = r.type === 'Transmembrane' ? 'transmembrane_region' : 'topological_domain';
+              let attributes = `ID=region_${i + 1}`;
+              if (r.description) attributes += `;Note=${r.description.replace(/;/g, ',')}`;
+              if (r.side) attributes += `;Side=${r.side}`;
+
+              content += `${id}\t${source}\t${type}\t${r.start}\t${r.end}\t.\t.\t.\t${attributes}\n`;
+            });
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${id}_topology.gff3`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+        } finally {
+          setExporting(false);
+        }
+        return;
+      }
+
+      if (!svgRef.current) return;
+      setExporting(true);
+      try {
+        const ext = format === 'jpeg' ? 'jpg' : 'png';
+        await exportSvgAsImage(svgRef.current, format, `${id}_TM_topology.${ext}`, 3);
+      } catch {
+        /* the user can press export again */
+      } finally {
+        setExporting(false);
+      }
+    },
+    [activeTopologyData, chain, topologySource]
+  );
+
+  const handleAddResidueRule = () => {
+    const start = parseInt(resStartInput.trim(), 10);
+    const end = resEndInput.trim() ? parseInt(resEndInput.trim(), 10) : start;
+    if (isNaN(start)) return;
+    setCustomResidueRules((prev) => [
+      ...prev,
+      {
+        id: `rule-${Date.now()}`,
+        label: start === end ? `Residue ${start}` : `Residues ${start}–${end}`,
+        startRes: Math.min(start, end),
+        endRes: Math.max(start, end),
+        color: resColorInput,
+      },
+    ]);
+    setResStartInput('');
+    setResEndInput('');
+  };
+
+  const handleRemoveResidueRule = (id: string) =>
+    setCustomResidueRules((prev) => prev.filter((r) => r.id !== id));
+
+  const handleResetColors = () => {
+    setSelectedPaletteKey('PAPER_DEFAULT');
+    setCustomHelixColors({});
+    setCustomResidueRules([]);
+  };
+
+  const getCustomResidueColorForHelix = (startRes: number, endRes: number): string | null =>
+    customResidueRules.find((rule) => rule.startRes <= endRes && rule.endRes >= startRes)?.color ?? null;
+
+  if (!chain) {
+    return <div className="empty-state">Upload a structure to draw the 2D transmembrane map.</div>;
+  }
+
+  const isPub = figureTheme === 'publication';
+  const slabParamsActive = tmAlgorithm === '3d_slab_geom';
+  const crossParamsActive = ssAlgorithm !== 'none';
+  const usedParam = (key: string): string => {
+    const value = calculatedData?.parameters_used?.[key];
+    return value === undefined || value === null ? 'default' : String(value);
+  };
+  const calcWarnings = topologySource === 'calculated' ? calculatedData?.warnings ?? [] : [];
+  const noCrossings = !!activeTopologyData && !activeLoading && helices.length === 0;
+
+  /* ---------------------------------------------------------------- *
+   * Geometry
+   * ---------------------------------------------------------------- */
+
+  const helixWidth = 40;
+  const colSpacing = 72;
+  const leftMargin = 96;
+  const columnCount = helixCount || 1;
+  const canvasWidth = Math.max(960, leftMargin + columnCount * colSpacing + 130);
+  const canvasHeight = 440;
+
+  const membraneTopY = 152;
+  const membraneBottomY = 258;
+  const membraneMidY = (membraneTopY + membraneBottomY) / 2;
+  const overhang = 26;
+  const breakGap = 9; // half-gap between the two parts of a broken helix
+
+  interface Pos {
+    x: number;
+    topY: number;
+    bottomY: number;
+    angle: number;
+    nEndY: number;
+    cEndY: number;
+  }
+
+  const helixPositions: Record<string, Pos> = {};
+
+  helices.forEach((h) => {
+    let x = leftMargin + h.column * colSpacing;
+
+    // Stagger the halves of a discontinuous helix so they don't perfectly align
+    if (h.isSplit) {
+      x += h.partIndex === 0 ? -12 : 12;
+    }
+
+    const angle = h.column % 2 === 0 ? 4 : -4;
+
+    let topY: number;
+    let bottomY: number;
+
+    if (!h.isSplit) {
+      topY = membraneTopY - overhang;
+      bottomY = membraneBottomY + overhang;
+    } else {
+      // Part a sits in the half nearest its entry side; part b takes the other half.
+      const occupiesUpperHalf = h.partIndex === 0 ? h.entrySide === 'out' : h.exitSide === 'out';
+      if (occupiesUpperHalf) {
+        topY = membraneTopY - overhang;
+        bottomY = membraneMidY - breakGap;
+      } else {
+        topY = membraneMidY + breakGap;
+        bottomY = membraneBottomY + overhang;
+      }
+    }
+
+    helixPositions[h.id] = {
+      x,
+      topY,
+      bottomY,
+      angle,
+      nEndY: h.entrySide === 'out' ? topY : bottomY,
+      cEndY: h.exitSide === 'out' ? topY : bottomY,
+    };
+  });
+
+  const firstHelix = helices[0];
+  const lastHelix = helices[helices.length - 1];
+
+  return (
+    <div
+      className="tm-topology-panel panel"
+      style={{
+        '--hover-brightness': hoverBrightness,
+        '--hover-shadow-opacity': hoverShadow,
+      } as React.CSSProperties}
+    >
+      {/* Header + toolbar */}
+      <div className="panel-heading" style={{ flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <span className="section-kicker">
+            {topologySource === 'calculated'
+              ? 'Calculated topology (TM block × DSSP/STRIDE, residue-level consensus)'
+              : 'UniProt topology'}
+          </span>
+          <h2>Transmembrane secondary structure map</h2>
+        </div>
+
+        <TopologyToolbar
+          figureTheme={figureTheme}
+          setFigureTheme={setFigureTheme}
+          topologySource={topologySource}
+          handleTopologySourceChange={handleTopologySourceChange}
+          filename={filename}
+          handleExport={handleExport as any}
+          exporting={exporting}
+          colorDrawerOpen={colorDrawerOpen}
+          setColorDrawerOpen={setColorDrawerOpen}
+          uniprotIdInput={uniprotIdInput}
+          setUniprotIdInput={setUniprotIdInput}
+          fetchUniProtTopology={fetchUniProtTopology}
+          loadingUniProt={loadingUniProt}
+          showUniProtInfo={showUniProtInfo}
+          setShowUniProtInfo={setShowUniProtInfo}
+          tmAlgorithm={tmAlgorithm}
+          handleTmAlgorithmChange={handleTmAlgorithmChange}
+          customUniprotId={customUniprotId}
+          setCustomUniprotId={setCustomUniprotId}
+          ssAlgorithm={ssAlgorithm}
+          setSsAlgorithm={setSsAlgorithm}
+          fetchCalculatedTopology={() => filename && fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain?.id)}
+          loadingCalculated={loadingCalculated}
+          showAdvancedParams={showAdvancedParams}
+          setShowAdvancedParams={setShowAdvancedParams}
+          tmThickness={tmThickness}
+          setTmThickness={setTmThickness}
+          tmMinMembraneScore={tmMinMembraneScore}
+          setTmMinMembraneScore={setTmMinMembraneScore}
+          tmMinCrossSpan={tmMinCrossSpan}
+          setTmMinCrossSpan={setTmMinCrossSpan}
+          tmFullCrossFrac={tmFullCrossFrac}
+          setTmFullCrossFrac={setTmFullCrossFrac}
+          tmTreatTurnAsHelix={tmTreatTurnAsHelix}
+          setTmTreatTurnAsHelix={setTmTreatTurnAsHelix}
+          calculatedData={calculatedData}
+          slabParamsActive={slabParamsActive}
+          crossParamsActive={crossParamsActive}
+        />
+
+      </div>
+      {/* Color drawer */}
+      {colorDrawerOpen && (
+        <TopologyCustomizeDrawer
+          isPub={isPub}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          visualStyle={visualStyle}
+          setVisualStyle={setVisualStyle}
+          selectedPaletteKey={selectedPaletteKey}
+          setSelectedPaletteKey={setSelectedPaletteKey}
+          helices={helices}
+          customHelixColors={customHelixColors}
+          setCustomHelixColors={setCustomHelixColors}
+          customRegionColors={customRegionColors}
+          setCustomRegionColors={setCustomRegionColors}
+          customResidueRules={customResidueRules}
+          resStartInput={resStartInput}
+          setResStartInput={setResStartInput}
+          resEndInput={resEndInput}
+          setResEndInput={setResEndInput}
+          resColorInput={resColorInput}
+          setResColorInput={setResColorInput}
+          handleAddResidueRule={handleAddResidueRule}
+          handleRemoveResidueRule={handleRemoveResidueRule}
+          handleResetColors={handleResetColors}
+          columnCount={columnCount}
+        />
+      )}
+      {isCalculatedTopology(activeTopologyData) && activeTopologyData.consensus_map && (
+        <ConsensusAnalysisMap
+          consensusMap={activeTopologyData.consensus_map}
+          customHelixColors={Object.fromEntries(helices.map(h => [h.helixNumber.toString(), h.color]))}
+          customRegionColors={customRegionColors}
+          figureTheme={figureTheme}
+        />
+      )}
+
+      {activeError && <div className="tm-error-banner">{activeError}</div>}
+      {overlayError && <div className="tm-error-banner">Overlay: {overlayError}</div>}
+      
+      {noCrossings && (
+        <div className="tm-error-banner tm-loading-banner">
+          No transmembrane segment in this topology
+          {activeTopologyData?.protein_name ? ` — ${activeTopologyData.protein_name}` : ''}.
+        </div>
+      )}
+      {activeLoading && !activeTopologyData && (
+        <div className="tm-error-banner tm-loading-banner">
+          {topologySource === 'calculated' ? 'Computing topology from the structure…' : 'Loading UniProt topology…'}
+        </div>
+      )}
+      {/* Diagram */}
+      <div className={`tm-diagram-wrap ${isPub ? 'publication' : 'lab'}`}>
+        <svg
+          ref={svgRef}
+          className="tm-diagram-svg"
+          onClick={() => {
+            if (selectResidue) selectResidue(null);
+          }}
+          viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+          role="img"
+          aria-label="Transmembrane topology diagram"
+        >
+          <rect x="0" y="0" width={canvasWidth} height={canvasHeight} fill={isPub ? '#ffffff' : 'transparent'} />
+
+          <defs>
+            {/* One barrel gradient per helix: shade, body, highlight, shade. */}
+            {helices.map((h) => {
+              const c = getCustomResidueColorForHelix(h.startRes, h.endRes) ?? h.color;
+              return (
+                <linearGradient key={`grad-${h.id}`} id={`cyl-${h.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor={darken(c, 0.4)} />
+                  <stop offset="16%" stopColor={c} />
+                  <stop offset="38%" stopColor={lighten(c, 0.55)} />
+                  <stop offset="60%" stopColor={c} />
+                  <stop offset="100%" stopColor={darken(c, 0.32)} />
+                </linearGradient>
+              );
+            })}
+            <linearGradient id="short-helix-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#94a3b8" />
+              <stop offset="35%" stopColor="#e2e8f0" />
+              <stop offset="70%" stopColor="#94a3b8" />
+              <stop offset="100%" stopColor="#64748b" />
+            </linearGradient>
+
+            {/* Break gradients for split helices */}
+            {helices.map((h) => {
+              if (!h.isSplit || h.partIndex !== 0) return null;
+              const partB = helices.find((o) => o.column === h.column && o.partIndex === 1);
+              if (!partB) return null;
+              const a = helixPositions[h.id];
+              const b = helixPositions[partB.id];
+              if (!a || !b) return null;
+              const isAAbove = a.topY < b.topY;
+              const topColor = isAAbove ? h.color : partB.color;
+              const bottomColor = isAAbove ? partB.color : h.color;
+              return (
+                <linearGradient key={`break-grad-${h.id}`} id={`break-grad-${h.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={topColor} />
+                  <stop offset="100%" stopColor={bottomColor} />
+                </linearGradient>
+              );
+            })}
+
+            <pattern id="hatch-warning" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="0" y2="8" stroke="#ff0000" strokeWidth="3" opacity="0.8" />
+            </pattern>
+
+          </defs>
+
+          {/* Lipid bilayer */}
+          <g className="membrane-zone">
+            <rect
+              x="0"
+              y={membraneTopY}
+              width={canvasWidth}
+              height={membraneBottomY - membraneTopY}
+              fill={customRegionColors.Membrane || '#00d2d3'}
+              opacity={isPub ? 0.9 : 1.0}
+            />
+            <text x="16" y={membraneTopY - 12} className="membrane-label" fill={customRegionColors.ExtracellularText || '#ff9f43'}>
+              Extracellular
+            </text>
+            <text x="16" y={membraneBottomY + 24} className="membrane-label" fill={customRegionColors.CytoplasmicText || '#5f27cd'}>
+              Cytoplasmic
+            </text>
+          </g>
+
+          {/* Loops */}
+          <g className="tm-loops">
+            {loops.map((loop) => {
+              const posPrev = helixPositions[loop.prevHelixId];
+              const posNext = helixPositions[loop.nextHelixId];
+              if (!posPrev || !posNext) return null;
+
+              const isEL = loop.type === 'EL';
+              const startX = posPrev.x + helixWidth / 2;
+              const startY = posPrev.cEndY;
+              const endX = posNext.x + helixWidth / 2;
+              const endY = posNext.nEndY;
+              const midX = (startX + endX) / 2;
+
+              let archDepth = 26 + Math.min(46, loop.length * 0.7);
+              if (loop.hasExtraFeature) archDepth += 42;
+
+              const apexY = isEL
+                ? Math.max(42, Math.min(startY, endY) - archDepth)
+                : Math.min(canvasHeight - 34, Math.max(startY, endY) + archDepth);
+
+              const pathD = `M ${startX} ${startY} C ${startX} ${apexY}, ${endX} ${apexY}, ${endX} ${endY}`;
+              const loopColorStart = helices.find((h) => h.id === loop.prevHelixId)?.color ?? '#64748b';
+              const loopColorEnd = helices.find((h) => h.id === loop.nextHelixId)?.color ?? '#64748b';
+
+              const labelY = isEL
+                ? (loop.hasExtraFeature ? apexY + 34 : apexY - 8)
+                : (loop.hasExtraFeature ? apexY - 26 : apexY + 16);
+              const hideLabel = loop.extraFeatures?.length === 1 && loop.extraFeatures[0].label === loop.label;
+              const isSelected = selectedResidue != null && selectedResidue >= loop.startRes && selectedResidue <= loop.endRes;
+              return (
+                <g
+                  key={loop.id}
+                  className="loop-group"
+                  onMouseEnter={() =>
+                    setHoveredElement({
+                      title: `${loop.label} — ${isEL ? 'extracellular' : 'cytoplasmic'} loop`,
+                      range: `Residues ${loop.startRes}–${loop.endRes}`,
+                      length: loop.length,
+                      details: loop.domainName || undefined,
+                    })
+                  }
+                  onMouseLeave={() => setHoveredElement(null)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (selectResidue) {
+                      selectResidue(isSelected ? null : loop.startRes);
+                    }
+                  }}
+                >
+                  <defs>
+                    <linearGradient id={`loop-grad-${loop.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={loopColorStart} />
+                      <stop offset="100%" stopColor={loopColorEnd} />
+                    </linearGradient>
+
+                    <pattern id="hatch-warning" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                      <line x1="0" y1="0" x2="0" y2="8" stroke="#ff0000" strokeWidth="3" opacity="0.8" />
+                    </pattern>
+
+                  </defs>
+
+                  <path d={pathD} fill="none" stroke={`url(#loop-grad-${loop.id})`} strokeWidth={2.6} strokeLinecap="round" />
+
+                  {!hideLabel && (
+                    <text
+                      x={midX}
+                      y={labelY}
+                      className="loop-text-label"
+                      textAnchor="middle"
+                      style={{ fill: isPub ? '#1e293b' : '#e2e8f0' }}
+                    >
+                      {loop.label}
+                    </text>
+                  )}
+
+                  {loop.hasExtraFeature && loop.extraFeatures && (
+                    <g className="short-helices">
+                      {loop.extraFeatures.map((sh, idx) => {
+                        const w = 48; // a bit wider for labels
+                        const shX = midX - w / 2 + (sh.offsetFactor ?? 0) * (w + 10);
+                        const shY = isEL ? apexY - 6 : apexY - 12;
+                        return (
+                          <g
+                            key={`${loop.id}-sh-${idx}`}
+                            transform={`translate(${shX}, ${shY})`}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              setHoveredElement({
+                                title: `${sh.type}: ${sh.label}`,
+                                range: `Residues ${sh.startRes}–${sh.endRes}`,
+                                length: sh.endRes - sh.startRes + 1,
+                                details: `Inside ${loop.label}`,
+                              });
+                            }}
+                          >
+                            {sh.type === 'turn' || sh.type === 'Turn' ? (
+                              <polygon
+                                points={`0,10.5 ${w / 2},0 ${w},10.5 ${w / 2},21`}
+                                fill={isPub ? '#f472b6' : '#db2777'}
+                                stroke={isPub ? '#831843' : '#fbcfe8'}
+                                strokeWidth="1"
+                              />
+                            ) : sh.type === 'Strand' || sh.type === 'β-strand' ? (
+                              // β-strand outside the membrane: draw as an arrow
+                              <path
+                                d={`M 0 4 L ${w - 12} 4 L ${w - 12} 0 L ${w} 10.5 L ${w - 12} 21 L ${w - 12} 17 L 0 17 Z`}
+                                fill={isPub ? '#e0a64b' : '#c98a2b'}
+                                stroke={isPub ? '#475569' : '#0f172a'}
+                                strokeWidth="1"
+                              />
+                            ) : (
+                              // α-helix (or UniProt feature) outside the membrane: rounded cylinder
+                              <rect
+                                x="0"
+                                y="0"
+                                width={w}
+                                height="21"
+                                rx={sh.type === 'Helix' || sh.type === 'Intramembrane' ? '10' : '4'}
+                                fill="url(#short-helix-grad)"
+                                stroke={isPub ? '#475569' : '#0f172a'}
+                                strokeWidth="1"
+                              />
+                            )}
+                            <text
+                              x={w / 2}
+                              y="15"
+                              className="short-helix-text"
+                              textAnchor="middle"
+                              style={{ fill: '#0f172a', fontSize: '10px' }}
+                            >
+                              {sh.label.substring(0, 7)}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+
+
+          {/* N-terminus and C-terminus tails */}
+          {(() => {
+            if (helices.length === 0) return null;
+            const first = helices[0];
+            const last = helices[helices.length - 1];
+            const posFirst = helixPositions[first.id];
+            const posLast = helixPositions[last.id];
+            if (!posFirst || !posLast) return null;
+
+            // Residue NUMBERS, not sequence length: numbering rarely starts at 1 (the old
+            // `sequence.length` bound dropped C-terminal features of e.g. residues 25-144).
+            const nFeatures = getExtraFeatures(Number.NEGATIVE_INFINITY, first.startRes - 1, activeTopologyData, structureSS, chain?.id, distinguishTurns) || [];
+            const cFeatures = getExtraFeatures(last.endRes + 1, Number.POSITIVE_INFINITY, activeTopologyData, structureSS, chain?.id, distinguishTurns) || [];
+
+            return (
+              <g className="tm-terminals">
+                {/* N-terminus */}
+                <path
+                  d={`M 20 ${first.entrySide === 'out' ? membraneTopY - 60 : membraneBottomY + 60} Q ${posFirst.x / 2} ${first.entrySide === 'out' ? membraneTopY - 30 : membraneBottomY + 30} ${posFirst.x + helixWidth / 2} ${posFirst.nEndY}`}
+                  fill="none"
+                  stroke={first.color}
+                  strokeWidth="2.6"
+                />
+                <text x="20" y={first.entrySide === 'out' ? membraneTopY - 70 : membraneBottomY + 75} textAnchor="middle" style={{ fill: isPub ? '#1e293b' : '#e2e8f0', fontSize: '11px', fontWeight: 'bold' }}>N (NH2)</text>
+
+                {nFeatures.map((f, i) => {
+                  const y = first.entrySide === 'out' ? membraneTopY - 45 : membraneBottomY + 45;
+                  const x = 30 + i * 50;
+                  return (
+                    <g key={`n-${i}`} transform={`translate(${x}, ${y})`} onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      setHoveredElement({ title: `${f.type}: ${f.label}`, range: `Residues ${f.startRes}-${f.endRes}`, length: f.endRes - f.startRes + 1, details: 'N-terminus' });
+                    }} onMouseLeave={() => setHoveredElement(null)}>
+                      {f.type === 'turn' || f.type === 'Turn' ? (
+                        <polygon points="0,9 22.5,0 45,9 22.5,18" fill={isPub ? '#f472b6' : '#db2777'} stroke={isPub ? '#831843' : '#fbcfe8'} strokeWidth="1" />
+                      ) : (
+                        <rect x="0" y="0" width="45" height="18" rx={f.type === 'Helix' ? 9 : 4} fill="url(#short-helix-grad)" stroke={isPub ? '#475569' : '#0f172a'} />
+                      )}
+                      <text x="22.5" y="13" textAnchor="middle" style={{ fill: (f.type === 'turn' || f.type === 'Turn') ? (isPub ? '#831843' : '#fbcfe8') : '#0f172a', fontSize: '9px' }}>{f.label.substring(0, 7)}</text>
+                    </g>
+                  );
+                })}
+
+                {/* C-terminus */}
+                <path
+                  d={`M ${posLast.x + helixWidth / 2} ${posLast.cEndY} Q ${(posLast.x + canvasWidth) / 2} ${last.exitSide === 'out' ? membraneTopY - 30 : membraneBottomY + 30} ${canvasWidth - 30} ${last.exitSide === 'out' ? membraneTopY - 60 : membraneBottomY + 60}`}
+                  fill="none"
+                  stroke={last.color}
+                  strokeWidth="2.6"
+                />
+                <text x={canvasWidth - 30} y={last.exitSide === 'out' ? membraneTopY - 70 : membraneBottomY + 75} textAnchor="middle" style={{ fill: isPub ? '#1e293b' : '#e2e8f0', fontSize: '11px', fontWeight: 'bold' }}>C (COOH)</text>
+
+                {cFeatures.map((f, i) => {
+                  const y = last.exitSide === 'out' ? membraneTopY - 45 : membraneBottomY + 45;
+                  const x = canvasWidth - 80 - i * 50;
+                  return (
+                    <g key={`c-${i}`} transform={`translate(${x}, ${y})`} onMouseEnter={(e) => {
+                      e.stopPropagation();
+                      setHoveredElement({ title: `${f.type}: ${f.label}`, range: `Residues ${f.startRes}-${f.endRes}`, length: f.endRes - f.startRes + 1, details: 'C-terminus' });
+                    }} onMouseLeave={() => setHoveredElement(null)}>
+                      {f.type === 'turn' || f.type === 'Turn' ? (
+                        <polygon points="0,9 22.5,0 45,9 22.5,18" fill={isPub ? '#f472b6' : '#db2777'} stroke={isPub ? '#831843' : '#fbcfe8'} strokeWidth="1" />
+                      ) : (
+                        <rect x="0" y="0" width="45" height="18" rx={f.type === 'Helix' ? 9 : 4} fill="url(#short-helix-grad)" stroke={isPub ? '#475569' : '#0f172a'} />
+                      )}
+                      <text x="22.5" y="13" textAnchor="middle" style={{ fill: (f.type === 'turn' || f.type === 'Turn') ? (isPub ? '#831843' : '#fbcfe8') : '#0f172a', fontSize: '9px' }}>{f.label.substring(0, 7)}</text>
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })()}
+
+          {/* Break connectors between the two halves of a discontinuous helix */}
+          <g className="tm-breaks">
+            {helices.map((h) => {
+              if (!h.isSplit || h.partIndex !== 0) return null;
+              const partB = helices.find((o) => o.column === h.column && o.partIndex === 1);
+              if (!partB) return null;
+              const a = helixPositions[h.id];
+              const b = helixPositions[partB.id];
+              if (!a || !b) return null;
+
+              // Helper to get true absolute center of the cap after rotation
+              const getCapCenter = (pos: typeof a, isBottom: boolean) => {
+                const cx = helixWidth / 2;
+                const cylHeight = Math.abs(pos.bottomY - pos.topY);
+                const cy = cylHeight / 2;
+                const angleRad = (pos.angle * Math.PI) / 180;
+                const absX = pos.x + cx + (isBottom ? -cy : cy) * Math.sin(angleRad);
+                const absY = pos.topY + cy + (isBottom ? cy : -cy) * Math.cos(angleRad);
+                return { x: absX, y: absY };
+              };
+
+              const isAAbove = a.topY < b.topY;
+              const ptA = getCapCenter(a, isAAbove); // bottom of a, or top of a
+              const ptB = getCapCenter(b, !isAAbove); // top of b, or bottom of b
+
+              const midY = (ptA.y + ptB.y) / 2;
+
+              return (
+                <path
+                  key={`break-${h.id}`}
+                  d={`M ${ptA.x} ${ptA.y} C ${ptA.x} ${midY}, ${ptB.x} ${midY}, ${ptB.x} ${ptB.y}`}
+                  fill="none"
+                  stroke={`url(#break-grad-${h.id})`}
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                />
+              );
+            })}
+          </g>
+
+          {/* Helices as 3D barrels */}
+          <g className="tm-helices">
+            {helices.map((h) => {
+              const pos = helixPositions[h.id];
+              if (!pos) return null;
+
+              const cylHeight = Math.abs(pos.bottomY - pos.topY);
+              const isSelected =
+                numberingMatchesStructure &&
+                selectedResidue != null && selectedResidue >= h.startRes && selectedResidue <= h.endRes;
+              const resCustomColor = getCustomResidueColorForHelix(h.startRes, h.endRes);
+              const baseColor = resCustomColor ?? h.color;
+              const cx = helixWidth / 2;
+              const cy = cylHeight / 2;
+              const labelColor = getContrastTextColor(baseColor);
+
+              const isBeta = h.isBeta ?? isBetaStrandDescription(h.description);
+              const isAlpha = !isBeta;
+
+              const pointsDown = pos.nEndY < pos.cEndY;
+              const headH = Math.min(20, cylHeight / 2);
+              const arrowPath = pointsDown
+                ? `M 6 0 L 6 ${cylHeight - headH} L 0 ${cylHeight - headH} L ${cx} ${cylHeight} L ${helixWidth} ${cylHeight - headH} L ${helixWidth - 6} ${cylHeight - headH} L ${helixWidth - 6} 0 Z`
+                : `M 6 ${cylHeight} L 6 ${headH} L 0 ${headH} L ${cx} 0 L ${helixWidth} ${headH} L ${helixWidth - 6} ${headH} L ${helixWidth - 6} ${cylHeight} Z`;
+
+              return (
+                <g
+                  key={h.id}
+                  className={`helix-group ${isSelected ? 'selected' : ''}`}
+                  transform={`translate(${pos.x}, ${pos.topY}) rotate(${pos.angle}, ${cx}, ${cy})`}
+                  onMouseEnter={() => {
+                    let startIdx = -1;
+                    let endIdx = -1;
+                    if (secondaryResult?.residues && chain?.id) {
+                      // Filter by chain first to get correct array indices that match the backend's per-chain arrays
+                      const chainResidues = secondaryResult.residues.filter(r => r.chain_id === chain.id);
+                      startIdx = chainResidues.findIndex(r => r.residue_number === h.startRes);
+                      endIdx = chainResidues.findIndex(r => r.residue_number === h.endRes);
+                    } else if (chain?.residues) {
+                      startIdx = chain.residues.findIndex(r => r.id === h.startRes);
+                      endIdx = chain.residues.findIndex(r => r.id === h.endRes);
+                    }
+
+                    setHoveredElement({
+                      title: `${isBeta ? 'Beta Strand' : 'Helix'} TM${h.subLabel}`,
+                      range: `Residues ${h.startRes}–${h.endRes}`,
+                      length: h.length,
+                      details: [
+                        h.isSplit
+                          ? `Discontinuous segment, part ${h.partIndex === 0 ? '1' : '2'}`
+                          : h.description || `Transmembrane ${isBeta ? 'beta strand' : 'alpha helix'}`,
+                        h.confidence ? `confidence: ${h.confidence}` : '',
+                        startIdx !== -1 && endIdx !== -1 ? `Array Index: [${startIdx} - ${endIdx}]` : ''
+                      ]
+                        .filter(Boolean)
+                        .join(' · '),
+                    });
+                  }}
+                  onMouseLeave={() => setHoveredElement(null)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (selectResidue) {
+                      selectResidue(isSelected ? null : h.startRes);
+                    }
+                  }}
+                >
+                  {isAlpha ? (
+                    <>
+                      {/* Base dashed line that shows through gaps */}
+                      {h.observedSpans && h.observedSpans.length > 1 && (
+                        <line x1={cx} y1={6} x2={cx} y2={cylHeight - 6} stroke={darken(baseColor, 0.3)} strokeWidth={2} strokeDasharray="4 4" />
+                      )}
+
+                      {h.observedSpans && h.observedSpans.length > 1 ? (
+                        h.observedSpans.map((span, idx) => {
+                          const nAtBottom = pos.nEndY > pos.cEndY;
+                          const fStart = (span.start - h.startRes) / Math.max(1, h.endRes - h.startRes);
+                          const fEnd = (span.end - h.startRes) / Math.max(1, h.endRes - h.startRes);
+
+                          let yStart = nAtBottom ? (1 - fStart) * cylHeight : fStart * cylHeight;
+                          let yEnd = nAtBottom ? (1 - fEnd) * cylHeight : fEnd * cylHeight;
+                          if (yStart > yEnd) { const t = yStart; yStart = yEnd; yEnd = t; }
+
+                          yStart = Math.max(6, yStart);
+                          yEnd = Math.min(cylHeight - 6, yEnd);
+                          const hSpan = Math.max(0, yEnd - yStart);
+
+                          if (hSpan === 0) return null;
+
+                          const renderSpan = () => {
+                            if (visualStyle === 'ribbon') return renderRibbon(helixWidth, hSpan, baseColor, h.id, yStart);
+                            if (visualStyle === 'wire') return <line x1={cx} y1={yStart} x2={cx} y2={yStart + hSpan} stroke={baseColor} strokeWidth={6} strokeLinecap="round" />;
+                            if (visualStyle === 'flat') return <rect x="0" y={yStart} width={helixWidth} height={hSpan} fill={baseColor} stroke={darken(baseColor, 0.4)} strokeWidth={2} rx={2} />;
+                            if (visualStyle === 'beads') {
+                              const nRes = span.end - span.start + 1;
+                              const beads = [];
+                              const dy = hSpan / Math.max(1, nRes);
+                              for (let j = 0; j < nRes; j++) {
+                                beads.push(<circle key={j} cx={cx} cy={yStart + dy * (j + 0.5)} r={Math.min(helixWidth * 0.45, dy * 0.45)} fill={baseColor} stroke={darken(baseColor, 0.4)} strokeWidth={1.2} />);
+                              }
+                              return <>{beads}</>;
+                            }
+                            // Default: Cylinder
+                            return (
+                              <>
+                                <rect x="0" y={yStart} width={helixWidth} height={hSpan} fill={`url(#cyl-${h.id})`} className="cylinder-body" />
+                                <rect x="0" y={yStart} width={helixWidth} height={hSpan} fill="none" stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)} strokeWidth={isSelected ? 2.5 : h.uncertain ? 1.6 : 0.8} strokeDasharray={h.uncertain ? '5 3' : undefined} />
+                              </>
+                            );
+                          };
+
+                          return <React.Fragment key={`span-${idx}`}>{renderSpan()}</React.Fragment>;
+                        })
+                      ) : (
+                        (() => {
+                          const hSpanFull = Math.max(0, cylHeight - 12);
+                          const yStartFull = 6;
+                          if (visualStyle === 'ribbon') return renderRibbon(helixWidth, hSpanFull, baseColor, h.id, yStartFull);
+                          if (visualStyle === 'wire') return <line x1={cx} y1={yStartFull} x2={cx} y2={yStartFull + hSpanFull} stroke={baseColor} strokeWidth={6} strokeLinecap="round" />;
+                          if (visualStyle === 'flat') return <rect x="0" y={yStartFull} width={helixWidth} height={hSpanFull} fill={baseColor} stroke={darken(baseColor, 0.4)} strokeWidth={2} rx={2} />;
+                          if (visualStyle === 'beads') {
+                            const nRes = h.endRes - h.startRes + 1;
+                            const beads = [];
+                            const dy = hSpanFull / Math.max(1, nRes);
+                            for (let j = 0; j < nRes; j++) {
+                              beads.push(<circle key={j} cx={cx} cy={yStartFull + dy * (j + 0.5)} r={Math.min(helixWidth * 0.45, dy * 0.45)} fill={baseColor} stroke={darken(baseColor, 0.4)} strokeWidth={1.2} />);
+                            }
+                            return <>{beads}</>;
+                          }
+                          // Default Cylinder
+                          return (
+                            <>
+                              <rect x="0" y="6" width={helixWidth} height={hSpanFull} fill={`url(#cyl-${h.id})`} className="cylinder-body" />
+                              <rect x="0" y="6" width={helixWidth} height={hSpanFull} fill="none" stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)} strokeWidth={isSelected ? 2.5 : h.uncertain ? 1.6 : 0.8} strokeDasharray={h.uncertain ? '5 3' : undefined} />
+                            </>
+                          );
+                        })()
+                      )}
+
+                      {visualStyle === 'cylinder' && (
+                        <>
+                          <ellipse
+                            cx={cx}
+                            cy={cylHeight - 6}
+                            rx={helixWidth / 2}
+                            ry="6"
+                            fill={darken(baseColor, 0.28)}
+                          />
+                          <ellipse
+                            cx={cx}
+                            cy="6"
+                            rx={helixWidth / 2}
+                            ry="6"
+                            fill={lighten(baseColor, 0.28)}
+                            stroke={darken(baseColor, 0.25)}
+                            strokeWidth="0.8"
+                          />
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <path
+                      d={arrowPath}
+                      fill={`url(#cyl-${h.id})`}
+                      stroke={isSelected ? '#ff6f61' : darken(baseColor, 0.3)}
+                      strokeWidth={isSelected ? 2.5 : 1.2}
+                      strokeDasharray={h.uncertain ? '5 3' : undefined}
+                    />
+                  )}
+
+
+                  {/* Disagreement Overlay */}
+                  {overlayType !== 'none' && overlaySS && (() => {
+                    const ssResidues = overlaySS.residues
+                      .filter(r => r.chain_id === chain?.id && r.residue_number >= h.startRes && r.residue_number <= h.endRes)
+                      .sort(compareResidues);
+                    // The cylinder is drawn top-to-bottom; when the N-terminus sits at the
+                    // bottom (entry from the cytoplasm) residue order runs bottom-to-top.
+                    const nAtBottom = pos.nEndY > pos.cEndY;
+                    if (ssResidues.length === 0) return null;
+                    const targetCodes = isBeta ? ['E', 'B'] : ['H', 'G', 'I'];
+                    const mismatched = ssResidues.filter(r => !targetCodes.includes(r.code.toUpperCase()));
+                    if (mismatched.length === 0) return null;
+
+                    // Draw bands for mismatched regions
+                    const bands = [];
+                    let startIdx = -1;
+                    for (let i = 0; i < ssResidues.length; i++) {
+                      const isMismatch = !targetCodes.includes(ssResidues[i].code.toUpperCase());
+                      if (isMismatch && startIdx === -1) startIdx = i;
+                      if (!isMismatch && startIdx !== -1) {
+                        bands.push({ start: startIdx, end: i - 1 });
+                        startIdx = -1;
+                      }
+                    }
+                    if (startIdx !== -1) bands.push({ start: startIdx, end: ssResidues.length - 1 });
+
+                    return bands.map((band, idx) => {
+                      const f0 = band.start / ssResidues.length;
+                      const f1 = (band.end + 1) / ssResidues.length;
+                      const top = nAtBottom ? 1 - f1 : f0;
+                      const yStart = 6 + top * (cylHeight - 12);
+                      const yHeight = Math.max(2, (f1 - f0) * (cylHeight - 12));
+                      return (
+                        <rect
+                          key={`mismatch-${idx}`}
+                          x="0"
+                          y={yStart}
+                          width={helixWidth}
+                          height={yHeight}
+                          fill="url(#hatch-warning)"
+                          style={{ pointerEvents: 'none' }}
+                        />
+                      );
+                    });
+                  })()}
+
+                  <text
+                    x={cx}
+                    y={cy - 2}
+                    className="helix-label-text"
+                    textAnchor="middle"
+                    transform={`rotate(${-pos.angle}, ${cx}, ${cy})`}
+                    style={{ fill: labelColor }}
+                  >
+                    {h.subLabel}
+                  </text>
+                  <text
+                    x={cx}
+                    y={cy + 12}
+                    className="helix-sub-text"
+                    textAnchor="middle"
+                    transform={`rotate(${-pos.angle}, ${cx}, ${cy})`}
+                    style={{ fill: labelColor, opacity: 0.85 }}
+                  >
+                    {h.startRes}–{h.endRes}
+                  </text>
+                  {(() => {
+                    let startIdx = -1;
+                    let endIdx = -1;
+                    if (secondaryResult?.residues && chain?.id) {
+                      const chainResidues = secondaryResult.residues.filter(r => r.chain_id === chain.id);
+                      startIdx = chainResidues.findIndex(r => r.residue_number === h.startRes);
+                      endIdx = chainResidues.findIndex(r => r.residue_number === h.endRes);
+                    } else if (chain?.residues) {
+                      startIdx = chain.residues.findIndex(r => r.id === h.startRes);
+                      endIdx = chain.residues.findIndex(r => r.id === h.endRes);
+                    }
+                    if (startIdx !== -1 && endIdx !== -1) {
+                      return (
+                        <text
+                          x={cx}
+                          y={cy + 24}
+                          className="helix-debug-text"
+                          textAnchor="middle"
+                          transform={`rotate(${-pos.angle}, ${cx}, ${cy})`}
+                          style={{ fill: labelColor, opacity: 0.65, fontSize: '8px', fontWeight: 600 }}
+                        >
+                          [{startIdx}-{endIdx}]
+                        </text>
+                      );
+                    }
+                    return null;
+                  })()}
+                </g>
+              );
+            })}
+          </g>
+
+        </svg>
+      </div>
+      {/* Inspector */}
+      <div className="tm-tooltip-bar">
+        {hoveredElement ? (
+          <div className="tm-tooltip-active">
+            <strong className="tm-tooltip-title">{hoveredElement.title}</strong>
+            <span>{hoveredElement.range}</span>
+            <span className="tm-tooltip-len">{hoveredElement.length} residues</span>
+            {hoveredElement.details && <small>{hoveredElement.details}</small>}
+          </div>
+        ) : (
+          <div className="tm-tooltip-placeholder">
+            <span>Hover a helix or loop to inspect it; click to jump to that residue in the 3D view.</span>
+          </div>
+        )}
+      </div>
+
+      {/* Summary Panel */}
+      {calculatedData && isCalculatedTopology(calculatedData) && (
+        <TopologySummaryPanel data={calculatedData} />
+      )}
+    </div>
+  );
+}

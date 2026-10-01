@@ -143,6 +143,63 @@ async def upload_structure(file: UploadFile = File(...)):
         "models": build_structure_summary(saved_path),
     }
 
+from pydantic import BaseModel
+class FetchRequest(BaseModel):
+    id: str
+    type: str
+
+@router.post("/fetch")
+async def fetch_structure(req: FetchRequest):
+    acc = req.id.strip().upper()
+    if not acc:
+        raise HTTPException(status_code=400, detail="ID is required")
+        
+    pdb_id = acc
+    uniprot_id = None
+    
+    if req.type == "UniProt":
+        # Resolve UniProt to PDB
+        uniprot_url = f"https://rest.uniprot.org/uniprotkb/{acc}.json"
+        try:
+            req_up = urllib.request.Request(uniprot_url, headers={"User-Agent": "ProteinVisualizeApp/1.0"})
+            with urllib.request.urlopen(req_up, timeout=5) as resp:
+                up_data = json.loads(resp.read().decode("utf-8"))
+            
+            pdb_refs = [ref for ref in up_data.get("uniProtKBCrossReferences", []) if ref.get("database") == "PDB"]
+            if not pdb_refs:
+                raise HTTPException(status_code=404, detail=f"No PDB structures found for UniProt ID {acc}")
+            
+            pdb_id = pdb_refs[0]["id"].upper()
+            uniprot_id = acc
+        except urllib.error.HTTPError:
+            raise HTTPException(status_code=404, detail=f"UniProt ID {acc} not found")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to lookup UniProt: {str(e)}")
+            
+    # Fetch CIF from RCSB
+    cif_url = f"https://files.rcsb.org/download/{pdb_id}.cif"
+    try:
+        req_cif = urllib.request.Request(cif_url, headers={"User-Agent": "ProteinVisualizeApp/1.0"})
+        with urllib.request.urlopen(req_cif, timeout=10) as resp:
+            cif_data = resp.read()
+    except urllib.error.HTTPError:
+        raise HTTPException(status_code=404, detail=f"PDB structure {pdb_id} not found on RCSB")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch PDB: {str(e)}")
+
+    filename = f"{pdb_id}_{uniprot_id}.cif" if uniprot_id else f"{pdb_id}.cif"
+    saved_path = ProteinService.save_uploaded_file(cif_data, filename)
+    
+    if not uniprot_id:
+        uniprot_id = extract_uniprot_id(saved_path)
+        
+    return {
+        "filename": filename,
+        "saved_path": str(saved_path),
+        "uniprot_id": uniprot_id,
+        "models": build_structure_summary(saved_path),
+    }
+
 def build_structure_summary(path: Path) -> list[dict]:
     structure = parse_pdb(str(path))
     summary = []
