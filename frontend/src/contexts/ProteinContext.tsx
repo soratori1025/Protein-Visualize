@@ -30,6 +30,8 @@ interface ProteinContextType {
   setActiveTopologyData: (data: UniProtTopologyData | null) => void;
   chainAnalysis: ChainAnalysis | null;
   setChainAnalysis: (data: ChainAnalysis | null) => void;
+  /** UniProt accession of the chain being analysed, when the file maps one. */
+  chainUniprotId: string | null;
 }
 
 const ProteinContext = createContext<ProteinContextType | undefined>(undefined);
@@ -158,6 +160,7 @@ export function ProteinProvider({ children }: { children: React.ReactNode }) {
         setActiveTopologyData,
         chainAnalysis,
         setChainAnalysis,
+        chainUniprotId: chainId ? protein?.chain_uniprot_ids?.[chainId] ?? null : null,
       }}
     >
       {children}

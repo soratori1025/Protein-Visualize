@@ -65,7 +65,7 @@ export function TopologyToolbar({
         <button className={`tm-tab-btn ${figureTheme === 'lab' ? 'active' : ''}`} onClick={() => setFigureTheme('lab')}>Dark Mode</button>
       </div>
       <div className="tm-preset-chip" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-        <button className={`tm-tab-btn ${topologySource === 'calculated' ? 'active' : ''}`} onClick={() => handleTopologySourceChange('calculated')} disabled={!filename} title={!filename ? 'Upload a structure file to calculate topology' : undefined}>Calculated (beta)</button>
+        <button className={`tm-tab-btn ${topologySource === 'calculated' ? 'active' : ''}`} onClick={() => handleTopologySourceChange('calculated')} disabled={!filename} title={!filename ? 'Upload a structure file to calculate topology' : undefined}>Calculated</button>
         <button className={`tm-tab-btn ${topologySource === 'uniprot' ? 'active' : ''}`} onClick={() => handleTopologySourceChange('uniprot')}>UniProt</button>
       </div>
       <div style={{ display: 'flex', gap: '4px' }}>

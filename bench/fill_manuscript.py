@@ -2,8 +2,8 @@
 Fill the manuscript placeholders from the committed benchmark results.
 
     python bench/fill_manuscript.py --results bench/results \
-        --template manuscript/ProteinLab_manuscript.tex \
-        --out manuscript/ProteinLab_manuscript_filled.tex
+        --template manuscript/ProteinLab_manuscript_submission.tex \
+        --out manuscript/ProteinLab_manuscript_submission.tex
 
 Every number in the manuscript is read from a file produced by a committed script, so
 the paper cannot silently disagree with the data.  The script reports every placeholder
@@ -12,6 +12,10 @@ it could not fill, so that nothing is left to memory.
 The placeholders are the ``\\todo{...}`` macros of the LaTeX source: the author
 metadata and the citation checks keep their marker, and every numeric placeholder is
 replaced by the value from the result files.
+
+The competitive matrix (Table 5) is not a placeholder: it is a generated file of its own,
+``manuscript/parts/table_5_matrix.tex``, which the manuscript inputs and which
+``bench/make_matrix_table.py`` regenerates from ``bench/competitive_matrix.json``.
 
 Formatting rules
 ----------------
@@ -228,12 +232,6 @@ def collect(results: Path) -> dict:
         out["PORT_STATES"] = parsed.get("n_states")
         out["PORT_TRANS_DIFF"] = parsed.get("max_transition_difference")
 
-    # ---- the competitive matrix
-    matrix_path = Path(__file__).resolve().parent / "competitive_matrix.json"
-    if matrix_path.exists():
-        matrix = json.loads(matrix_path.read_text())
-        out["_matrix"] = matrix
-
     return out
 
 
@@ -287,44 +285,10 @@ def render(key: str, values: dict) -> str | None:
     return None
 
 
-def matrix_table(matrix: dict) -> str:
-    """The competitive matrix as a LaTeX longtable."""
-    tools = matrix.get("tools", [])
-    capabilities = matrix.get("capabilities", [])
-    if not tools or not capabilities:
-        return ""
-    name_width = 0.30
-    col = (1.0 - name_width) / len(tools)
-    out = [r"\begin{longtable}{" + f"p{{{name_width:.2f}\\linewidth}}"
-           + "".join(f"p{{{col:.2f}\\linewidth}}" for _ in tools) + "}",
-           r"\caption{What each tool can do. The entries about the competitors are taken "
-           r"from their own repositories and documentation; the pointers are checked "
-           r"when the table is generated.}" + r"\label{table:matrix}\\",
-           r"\toprule",
-           r"\textbf{capability} & " + " & ".join(r"\textbf{%s}" % t["tool"] for t in tools)
-           + r" \\",
-           r"\midrule",
-           r"\endfirsthead",
-           r"\toprule",
-           r"\textbf{capability} & " + " & ".join(r"\textbf{%s}" % t["tool"] for t in tools)
-           + r" \\",
-           r"\midrule",
-           r"\endhead",
-           r"\bottomrule\endfoot\bottomrule\endlastfoot"]
-    for capability in capabilities:
-        cells = [capability.replace("_", " ")]
-        for tool in tools:
-            value = str(tool["capabilities"].get(capability, "-"))
-            cells.append(value.replace("&", r"\&").replace("_", r"\_"))
-        out.append(" & ".join(cells) + r" \\")
-    out.append(r"\end{longtable}")
-    return "\n".join(out)
-
-
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="bench/results")
-    ap.add_argument("--template", default="manuscript/ProteinLab_manuscript.tex")
+    ap.add_argument("--template", default="manuscript/ProteinLab_manuscript_submission.tex")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     results = Path(args.results)
@@ -346,14 +310,6 @@ def main() -> None:
         return value
 
     text = PLACEHOLDER.sub(replace, text)
-
-    # the competitive matrix table is generated, not typed
-    matrix = values.get("_matrix")
-    if matrix:
-        table = matrix_table(matrix)
-        if table:
-            text = text.replace(r"\todo{MATRIX_TABLE}", table)
-            unresolved = [k for k in unresolved if k != "MATRIX_TABLE"]
     out_path.write_text(text, encoding="utf-8")
     print(f"written to {out_path}")
     if unresolved:

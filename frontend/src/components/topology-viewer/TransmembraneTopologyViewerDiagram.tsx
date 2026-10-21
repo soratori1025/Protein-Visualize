@@ -48,8 +48,30 @@ import {
   getExtraFeatures
 } from './topologyUtils';
 
+/**
+ * Whether a chain carries the UniProt entry recorded for the file as a whole.
+ *
+ * A file that names one accession for all its chains (an AlphaFold model, a small monomer)
+ * has no per-chain map, and the accession of the file applies to every chain.  When the map
+ * exists, it is authoritative: a chain it does not name has no known accession, and the file
+ * entry must not be sent for it - 7YK7 records P63212 for its first chain only, and asking
+ * for the topology of chain R against P63212 fails with a sequence mismatch.
+ */
+export function chainHostsFileEntry(
+  chainId: string | undefined,
+  fileAccession: string | undefined,
+  map?: Record<string, string>
+): boolean {
+  if (!fileAccession) return false;
+  if (!map || Object.keys(map).length === 0) return true;
+  return !!chainId && map[chainId] === fileAccession;
+}
+
 export function TransmembraneTopologyViewerDiagram({
   chain,
+  chainOptions = [],
+  onSelectChain,
+  chainUniprotIds,
   secondaryResult,
   filename,
   onSelectResidue,
@@ -89,6 +111,7 @@ export function TransmembraneTopologyViewerDiagram({
   const [customUniprotId, setCustomUniprotId] = useState<string>('');
   const [overlayType, setOverlayType] = useState<'none' | 'dssp' | 'stride'>('none');
   const [calculatedData, setCalculatedData] = useState<CalculatedTopologyData | null>(null);
+  const calculatedTicket = useRef<number>(0);
   const [overlayResult, setOverlayResult] = useState<SecondaryStructureResult | null>(null);
   const [overlayError, setOverlayError] = useState<string | null>(null);
   const [loadingCalculated, setLoadingCalculated] = useState<boolean>(false);
@@ -162,6 +185,7 @@ export function TransmembraneTopologyViewerDiagram({
     chainIdToFetch?: string
   ) => {
     if (!filenameToFetch.trim()) return;
+    const ticket = ++calculatedTicket.current;
     setLoadingCalculated(true);
     setCalculatedError(null);
     try {
@@ -195,12 +219,14 @@ export function TransmembraneTopologyViewerDiagram({
         const errData = await response.json().catch(() => ({}));
         throw new Error(errData.detail || `Could not compute topology for ${filenameToFetch}`);
       }
+      if (ticket !== calculatedTicket.current) return;
       setCalculatedData((await response.json()) as CalculatedTopologyData);
     } catch (err: any) {
+      if (ticket !== calculatedTicket.current) return;
       setCalculatedError(err.message || 'Could not compute topology');
       setCalculatedData(null);
     } finally {
-      setLoadingCalculated(false);
+      if (ticket === calculatedTicket.current) setLoadingCalculated(false);
     }
   }, [tmThickness, tmMinMembraneScore, tmTreatTurnAsHelix, tmMinCrossSpan, tmFullCrossFrac, distinguishTurns]);
 
@@ -223,20 +249,31 @@ export function TransmembraneTopologyViewerDiagram({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerTmRecalc]);
 
-  // The calculated topology belongs to one chain: recompute when another chain is selected.
+  // The calculated topology belongs to one chain and one accession: recompute when the
+  // chain is selected, and again once the accession of that chain is known.  A file may
+  // map each chain to its own entry - 7YK7 holds a fusion partner and a G-protein subunit
+  // next to the receptor - so the accession follows the chain rather than the file.  The
+  // effect runs once per change: the value passed in this render is the right one, and a
+  // request sent with the previous value would either fail or be overtaken.
+  // A value the user typed by hand is left alone, and so is the upload itself: the first
+  // render after a file loads has no data yet because the request sent for the upload (or
+  // for the previously selected chain) is still on its way.  Once it has landed, the same
+  // effect sees a chain that differs from the data and recomputes.
   useEffect(() => {
-    if (topologySource !== 'calculated' || !filename || !chain?.id || loadingCalculated) return;
-    if (calculatedData?.chain_id && calculatedData.chain_id !== chain.id) {
-      fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, customUniprotId, chain.id);
+    if (topologySource !== 'calculated' || !filename || !chain?.id) return;
+    if (!calculatedData) return;
+    const chainAccession = chainUniprotIds?.[chain.id];
+    // the data shown already belongs to this chain
+    if (calculatedData.chain_id === chain.id) return;
+    const accession = chainHostsFileEntry(chain.id, uniprotId ?? undefined, chainUniprotIds) ? customUniprotId : '';
+    if (chainAccession) {
+      setCustomUniprotId(chainAccession);
+      setUniprotIdInput(chainAccession);
     }
+    if (chainAccession && chainAccession !== uniprotId) fetchUniProtTopology(chainAccession);
+    fetchCalculatedTopology(filename, tmAlgorithm, ssAlgorithm, accession, chain.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chain?.id]);
-
-  // Prefill the UniProt accession of the uploaded structure (still editable).
-  useEffect(() => {
-    if (uniprotId && !customUniprotId) setCustomUniprotId(uniprotId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uniprotId]);
+  }, [chain?.id, chainUniprotIds, !!calculatedData]);
 
   const activeTopologyData = topologySource === 'calculated' ? calculatedData : uniprotData;
 
@@ -521,6 +558,25 @@ export function TransmembraneTopologyViewerDiagram({
               : 'UniProt topology'}
           </span>
           <h2>Transmembrane secondary structure map</h2>
+          {/* A file may hold several chains, and the first one is not always the membrane
+              protein: 7YK7 is a fusion whose first chain is a soluble partner with no
+              crossing at all.  The analysed chain is therefore named here, and can be
+              changed, next to the title of the map it applies to. */}
+          {chainOptions.length > 1 && (
+            <label className="tm-chain-picker">
+              <span>Chain</span>
+              <select
+                value={chain?.id ?? ''}
+                onChange={(event) => onSelectChain?.(event.target.value)}
+              >
+                {chainOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.id} · {option.residue_count} residues
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
 
         <TopologyToolbar

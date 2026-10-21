@@ -16,6 +16,29 @@
   font-size: 12px;
 }
 
+/* Which chain the map describes.  A file may hold several chains and the first one is not
+   always the membrane protein, so the choice is shown next to the title of the map. */
+.tm-chain-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tm-chain-picker select {
+  padding: 3px 8px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 /* Toolbar */
 .tm-toolbar-actions {
   display: flex;

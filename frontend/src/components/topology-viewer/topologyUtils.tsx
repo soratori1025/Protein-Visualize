@@ -258,6 +258,11 @@ export function looksLikeHalfPair(prev: RawTM, curr: RawTM, trustSegments = fals
 
 export interface Props {
   chain: Chain | undefined;
+  /** The chains of the loaded file, so that the analysed chain can be chosen. */
+  chainOptions?: Chain[];
+  onSelectChain?: (chainId: string) => void;
+  /** UniProt accession of each chain, when the file maps one. */
+  chainUniprotIds?: Record<string, string>;
   secondaryResult?: SecondaryStructureResult | null;
   selectedResidue?: number | null;
   onSelectResidue?: (residueNumber: number | null) => void;

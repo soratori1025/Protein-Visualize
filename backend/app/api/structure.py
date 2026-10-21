@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from app.services.protein_service import ProteinService
+from app.services.topology.providers.tm.uniprot import chain_references
 from protein_engine.parser.pdb import parse_pdb
 
 router = APIRouter(prefix="/api/structure", tags=["structure"])
@@ -140,6 +141,7 @@ async def upload_structure(file: UploadFile = File(...)):
         "filename": filename,
         "saved_path": str(saved_path),
         "uniprot_id": uniprot_id,
+        "chain_uniprot_ids": chain_references(saved_path),
         "models": build_structure_summary(saved_path),
     }
 
@@ -197,6 +199,7 @@ async def fetch_structure(req: FetchRequest):
         "filename": filename,
         "saved_path": str(saved_path),
         "uniprot_id": uniprot_id,
+        "chain_uniprot_ids": chain_references(saved_path),
         "models": build_structure_summary(saved_path),
     }
 

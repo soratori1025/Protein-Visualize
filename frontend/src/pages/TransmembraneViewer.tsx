@@ -72,6 +72,15 @@ export function TransmembraneViewer() {
       <section className="tm-topology-section">
         <TransmembraneTopologyViewerDiagram
           chain={chain}
+          chainOptions={chains}
+          chainUniprotIds={protein?.chain_uniprot_ids}
+          onSelectChain={(nextChain) => {
+            // the map, the secondary-structure track and the 3-D selection follow the
+            // chosen chain, and the topology is recomputed for it (see the effect in the
+            // diagram, which refetches when the chain of the data differs)
+            setChainId(nextChain);
+            setSelectedResidue(null);
+          }}
           secondaryResult={secondaryResult}
           selectedResidue={selectedResidue}
           onSelectResidue={setSelectedResidue}

@@ -103,6 +103,54 @@ def _reference_from_cif(file_path: Path, chain_id: Optional[str]) -> Optional[Un
     return None
 
 
+def chain_references(file_path: Path) -> dict[str, str]:
+    """{chain id: UniProt accession} for every chain the file maps to a UniProt entry.
+
+    A file may hold several proteins - 7YK7 is a fusion whose first chain is a soluble
+    partner - and the accession of one chain is not the accession of another.  The map
+    is read from the same records as `extract_uniprot_reference`, without a chain filter.
+    Returns an empty map when the file carries no such record.
+    """
+    if file_path.suffix.lower() not in (".cif", ".mmcif", ".pdb", ".ent"):
+        return {}
+    try:
+        if file_path.suffix.lower() in (".cif", ".mmcif"):
+            # Bio.PDB raises several unrelated error types on a malformed record
+            from Bio.PDB.MMCIF2Dict import MMCIF2Dict
+            d = MMCIF2Dict(str(file_path))
+            ref_ids = _as_list(d.get("_struct_ref.id"))
+            db_names = _as_list(d.get("_struct_ref.db_name"))
+            accessions = _as_list(d.get("_struct_ref.pdbx_db_accession"))
+            unp = {rid: str(acc).strip().upper()
+                   for rid, db, acc in zip(ref_ids, db_names, accessions)
+                   if db == "UNP" and acc not in (None, "?")}
+            seq_ref = _as_list(d.get("_struct_ref_seq.ref_id"))
+            strands = _as_list(d.get("_struct_ref_seq.pdbx_strand_id"))
+            out: dict[str, str] = {}
+            for rid, strand in zip(seq_ref, strands):
+                if rid in unp and strand not in (None, "?", "."):
+                    for chain in str(strand).split(","):
+                        out[chain.strip()] = unp[rid]
+            return out
+
+        out = {}
+        with open(file_path, errors="replace") as fh:
+            for line in fh:
+                # the test is on the slice as a string: Bio.PDB can equip a line with
+                # attributes of its own, and those objects answer comparisons by raising
+                head = str(line[:6])
+                if head in ("ATOM  ", "HETATM"):
+                    break
+                # database field, columns 26-28 (1-based) -> index 25:28
+                if head == "DBREF " and str(line[25:28]).strip() == "UNP":
+                    acc = str(line[33:41]).strip().upper().split()[0]
+                    if acc:
+                        out[str(line[12:13]).strip()] = acc
+        return out
+    except Exception:          # Bio.PDB raises several unrelated types on a bad record
+        return {}
+
+
 def extract_uniprot_reference(file_path: Path, chain_id: Optional[str] = None) -> Optional[UniProtReference]:
     try:
         if file_path.suffix.lower() in (".cif", ".mmcif"):
