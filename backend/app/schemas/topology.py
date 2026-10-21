@@ -120,3 +120,9 @@ class TopologyResponse(BaseModel):
     residues: Optional[list[ResidueAnnotation]] = None
     # residue map TM_in / TM_C / TM_E (see ConsensusResidue); None without an SS result
     consensus_map: Optional[list[ConsensusResidue]] = None
+    # How well the bilayer placement is determined by the structure:
+    # "ok" | "caution" | "uncertain".  "uncertain" means the placement should not be
+    # trusted - the thickness sat at the edge of the search range, or the free energy
+    # was barely below the membrane threshold, or very few helices carry the fit.
+    placement_quality: str = "ok"
+    placement_flags: list[str] = Field(default_factory=list)

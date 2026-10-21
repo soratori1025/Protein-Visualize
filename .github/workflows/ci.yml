@@ -1,0 +1,87 @@
+name: ProteinLab CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: backend tests (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
+          python -m pip install pytest
+
+      - name: install DSSP and STRIDE
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dssp
+          python -m pip install --quiet stride || true
+
+      - name: run the test suite
+        working-directory: backend
+        run: python -m pytest tests -q
+
+  frontend:
+    name: frontend type check and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: install
+        working-directory: frontend
+        run: npm ci
+
+      - name: type check
+        working-directory: frontend
+        run: npx tsc -b --pretty false
+
+      - name: build
+        working-directory: frontend
+        run: npx vite build
+
+  benchmark-smoke:
+    name: benchmark smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r backend/requirements.txt
+          python -m pip install matplotlib scipy
+      - name: run the topology benchmark on a small cohort
+        run: |
+          python bench/benchmark_tm_topology.py --out /tmp/bench --limit 3 --soluble --workers 2
+          test -s /tmp/bench/summary.csv
+          python bench/make_figures.py --results /tmp/bench --out /tmp/figures
+          test -s /tmp/figures/figure3_benchmark.png

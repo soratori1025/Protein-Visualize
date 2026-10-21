@@ -1,0 +1,4222 @@
+[
+  {
+    "accession": "",
+    "pdb_id": "7OTG",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 1179,
+    "3d_energy": {
+      "normal_error_deg": 3.43,
+      "midplane_offset_A": 0.61,
+      "thickness_A": 27.7,
+      "thickness_error_A": -3.1,
+      "dG_transfer": -76.97,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.34
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7DDF",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 995,
+    "3d_energy": {
+      "normal_error_deg": 1.19,
+      "midplane_offset_A": 0.58,
+      "thickness_A": 24.8,
+      "thickness_error_A": -5.8,
+      "dG_transfer": -106.04,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 3.74
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8E9Z",
+    "chain": "",
+    "reference_thickness_A": 32.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 278,
+    "3d_energy": {
+      "normal_error_deg": 4.65,
+      "midplane_offset_A": 1.43,
+      "thickness_A": 31.3,
+      "thickness_error_A": -1.3,
+      "dG_transfer": -64.35,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.6
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6YKM",
+    "chain": "",
+    "reference_thickness_A": 27.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 255,
+    "3d_energy": {
+      "normal_error_deg": 0.6,
+      "midplane_offset_A": 1.5,
+      "thickness_A": 23.5,
+      "thickness_error_A": -3.9,
+      "dG_transfer": -72.78,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.21
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7V8M",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 396,
+    "3d_energy": {
+      "normal_error_deg": 5.14,
+      "midplane_offset_A": 0.58,
+      "thickness_A": 27.2,
+      "thickness_error_A": -3.0,
+      "dG_transfer": -60.74,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.47
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6X3W",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 334,
+    "3d_energy": {
+      "normal_error_deg": 3.26,
+      "midplane_offset_A": 0.55,
+      "thickness_A": 28.2,
+      "thickness_error_A": -2.0,
+      "dG_transfer": -98.14,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.56
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "1XJI",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 225,
+    "3d_energy": {
+      "normal_error_deg": 6.09,
+      "midplane_offset_A": 1.32,
+      "thickness_A": 28.7,
+      "thickness_error_A": -2.9,
+      "dG_transfer": -49.16,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 19.1
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7T9I",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 86,
+    "3d_energy": {
+      "normal_error_deg": 2.94,
+      "midplane_offset_A": 0.83,
+      "thickness_A": 31.5,
+      "thickness_error_A": 0.1,
+      "dG_transfer": -67.36,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 62.26
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8EAU",
+    "chain": "",
+    "reference_thickness_A": 34.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 758,
+    "3d_energy": {
+      "normal_error_deg": 3.8,
+      "midplane_offset_A": 0.41,
+      "thickness_A": 31.0,
+      "thickness_error_A": -3.6,
+      "dG_transfer": -167.99,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.38
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6GAI",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.166,
+    "n_superposed_atoms": 231,
+    "3d_energy": {
+      "normal_error_deg": 12.02,
+      "midplane_offset_A": 1.96,
+      "thickness_A": 32.2,
+      "thickness_error_A": 1.2,
+      "dG_transfer": -50.06,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.03
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7K18",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1128,
+    "3d_energy": {
+      "normal_error_deg": 2.16,
+      "midplane_offset_A": 1.22,
+      "thickness_A": 24.8,
+      "thickness_error_A": -5.4,
+      "dG_transfer": -131.94,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.41
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3DHW",
+    "chain": "",
+    "reference_thickness_A": 29.1,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 203,
+    "3d_energy": {
+      "normal_error_deg": 20.93,
+      "midplane_offset_A": 14.67,
+      "thickness_A": 40.0,
+      "thickness_error_A": 10.9,
+      "dG_transfer": -55.37,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.35
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8EA0",
+    "chain": "",
+    "reference_thickness_A": 32.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 285,
+    "3d_energy": {
+      "normal_error_deg": 3.48,
+      "midplane_offset_A": 0.52,
+      "thickness_A": 31.1,
+      "thickness_error_A": -1.5,
+      "dG_transfer": -60.99,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.04
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6HCL",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 395,
+    "3d_energy": {
+      "normal_error_deg": 76.04,
+      "midplane_offset_A": 21.05,
+      "thickness_A": 20.0,
+      "thickness_error_A": -11.0,
+      "dG_transfer": -46.73,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 18.76
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7M17",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 313,
+    "3d_energy": {
+      "normal_error_deg": 0.48,
+      "midplane_offset_A": 1.88,
+      "thickness_A": 23.5,
+      "thickness_error_A": -6.7,
+      "dG_transfer": -123.83,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 17.39
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2LHF",
+    "chain": "",
+    "reference_thickness_A": 20.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 178,
+    "3d_energy": {
+      "normal_error_deg": 1.66,
+      "midplane_offset_A": 2.5,
+      "thickness_A": 20.0,
+      "thickness_error_A": -0.6,
+      "dG_transfer": -5.82,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.15
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7WYW",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 992,
+    "3d_energy": {
+      "normal_error_deg": 4.39,
+      "midplane_offset_A": 1.7,
+      "thickness_A": 29.0,
+      "thickness_error_A": -2.4,
+      "dG_transfer": -137.64,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.22
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7SQ7",
+    "chain": "",
+    "reference_thickness_A": 31.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 463,
+    "3d_energy": {
+      "normal_error_deg": 0.62,
+      "midplane_offset_A": 2.07,
+      "thickness_A": 30.0,
+      "thickness_error_A": -1.2,
+      "dG_transfer": -153.83,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.23
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7TU9",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 341,
+    "3d_energy": {
+      "normal_error_deg": 1.45,
+      "midplane_offset_A": 2.89,
+      "thickness_A": 31.2,
+      "thickness_error_A": -0.4,
+      "dG_transfer": -107.76,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 10.44
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7RU6",
+    "chain": "",
+    "reference_thickness_A": 31.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 315,
+    "3d_energy": {
+      "normal_error_deg": 8.37,
+      "midplane_offset_A": 1.24,
+      "thickness_A": 26.3,
+      "thickness_error_A": -4.9,
+      "dG_transfer": -74.7,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.05
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6XOX",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 220,
+    "3d_energy": {
+      "normal_error_deg": 7.55,
+      "midplane_offset_A": 1.32,
+      "thickness_A": 27.0,
+      "thickness_error_A": -4.4,
+      "dG_transfer": -50.93,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 71.98
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4O9U",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 94,
+    "3d_energy": {
+      "normal_error_deg": 2.77,
+      "midplane_offset_A": 0.55,
+      "thickness_A": 23.8,
+      "thickness_error_A": -6.8,
+      "dG_transfer": -99.99,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 31.7
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6JG3",
+    "chain": "",
+    "reference_thickness_A": 29.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 3477,
+    "3d_energy": {
+      "normal_error_deg": 0.58,
+      "midplane_offset_A": 0.78,
+      "thickness_A": 20.0,
+      "thickness_error_A": -9.0,
+      "dG_transfer": -93.48,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 44.46
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4TKQ",
+    "chain": "",
+    "reference_thickness_A": 29.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 207,
+    "3d_energy": {
+      "normal_error_deg": 7.01,
+      "midplane_offset_A": 7.42,
+      "thickness_A": 40.0,
+      "thickness_error_A": 10.2,
+      "dG_transfer": -56.78,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 34.52
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3AQP",
+    "chain": "",
+    "reference_thickness_A": 29.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 719,
+    "3d_energy": {
+      "normal_error_deg": 1.83,
+      "midplane_offset_A": 2.08,
+      "thickness_A": 23.5,
+      "thickness_error_A": -6.3,
+      "dG_transfer": -67.66,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.7
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7JNA",
+    "chain": "",
+    "reference_thickness_A": 36.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 278,
+    "3d_energy": {
+      "normal_error_deg": 0.77,
+      "midplane_offset_A": 1.91,
+      "thickness_A": 27.2,
+      "thickness_error_A": -9.4,
+      "dG_transfer": -45.36,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 29.73
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6NQ7",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 204,
+    "3d_energy": {
+      "normal_error_deg": 4.3,
+      "midplane_offset_A": 3.53,
+      "thickness_A": 30.3,
+      "thickness_error_A": -1.1,
+      "dG_transfer": -57.16,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 16.87
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6E1M",
+    "chain": "",
+    "reference_thickness_A": 26.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 533,
+    "3d_energy": {
+      "normal_error_deg": 0.71,
+      "midplane_offset_A": 0.09,
+      "thickness_A": 24.0,
+      "thickness_error_A": -2.2,
+      "dG_transfer": -96.23,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.68
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5O79",
+    "chain": "",
+    "reference_thickness_A": 23.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 341,
+    "3d_energy": {
+      "normal_error_deg": 0.12,
+      "midplane_offset_A": 1.45,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -47.22,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.49
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6PJR",
+    "chain": "",
+    "reference_thickness_A": 29.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 176,
+    "3d_energy": {
+      "normal_error_deg": 4.24,
+      "midplane_offset_A": 0.77,
+      "thickness_A": 21.8,
+      "thickness_error_A": -8.0,
+      "dG_transfer": -43.3,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 18.72
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5UP2",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 796,
+    "3d_energy": {
+      "normal_error_deg": 6.1,
+      "midplane_offset_A": 1.16,
+      "thickness_A": 23.8,
+      "thickness_error_A": -7.2,
+      "dG_transfer": -77.64,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 26.32
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6EID",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 246,
+    "3d_energy": {
+      "normal_error_deg": 0.16,
+      "midplane_offset_A": 0.14,
+      "thickness_A": 30.0,
+      "thickness_error_A": -1.4,
+      "dG_transfer": -84.89,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 0.08
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7VL9",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 218,
+    "3d_energy": {
+      "normal_error_deg": 5.4,
+      "midplane_offset_A": 0.0,
+      "thickness_A": 28.7,
+      "thickness_error_A": -2.7,
+      "dG_transfer": -53.92,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 73.54
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7U2N",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 345,
+    "3d_energy": {
+      "normal_error_deg": 1.7,
+      "midplane_offset_A": 0.46,
+      "thickness_A": 32.2,
+      "thickness_error_A": 0.6,
+      "dG_transfer": -113.06,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.84
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7RPH",
+    "chain": "",
+    "reference_thickness_A": 31.2,
+    "superposition_rmsd_A": 0.003,
+    "n_superposed_atoms": 926,
+    "3d_energy": {
+      "normal_error_deg": 2.76,
+      "midplane_offset_A": 0.97,
+      "thickness_A": 31.2,
+      "thickness_error_A": -0.0,
+      "dG_transfer": -81.82,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.01
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7FJM",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 973,
+    "3d_energy": {
+      "normal_error_deg": 4.67,
+      "midplane_offset_A": 1.56,
+      "thickness_A": 28.2,
+      "thickness_error_A": -2.0,
+      "dG_transfer": -62.69,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 10.29
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6P48",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 604,
+    "3d_energy": {
+      "normal_error_deg": 0.63,
+      "midplane_offset_A": 0.72,
+      "thickness_A": 30.5,
+      "thickness_error_A": 0.3,
+      "dG_transfer": -116.83,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.99
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7A0Y",
+    "chain": "",
+    "reference_thickness_A": 26.4,
+    "superposition_rmsd_A": 0.003,
+    "n_superposed_atoms": 372,
+    "3d_energy": {
+      "normal_error_deg": 0.75,
+      "midplane_offset_A": 0.83,
+      "thickness_A": 23.5,
+      "thickness_error_A": -2.9,
+      "dG_transfer": -99.24,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.9
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6FKB",
+    "chain": "",
+    "reference_thickness_A": 32.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 328,
+    "3d_energy": {
+      "normal_error_deg": 4.75,
+      "midplane_offset_A": 0.14,
+      "thickness_A": 31.0,
+      "thickness_error_A": -1.2,
+      "dG_transfer": -60.15,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.68
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7LAD",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 447,
+    "3d_energy": {
+      "normal_error_deg": 8.07,
+      "midplane_offset_A": 0.5,
+      "thickness_A": 24.8,
+      "thickness_error_A": -6.0,
+      "dG_transfer": -3.04,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 87.12
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6VUM",
+    "chain": "",
+    "reference_thickness_A": 28.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 409,
+    "3d_energy": {
+      "normal_error_deg": 0.75,
+      "midplane_offset_A": 0.13,
+      "thickness_A": 21.8,
+      "thickness_error_A": -6.4,
+      "dG_transfer": -174.0,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.1
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6KZP",
+    "chain": "",
+    "reference_thickness_A": 29.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 1014,
+    "3d_energy": {
+      "normal_error_deg": 0.62,
+      "midplane_offset_A": 1.69,
+      "thickness_A": 24.2,
+      "thickness_error_A": -5.6,
+      "dG_transfer": -134.3,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.94
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "1A0T",
+    "chain": "",
+    "reference_thickness_A": 23.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 413,
+    "3d_energy": {
+      "normal_error_deg": 0.73,
+      "midplane_offset_A": 0.05,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.6,
+      "dG_transfer": -51.46,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 22.24
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6AFT",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 740,
+    "3d_energy": {
+      "normal_error_deg": 0.43,
+      "midplane_offset_A": 0.08,
+      "thickness_A": 27.3,
+      "thickness_error_A": -2.9,
+      "dG_transfer": -111.81,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 3.9
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7XQH",
+    "chain": "",
+    "reference_thickness_A": 35.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 200,
+    "3d_energy": {
+      "normal_error_deg": 0.56,
+      "midplane_offset_A": 1.45,
+      "thickness_A": 35.6,
+      "thickness_error_A": 0.0,
+      "dG_transfer": -188.05,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 16.24
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8F74",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 319,
+    "3d_energy": {
+      "normal_error_deg": 0.35,
+      "midplane_offset_A": 0.99,
+      "thickness_A": 23.2,
+      "thickness_error_A": -7.0,
+      "dG_transfer": -123.75,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.86
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4B62",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.013,
+    "n_superposed_atoms": 143,
+    "3d_energy": {
+      "normal_error_deg": 62.5,
+      "midplane_offset_A": 12.8,
+      "thickness_A": 20.0,
+      "thickness_error_A": -10.8,
+      "dG_transfer": 1.08,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 47.36
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5O67",
+    "chain": "",
+    "reference_thickness_A": 25.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 282,
+    "3d_energy": {
+      "normal_error_deg": 0.9,
+      "midplane_offset_A": 0.13,
+      "thickness_A": 20.3,
+      "thickness_error_A": -4.7,
+      "dG_transfer": -75.21,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 85.64
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6GWH",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 440,
+    "3d_energy": {
+      "normal_error_deg": 4.27,
+      "midplane_offset_A": 0.6,
+      "thickness_A": 22.7,
+      "thickness_error_A": -7.5,
+      "dG_transfer": -59.09,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 9.97
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6Z0H",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 6.979,
+    "n_superposed_atoms": 46,
+    "3d_energy": {
+      "normal_error_deg": 20.6,
+      "midplane_offset_A": 13.05,
+      "thickness_A": 39.5,
+      "thickness_error_A": 8.7,
+      "dG_transfer": -28.81,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 39.76
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4TPJ",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 445,
+    "3d_energy": {
+      "normal_error_deg": 4.19,
+      "midplane_offset_A": 0.97,
+      "thickness_A": 23.3,
+      "thickness_error_A": -7.3,
+      "dG_transfer": -110.14,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.64
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4FQE",
+    "chain": "",
+    "reference_thickness_A": 22.2,
+    "superposition_rmsd_A": 0.009,
+    "n_superposed_atoms": 170,
+    "3d_energy": {
+      "normal_error_deg": 3.15,
+      "midplane_offset_A": 0.86,
+      "thickness_A": 20.0,
+      "thickness_error_A": -2.2,
+      "dG_transfer": -23.05,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 27.09
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2O4V",
+    "chain": "",
+    "reference_thickness_A": 23.9,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 411,
+    "3d_energy": {
+      "normal_error_deg": 0.42,
+      "midplane_offset_A": 1.61,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.9,
+      "dG_transfer": -64.31,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 23.51
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4BUM",
+    "chain": "",
+    "reference_thickness_A": 23.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 283,
+    "3d_energy": {
+      "normal_error_deg": 2.85,
+      "midplane_offset_A": 0.93,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -4.53,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 18.64
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7EFO",
+    "chain": "",
+    "reference_thickness_A": 27.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 235,
+    "3d_energy": {
+      "normal_error_deg": 6.46,
+      "midplane_offset_A": 0.27,
+      "thickness_A": 21.5,
+      "thickness_error_A": -5.7,
+      "dG_transfer": -59.63,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 70.39
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4QNC",
+    "chain": "",
+    "reference_thickness_A": 31.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 81,
+    "3d_energy": {
+      "normal_error_deg": 5.92,
+      "midplane_offset_A": 1.32,
+      "thickness_A": 26.2,
+      "thickness_error_A": -5.6,
+      "dG_transfer": -43.99,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.14
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7QBI",
+    "chain": "",
+    "reference_thickness_A": 32.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 298,
+    "3d_energy": {
+      "normal_error_deg": 1.05,
+      "midplane_offset_A": 0.48,
+      "thickness_A": 27.5,
+      "thickness_error_A": -5.3,
+      "dG_transfer": -73.45,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 10.19
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7W7D",
+    "chain": "",
+    "reference_thickness_A": 33.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 216,
+    "3d_energy": {
+      "normal_error_deg": 67.17,
+      "midplane_offset_A": 64.97,
+      "thickness_A": 28.0,
+      "thickness_error_A": -5.8,
+      "dG_transfer": -64.45,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 49.07
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7XNN",
+    "chain": "",
+    "reference_thickness_A": 32.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 144,
+    "3d_energy": {
+      "normal_error_deg": 0.59,
+      "midplane_offset_A": 2.06,
+      "thickness_A": 27.5,
+      "thickness_error_A": -4.9,
+      "dG_transfer": -167.1,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 84.97
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7LFX",
+    "chain": "",
+    "reference_thickness_A": 29.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 450,
+    "3d_energy": {
+      "normal_error_deg": 0.75,
+      "midplane_offset_A": 0.51,
+      "thickness_A": 21.0,
+      "thickness_error_A": -8.4,
+      "dG_transfer": -94.15,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.47
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2B5F",
+    "chain": "",
+    "reference_thickness_A": 29.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 236,
+    "3d_energy": {
+      "normal_error_deg": 0.88,
+      "midplane_offset_A": 1.39,
+      "thickness_A": 21.7,
+      "thickness_error_A": -7.7,
+      "dG_transfer": -77.65,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 18.94
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6WEL",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 513,
+    "3d_energy": {
+      "normal_error_deg": 0.61,
+      "midplane_offset_A": 0.06,
+      "thickness_A": 27.3,
+      "thickness_error_A": -3.7,
+      "dG_transfer": -140.49,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.03
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7YP7",
+    "chain": "",
+    "reference_thickness_A": 32.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 234,
+    "3d_energy": {
+      "normal_error_deg": 6.32,
+      "midplane_offset_A": 2.87,
+      "thickness_A": 32.0,
+      "thickness_error_A": 0.0,
+      "dG_transfer": -61.64,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 79.33
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5JWA",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 495,
+    "3d_energy": {
+      "normal_error_deg": 6.01,
+      "midplane_offset_A": 10.63,
+      "thickness_A": 39.4,
+      "thickness_error_A": 8.6,
+      "dG_transfer": -1.97,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 41.07
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7VDH",
+    "chain": "",
+    "reference_thickness_A": 36.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 267,
+    "3d_energy": {
+      "normal_error_deg": 7.26,
+      "midplane_offset_A": 0.55,
+      "thickness_A": 32.5,
+      "thickness_error_A": -3.5,
+      "dG_transfer": -71.75,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 19.21
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8ABK",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 383,
+    "3d_energy": {
+      "normal_error_deg": 1.82,
+      "midplane_offset_A": 1.24,
+      "thickness_A": 27.5,
+      "thickness_error_A": -2.7,
+      "dG_transfer": -119.38,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 10.07
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6MG8",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.593,
+    "n_superposed_atoms": 985,
+    "3d_energy": {
+      "normal_error_deg": 4.58,
+      "midplane_offset_A": 1.35,
+      "thickness_A": 29.0,
+      "thickness_error_A": -2.4,
+      "dG_transfer": -73.26,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 3.09
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7VMS",
+    "chain": "",
+    "reference_thickness_A": 26.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 3295,
+    "3d_energy": {
+      "normal_error_deg": 0.46,
+      "midplane_offset_A": 0.46,
+      "thickness_A": 21.0,
+      "thickness_error_A": -5.0,
+      "dG_transfer": -69.38,
+      "curved": true,
+      "curvature_radius_A": 281.1
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 51.6
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8H9K",
+    "chain": "",
+    "reference_thickness_A": 21.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 198,
+    "3d_energy": {
+      "normal_error_deg": 5.91,
+      "midplane_offset_A": 2.07,
+      "thickness_A": 20.0,
+      "thickness_error_A": -1.4,
+      "dG_transfer": -18.31,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 87.38
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4NJN",
+    "chain": "",
+    "reference_thickness_A": 28.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 182,
+    "3d_energy": {
+      "normal_error_deg": 5.1,
+      "midplane_offset_A": 0.76,
+      "thickness_A": 20.2,
+      "thickness_error_A": -8.4,
+      "dG_transfer": -39.78,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 9.77
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4AQ9",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 370,
+    "3d_energy": {
+      "normal_error_deg": 5.08,
+      "midplane_offset_A": 0.62,
+      "thickness_A": 25.7,
+      "thickness_error_A": -5.1,
+      "dG_transfer": -93.62,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 13.53
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3LSV",
+    "chain": "",
+    "reference_thickness_A": 32.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 311,
+    "3d_energy": {
+      "normal_error_deg": 0.5,
+      "midplane_offset_A": 0.82,
+      "thickness_A": 29.8,
+      "thickness_error_A": -2.6,
+      "dG_transfer": -121.58,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.63
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3OUF",
+    "chain": "",
+    "reference_thickness_A": 27.9,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 93,
+    "3d_energy": {
+      "normal_error_deg": 26.17,
+      "midplane_offset_A": 7.97,
+      "thickness_A": 21.8,
+      "thickness_error_A": -6.1,
+      "dG_transfer": -27.25,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 21.5
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5L7I",
+    "chain": "",
+    "reference_thickness_A": 32.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 564,
+    "3d_energy": {
+      "normal_error_deg": 6.01,
+      "midplane_offset_A": 0.33,
+      "thickness_A": 27.2,
+      "thickness_error_A": -5.2,
+      "dG_transfer": -84.44,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.93
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7MIO",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 659,
+    "3d_energy": {
+      "normal_error_deg": 0.77,
+      "midplane_offset_A": 1.45,
+      "thickness_A": 30.2,
+      "thickness_error_A": -0.2,
+      "dG_transfer": -165.76,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.82
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5X87",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 268,
+    "3d_energy": {
+      "normal_error_deg": 0.21,
+      "midplane_offset_A": 2.22,
+      "thickness_A": 20.0,
+      "thickness_error_A": -11.0,
+      "dG_transfer": -67.99,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 10.13
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8IWE",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 296,
+    "3d_energy": {
+      "normal_error_deg": 9.8,
+      "midplane_offset_A": 1.25,
+      "thickness_A": 30.0,
+      "thickness_error_A": -1.4,
+      "dG_transfer": -58.66,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 14.28
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3X3C",
+    "chain": "",
+    "reference_thickness_A": 29.4,
+    "superposition_rmsd_A": 0.011,
+    "n_superposed_atoms": 271,
+    "3d_energy": {
+      "normal_error_deg": 11.49,
+      "midplane_offset_A": 3.28,
+      "thickness_A": 24.7,
+      "thickness_error_A": -4.7,
+      "dG_transfer": -43.17,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.46
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6WBY",
+    "chain": "",
+    "reference_thickness_A": 27.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1250,
+    "3d_energy": {
+      "normal_error_deg": 5.06,
+      "midplane_offset_A": 0.12,
+      "thickness_A": 24.0,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -73.72,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 19.84
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6D7V",
+    "chain": "",
+    "reference_thickness_A": 29.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 592,
+    "3d_energy": {
+      "normal_error_deg": 12.4,
+      "midplane_offset_A": 4.32,
+      "thickness_A": 25.8,
+      "thickness_error_A": -3.6,
+      "dG_transfer": -70.02,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 13.39
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7V75",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 605,
+    "3d_energy": {
+      "normal_error_deg": 9.36,
+      "midplane_offset_A": 3.15,
+      "thickness_A": 20.8,
+      "thickness_error_A": -9.6,
+      "dG_transfer": -58.25,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.09
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6V05",
+    "chain": "",
+    "reference_thickness_A": 24.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 758,
+    "3d_energy": {
+      "normal_error_deg": 2.29,
+      "midplane_offset_A": 0.11,
+      "thickness_A": 21.8,
+      "thickness_error_A": -2.8,
+      "dG_transfer": -61.87,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 17.75
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5EKQ",
+    "chain": "",
+    "reference_thickness_A": 23.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 763,
+    "3d_energy": {
+      "normal_error_deg": 5.06,
+      "midplane_offset_A": 0.2,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -42.26,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 31.86
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2Z73",
+    "chain": "",
+    "reference_thickness_A": 32.9,
+    "superposition_rmsd_A": 0.565,
+    "n_superposed_atoms": 347,
+    "3d_energy": {
+      "normal_error_deg": 8.15,
+      "midplane_offset_A": 59.92,
+      "thickness_A": 33.2,
+      "thickness_error_A": 0.3,
+      "dG_transfer": -63.15,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.41
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6SQG",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.002,
+    "n_superposed_atoms": 210,
+    "3d_energy": {
+      "normal_error_deg": 0.57,
+      "midplane_offset_A": 2.45,
+      "thickness_A": 22.0,
+      "thickness_error_A": -8.6,
+      "dG_transfer": -88.8,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 17.24
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4N75",
+    "chain": "",
+    "reference_thickness_A": 23.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 379,
+    "3d_energy": {
+      "normal_error_deg": 12.1,
+      "midplane_offset_A": 2.62,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.8,
+      "dG_transfer": -53.89,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 13.8
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6HH0",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 25,
+    "3d_energy": {
+      "normal_error_deg": 8.57,
+      "midplane_offset_A": 0.7,
+      "thickness_A": 20.8,
+      "thickness_error_A": -10.0,
+      "dG_transfer": -0.32,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 71.32
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2ZLD",
+    "chain": "",
+    "reference_thickness_A": 23.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 339,
+    "3d_energy": {
+      "normal_error_deg": 1.87,
+      "midplane_offset_A": 1.5,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.6,
+      "dG_transfer": -25.15,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.03
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4RYM",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 154,
+    "3d_energy": {
+      "normal_error_deg": 3.04,
+      "midplane_offset_A": 0.84,
+      "thickness_A": 29.7,
+      "thickness_error_A": -1.7,
+      "dG_transfer": -41.06,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 3.02
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2KPE",
+    "chain": "",
+    "reference_thickness_A": 27.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 29,
+    "3d_energy": {
+      "normal_error_deg": 10.52,
+      "midplane_offset_A": 0.11,
+      "thickness_A": 23.5,
+      "thickness_error_A": -3.7,
+      "dG_transfer": -25.77,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 21.9
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6YC4",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.269,
+    "n_superposed_atoms": 269,
+    "3d_energy": {
+      "normal_error_deg": 0.67,
+      "midplane_offset_A": 1.92,
+      "thickness_A": 25.7,
+      "thickness_error_A": -4.5,
+      "dG_transfer": -107.09,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.9
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6OQV",
+    "chain": "",
+    "reference_thickness_A": 27.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 173,
+    "3d_energy": {
+      "normal_error_deg": 13.02,
+      "midplane_offset_A": 0.78,
+      "thickness_A": 32.3,
+      "thickness_error_A": 4.5,
+      "dG_transfer": -112.41,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 72.42
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6XBK",
+    "chain": "",
+    "reference_thickness_A": 29.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 468,
+    "3d_energy": {
+      "normal_error_deg": 5.83,
+      "midplane_offset_A": 0.16,
+      "thickness_A": 26.3,
+      "thickness_error_A": -3.5,
+      "dG_transfer": -48.4,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 9.82
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7O8T",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 265,
+    "3d_energy": {
+      "normal_error_deg": 8.5,
+      "midplane_offset_A": 0.67,
+      "thickness_A": 25.3,
+      "thickness_error_A": -6.1,
+      "dG_transfer": -48.82,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.88
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2K3M",
+    "chain": "",
+    "reference_thickness_A": 23.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 122,
+    "3d_energy": {
+      "normal_error_deg": 74.57,
+      "midplane_offset_A": 27.59,
+      "thickness_A": 32.6,
+      "thickness_error_A": 8.8,
+      "dG_transfer": -4.8,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 46.53
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5YUA",
+    "chain": "",
+    "reference_thickness_A": 29.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 228,
+    "3d_energy": {
+      "normal_error_deg": 10.32,
+      "midplane_offset_A": 3.15,
+      "thickness_A": 27.3,
+      "thickness_error_A": -2.1,
+      "dG_transfer": -55.25,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 18.0
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7QAO",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 35,
+    "3d_energy": {
+      "normal_error_deg": 48.47,
+      "midplane_offset_A": 11.11,
+      "thickness_A": 20.0,
+      "thickness_error_A": -10.6,
+      "dG_transfer": -17.63,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 81.75
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7ZRI",
+    "chain": "",
+    "reference_thickness_A": 28.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 557,
+    "3d_energy": {
+      "normal_error_deg": 1.94,
+      "midplane_offset_A": 3.23,
+      "thickness_A": 24.0,
+      "thickness_error_A": -4.4,
+      "dG_transfer": -86.09,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.91
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7JK8",
+    "chain": "",
+    "reference_thickness_A": 28.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 102,
+    "3d_energy": {
+      "normal_error_deg": 11.72,
+      "midplane_offset_A": 0.58,
+      "thickness_A": 27.8,
+      "thickness_error_A": -0.8,
+      "dG_transfer": -61.48,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 35.45
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6UBS",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 362,
+    "3d_energy": {
+      "normal_error_deg": 0.69,
+      "midplane_offset_A": 1.96,
+      "thickness_A": 31.0,
+      "thickness_error_A": -0.4,
+      "dG_transfer": -100.54,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.06
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7W7C",
+    "chain": "",
+    "reference_thickness_A": 33.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 222,
+    "3d_energy": {
+      "normal_error_deg": 14.54,
+      "midplane_offset_A": 11.19,
+      "thickness_A": 40.0,
+      "thickness_error_A": 6.2,
+      "dG_transfer": -49.38,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 42.91
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7DDL",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 995,
+    "3d_energy": {
+      "normal_error_deg": 5.31,
+      "midplane_offset_A": 1.71,
+      "thickness_A": 25.0,
+      "thickness_error_A": -5.2,
+      "dG_transfer": -101.44,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.81
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7S5V",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1397,
+    "3d_energy": {
+      "normal_error_deg": 6.88,
+      "midplane_offset_A": 1.51,
+      "thickness_A": 29.7,
+      "thickness_error_A": -0.5,
+      "dG_transfer": -105.57,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.05
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6HCP",
+    "chain": "",
+    "reference_thickness_A": 23.0,
+    "superposition_rmsd_A": 0.016,
+    "n_superposed_atoms": 671,
+    "3d_energy": {
+      "normal_error_deg": 0.42,
+      "midplane_offset_A": 0.72,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.0,
+      "dG_transfer": -52.74,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 14.72
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4NPK",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 269,
+    "3d_energy": {
+      "normal_error_deg": 20.68,
+      "midplane_offset_A": 7.38,
+      "thickness_A": 20.8,
+      "thickness_error_A": -10.0,
+      "dG_transfer": -0.4,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 40.12
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2LOS",
+    "chain": "",
+    "reference_thickness_A": 26.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 112,
+    "3d_energy": {
+      "normal_error_deg": 47.29,
+      "midplane_offset_A": 4.11,
+      "thickness_A": 32.5,
+      "thickness_error_A": 5.7,
+      "dG_transfer": -37.09,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 33.46
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7YG0",
+    "chain": "",
+    "reference_thickness_A": 31.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 854,
+    "3d_energy": {
+      "normal_error_deg": 4.18,
+      "midplane_offset_A": 6.34,
+      "thickness_A": 25.0,
+      "thickness_error_A": -6.2,
+      "dG_transfer": -102.3,
+      "curved": true,
+      "curvature_radius_A": 86.9
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.28
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3T0S",
+    "chain": "",
+    "reference_thickness_A": 23.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 361,
+    "3d_energy": {
+      "normal_error_deg": 3.44,
+      "midplane_offset_A": 0.59,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.0,
+      "dG_transfer": -23.81,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 28.32
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6LKE",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 428,
+    "3d_energy": {
+      "normal_error_deg": 9.15,
+      "midplane_offset_A": 4.75,
+      "thickness_A": 26.1,
+      "thickness_error_A": -4.3,
+      "dG_transfer": -29.63,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 87.01
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6LYS",
+    "chain": "",
+    "reference_thickness_A": 24.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 786,
+    "3d_energy": {
+      "normal_error_deg": 6.89,
+      "midplane_offset_A": 1.47,
+      "thickness_A": 20.0,
+      "thickness_error_A": -4.2,
+      "dG_transfer": -46.75,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 25.11
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7W7A",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 216,
+    "3d_energy": {
+      "normal_error_deg": 67.55,
+      "midplane_offset_A": 65.55,
+      "thickness_A": 28.5,
+      "thickness_error_A": -2.5,
+      "dG_transfer": -65.97,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 45.67
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8ID4",
+    "chain": "",
+    "reference_thickness_A": 34.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 285,
+    "3d_energy": {
+      "normal_error_deg": 6.12,
+      "midplane_offset_A": 1.43,
+      "thickness_A": 35.0,
+      "thickness_error_A": 0.2,
+      "dG_transfer": -62.66,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.94
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7WI3",
+    "chain": "",
+    "reference_thickness_A": 30.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 293,
+    "3d_energy": {
+      "normal_error_deg": 0.08,
+      "midplane_offset_A": 11.15,
+      "thickness_A": 24.3,
+      "thickness_error_A": -5.7,
+      "dG_transfer": -631.21,
+      "curved": true,
+      "curvature_radius_A": 373.8
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 10.99
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6ZFZ",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 446,
+    "3d_energy": {
+      "normal_error_deg": 6.96,
+      "midplane_offset_A": 2.41,
+      "thickness_A": 30.0,
+      "thickness_error_A": -1.0,
+      "dG_transfer": -60.79,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 18.24
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3AOC",
+    "chain": "",
+    "reference_thickness_A": 27.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 1022,
+    "3d_energy": {
+      "normal_error_deg": 2.14,
+      "midplane_offset_A": 0.67,
+      "thickness_A": 21.0,
+      "thickness_error_A": -6.0,
+      "dG_transfer": -117.01,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 0.22
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5XAP",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 732,
+    "3d_energy": {
+      "normal_error_deg": 3.47,
+      "midplane_offset_A": 0.65,
+      "thickness_A": 25.3,
+      "thickness_error_A": -4.9,
+      "dG_transfer": -67.67,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.67
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4HYG",
+    "chain": "",
+    "reference_thickness_A": 31.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 246,
+    "3d_energy": {
+      "normal_error_deg": 14.63,
+      "midplane_offset_A": 16.48,
+      "thickness_A": 40.0,
+      "thickness_error_A": 8.2,
+      "dG_transfer": -285.11,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 26.37
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5XNN",
+    "chain": "",
+    "reference_thickness_A": 28.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 219,
+    "3d_energy": {
+      "normal_error_deg": 1.35,
+      "midplane_offset_A": 2.03,
+      "thickness_A": 20.5,
+      "thickness_error_A": -7.7,
+      "dG_transfer": -77.99,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 17.41
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7DUW",
+    "chain": "",
+    "reference_thickness_A": 27.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 820,
+    "3d_energy": {
+      "normal_error_deg": 0.76,
+      "midplane_offset_A": 0.0,
+      "thickness_A": 24.7,
+      "thickness_error_A": -3.1,
+      "dG_transfer": -124.7,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.11
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2FEE",
+    "chain": "",
+    "reference_thickness_A": 29.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 444,
+    "3d_energy": {
+      "normal_error_deg": 0.98,
+      "midplane_offset_A": 2.99,
+      "thickness_A": 26.3,
+      "thickness_error_A": -2.9,
+      "dG_transfer": -73.13,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.34
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6LU1",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 745,
+    "3d_energy": {
+      "normal_error_deg": 0.47,
+      "midplane_offset_A": 0.23,
+      "thickness_A": 27.8,
+      "thickness_error_A": -2.4,
+      "dG_transfer": -138.97,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.69
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6GIE",
+    "chain": "",
+    "reference_thickness_A": 24.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 218,
+    "3d_energy": {
+      "normal_error_deg": 5.43,
+      "midplane_offset_A": 0.1,
+      "thickness_A": 20.7,
+      "thickness_error_A": -3.9,
+      "dG_transfer": -38.01,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 0.52
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6JY8",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 264,
+    "3d_energy": {
+      "normal_error_deg": 9.26,
+      "midplane_offset_A": 1.03,
+      "thickness_A": 25.2,
+      "thickness_error_A": -6.2,
+      "dG_transfer": -46.67,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.89
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7F4F",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 230,
+    "3d_energy": {
+      "normal_error_deg": 10.35,
+      "midplane_offset_A": 1.04,
+      "thickness_A": 28.2,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -46.33,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 43.94
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8B8Q",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 691,
+    "3d_energy": {
+      "normal_error_deg": 3.06,
+      "midplane_offset_A": 0.99,
+      "thickness_A": 26.5,
+      "thickness_error_A": -4.1,
+      "dG_transfer": -111.64,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.18
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6MVV",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 222,
+    "3d_energy": {
+      "normal_error_deg": 1.31,
+      "midplane_offset_A": 2.47,
+      "thickness_A": 24.0,
+      "thickness_error_A": -7.0,
+      "dG_transfer": -104.45,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 14.13
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8E4P",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 899,
+    "3d_energy": {
+      "normal_error_deg": 1.0,
+      "midplane_offset_A": 2.08,
+      "thickness_A": 36.0,
+      "thickness_error_A": 4.4,
+      "dG_transfer": -214.26,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.7
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7YIE",
+    "chain": "",
+    "reference_thickness_A": 28.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 660,
+    "3d_energy": {
+      "normal_error_deg": 0.58,
+      "midplane_offset_A": 1.84,
+      "thickness_A": 30.0,
+      "thickness_error_A": 1.4,
+      "dG_transfer": -156.75,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 7.11
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7ZDU",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 563,
+    "3d_energy": {
+      "normal_error_deg": 5.24,
+      "midplane_offset_A": 0.76,
+      "thickness_A": 30.3,
+      "thickness_error_A": -1.1,
+      "dG_transfer": -65.77,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 18.45
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6BQG",
+    "chain": "",
+    "reference_thickness_A": 33.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 286,
+    "3d_energy": {
+      "normal_error_deg": 4.84,
+      "midplane_offset_A": 0.66,
+      "thickness_A": 27.8,
+      "thickness_error_A": -5.2,
+      "dG_transfer": -51.16,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.51
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7U55",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.011,
+    "n_superposed_atoms": 245,
+    "3d_energy": {
+      "normal_error_deg": 8.77,
+      "midplane_offset_A": 0.98,
+      "thickness_A": 26.7,
+      "thickness_error_A": -4.3,
+      "dG_transfer": -44.24,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 9.86
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8B8M",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 741,
+    "3d_energy": {
+      "normal_error_deg": 2.05,
+      "midplane_offset_A": 0.17,
+      "thickness_A": 27.5,
+      "thickness_error_A": -3.3,
+      "dG_transfer": -109.66,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 9.99
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7AA5",
+    "chain": "",
+    "reference_thickness_A": 28.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 612,
+    "3d_energy": {
+      "normal_error_deg": 0.46,
+      "midplane_offset_A": 1.0,
+      "thickness_A": 25.7,
+      "thickness_error_A": -3.1,
+      "dG_transfer": -153.1,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.02
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7WF4",
+    "chain": "",
+    "reference_thickness_A": 31.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 256,
+    "3d_energy": {
+      "normal_error_deg": 1.09,
+      "midplane_offset_A": 0.4,
+      "thickness_A": 26.8,
+      "thickness_error_A": -4.4,
+      "dG_transfer": -158.58,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.21
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7W0L",
+    "chain": "",
+    "reference_thickness_A": 35.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 226,
+    "3d_energy": {
+      "normal_error_deg": 3.9,
+      "midplane_offset_A": 0.55,
+      "thickness_A": 34.2,
+      "thickness_error_A": -1.4,
+      "dG_transfer": -106.87,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 75.23
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7XT8",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 238,
+    "3d_energy": {
+      "normal_error_deg": 3.25,
+      "midplane_offset_A": 1.23,
+      "thickness_A": 29.5,
+      "thickness_error_A": -2.1,
+      "dG_transfer": -55.39,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 85.68
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8EP1",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 701,
+    "3d_energy": {
+      "normal_error_deg": 1.13,
+      "midplane_offset_A": 2.2,
+      "thickness_A": 23.3,
+      "thickness_error_A": -7.1,
+      "dG_transfer": -116.46,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.04
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8FN0",
+    "chain": "",
+    "reference_thickness_A": 34.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 282,
+    "3d_energy": {
+      "normal_error_deg": 2.63,
+      "midplane_offset_A": 1.81,
+      "thickness_A": 30.8,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -52.21,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 13.42
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6UR8",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 362,
+    "3d_energy": {
+      "normal_error_deg": 2.16,
+      "midplane_offset_A": 1.41,
+      "thickness_A": 36.2,
+      "thickness_error_A": 5.6,
+      "dG_transfer": -131.91,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 16.0
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3FB6",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 219,
+    "3d_energy": {
+      "normal_error_deg": 3.79,
+      "midplane_offset_A": 0.96,
+      "thickness_A": 28.5,
+      "thickness_error_A": -1.7,
+      "dG_transfer": -29.79,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 71.89
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5YWB",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 325,
+    "3d_energy": {
+      "normal_error_deg": 0.57,
+      "midplane_offset_A": 0.21,
+      "thickness_A": 28.0,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -393.77,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 16.55
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8F4R",
+    "chain": "",
+    "reference_thickness_A": 27.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1031,
+    "3d_energy": {
+      "normal_error_deg": 1.15,
+      "midplane_offset_A": 0.62,
+      "thickness_A": 21.0,
+      "thickness_error_A": -6.2,
+      "dG_transfer": -105.53,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.85
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3UU5",
+    "chain": "",
+    "reference_thickness_A": 32.4,
+    "superposition_rmsd_A": 0.004,
+    "n_superposed_atoms": 311,
+    "3d_energy": {
+      "normal_error_deg": 1.19,
+      "midplane_offset_A": 0.69,
+      "thickness_A": 30.2,
+      "thickness_error_A": -2.2,
+      "dG_transfer": -119.36,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.43
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8FEF",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 392,
+    "3d_energy": {
+      "normal_error_deg": 2.67,
+      "midplane_offset_A": 0.9,
+      "thickness_A": 27.3,
+      "thickness_error_A": -3.3,
+      "dG_transfer": -97.82,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 1.72
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6WIL",
+    "chain": "",
+    "reference_thickness_A": 22.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 530,
+    "3d_energy": {
+      "normal_error_deg": 7.78,
+      "midplane_offset_A": 0.29,
+      "thickness_A": 20.0,
+      "thickness_error_A": -2.2,
+      "dG_transfer": -28.1,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 29.69
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6MIE",
+    "chain": "",
+    "reference_thickness_A": 28.6,
+    "superposition_rmsd_A": 1.594,
+    "n_superposed_atoms": 150,
+    "3d_energy": {
+      "normal_error_deg": 28.9,
+      "midplane_offset_A": 91.6,
+      "thickness_A": 40.0,
+      "thickness_error_A": 11.4,
+      "dG_transfer": -37.7,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 22.57
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5HXR",
+    "chain": "",
+    "reference_thickness_A": 29.6,
+    "superposition_rmsd_A": 0.003,
+    "n_superposed_atoms": 293,
+    "3d_energy": {
+      "normal_error_deg": 8.03,
+      "midplane_offset_A": 0.87,
+      "thickness_A": 20.8,
+      "thickness_error_A": -8.8,
+      "dG_transfer": -46.84,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 18.38
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6OS0",
+    "chain": "",
+    "reference_thickness_A": 33.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 395,
+    "3d_energy": {
+      "normal_error_deg": 7.09,
+      "midplane_offset_A": 1.06,
+      "thickness_A": 33.2,
+      "thickness_error_A": 0.2,
+      "dG_transfer": -58.98,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 16.03
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7PGH",
+    "chain": "",
+    "reference_thickness_A": 25.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 128,
+    "3d_energy": {
+      "normal_error_deg": 13.33,
+      "midplane_offset_A": 3.28,
+      "thickness_A": 27.8,
+      "thickness_error_A": 2.0,
+      "dG_transfer": -72.9,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 14.25
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7EU8",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 761,
+    "3d_energy": {
+      "normal_error_deg": 10.01,
+      "midplane_offset_A": 1.17,
+      "thickness_A": 30.5,
+      "thickness_error_A": 0.3,
+      "dG_transfer": -90.16,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 13.0
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6V01",
+    "chain": "",
+    "reference_thickness_A": 29.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 144,
+    "3d_energy": {
+      "normal_error_deg": 0.62,
+      "midplane_offset_A": 0.32,
+      "thickness_A": 24.7,
+      "thickness_error_A": -4.7,
+      "dG_transfer": -138.23,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 84.5
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7Q0M",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 482,
+    "3d_energy": {
+      "normal_error_deg": 2.13,
+      "midplane_offset_A": 0.22,
+      "thickness_A": 26.2,
+      "thickness_error_A": -4.2,
+      "dG_transfer": -80.17,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.72
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6RF4",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 273,
+    "3d_energy": {
+      "normal_error_deg": 0.43,
+      "midplane_offset_A": 2.01,
+      "thickness_A": 25.2,
+      "thickness_error_A": -5.0,
+      "dG_transfer": -106.87,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 15.75
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4ILB",
+    "chain": "",
+    "reference_thickness_A": 32.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 311,
+    "3d_energy": {
+      "normal_error_deg": 0.16,
+      "midplane_offset_A": 0.76,
+      "thickness_A": 29.8,
+      "thickness_error_A": -2.8,
+      "dG_transfer": -119.3,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.28
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3D4S",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 439,
+    "3d_energy": {
+      "normal_error_deg": 3.22,
+      "midplane_offset_A": 0.81,
+      "thickness_A": 28.5,
+      "thickness_error_A": -3.1,
+      "dG_transfer": -54.67,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 10.08
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6U9V",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 560,
+    "3d_energy": {
+      "normal_error_deg": 1.02,
+      "midplane_offset_A": 0.08,
+      "thickness_A": 32.3,
+      "thickness_error_A": 0.9,
+      "dG_transfer": -69.57,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.03
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "1PXS",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 227,
+    "3d_energy": {
+      "normal_error_deg": 6.58,
+      "midplane_offset_A": 1.53,
+      "thickness_A": 28.2,
+      "thickness_error_A": -2.2,
+      "dG_transfer": -77.22,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 23.93
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7V6Z",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1008,
+    "3d_energy": {
+      "normal_error_deg": 3.14,
+      "midplane_offset_A": 1.22,
+      "thickness_A": 26.8,
+      "thickness_error_A": -4.2,
+      "dG_transfer": -68.58,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 1.18
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7M4Q",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1049,
+    "3d_energy": {
+      "normal_error_deg": 0.83,
+      "midplane_offset_A": 0.4,
+      "thickness_A": 27.0,
+      "thickness_error_A": -3.2,
+      "dG_transfer": -147.42,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 1.69
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2A0L",
+    "chain": "",
+    "reference_thickness_A": 29.5,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 214,
+    "3d_energy": {
+      "normal_error_deg": 13.63,
+      "midplane_offset_A": 3.75,
+      "thickness_A": 20.0,
+      "thickness_error_A": -9.5,
+      "dG_transfer": -27.99,
+      "curved": true,
+      "curvature_radius_A": 60.1
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 35.09
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7Z23",
+    "chain": "",
+    "reference_thickness_A": 35.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 189,
+    "3d_energy": {
+      "normal_error_deg": 0.78,
+      "midplane_offset_A": 1.7,
+      "thickness_A": 34.0,
+      "thickness_error_A": -1.6,
+      "dG_transfer": -195.24,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.03
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7FDY",
+    "chain": "",
+    "reference_thickness_A": 23.8,
+    "superposition_rmsd_A": 0.004,
+    "n_superposed_atoms": 338,
+    "3d_energy": {
+      "normal_error_deg": 1.1,
+      "midplane_offset_A": 1.99,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.8,
+      "dG_transfer": -43.07,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.5
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7ZJH",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 586,
+    "3d_energy": {
+      "normal_error_deg": 0.14,
+      "midplane_offset_A": 1.04,
+      "thickness_A": 25.3,
+      "thickness_error_A": -5.3,
+      "dG_transfer": -147.4,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.14
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "5GJW",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1291,
+    "3d_energy": {
+      "normal_error_deg": 2.34,
+      "midplane_offset_A": 1.05,
+      "thickness_A": 23.3,
+      "thickness_error_A": -8.3,
+      "dG_transfer": -102.46,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.95
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6ZLU",
+    "chain": "",
+    "reference_thickness_A": 25.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 555,
+    "3d_energy": {
+      "normal_error_deg": 4.9,
+      "midplane_offset_A": 4.46,
+      "thickness_A": 20.0,
+      "thickness_error_A": -5.0,
+      "dG_transfer": -32.86,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 72.55
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8F76",
+    "chain": "",
+    "reference_thickness_A": 33.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 302,
+    "3d_energy": {
+      "normal_error_deg": 5.74,
+      "midplane_offset_A": 0.9,
+      "thickness_A": 28.3,
+      "thickness_error_A": -5.5,
+      "dG_transfer": -47.74,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.15
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4OO9",
+    "chain": "",
+    "reference_thickness_A": 32.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 245,
+    "3d_energy": {
+      "normal_error_deg": 7.84,
+      "midplane_offset_A": 0.6,
+      "thickness_A": 27.8,
+      "thickness_error_A": -4.6,
+      "dG_transfer": -52.64,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.52
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6VX7",
+    "chain": "",
+    "reference_thickness_A": 25.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 366,
+    "3d_energy": {
+      "normal_error_deg": 0.03,
+      "midplane_offset_A": 7.86,
+      "thickness_A": 20.0,
+      "thickness_error_A": -5.8,
+      "dG_transfer": -67.33,
+      "curved": true,
+      "curvature_radius_A": 62.3
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.77
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2X2V",
+    "chain": "",
+    "reference_thickness_A": 35.3,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 68,
+    "3d_energy": {
+      "normal_error_deg": 1.16,
+      "midplane_offset_A": 3.02,
+      "thickness_A": 40.0,
+      "thickness_error_A": 4.7,
+      "dG_transfer": -173.81,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 20.13
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7AU3",
+    "chain": "",
+    "reference_thickness_A": 30.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 537,
+    "3d_energy": {
+      "normal_error_deg": 0.54,
+      "midplane_offset_A": 1.4,
+      "thickness_A": 28.3,
+      "thickness_error_A": -2.3,
+      "dG_transfer": -114.87,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.05
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2O9D",
+    "chain": "",
+    "reference_thickness_A": 30.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 231,
+    "3d_energy": {
+      "normal_error_deg": 39.1,
+      "midplane_offset_A": 4.1,
+      "thickness_A": 35.4,
+      "thickness_error_A": 5.4,
+      "dG_transfer": -80.66,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.08
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3SZV",
+    "chain": "",
+    "reference_thickness_A": 23.4,
+    "superposition_rmsd_A": 0.003,
+    "n_superposed_atoms": 364,
+    "3d_energy": {
+      "normal_error_deg": 1.4,
+      "midplane_offset_A": 0.49,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -13.43,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 15.14
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7SBF",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 217,
+    "3d_energy": {
+      "normal_error_deg": 8.87,
+      "midplane_offset_A": 3.98,
+      "thickness_A": 35.5,
+      "thickness_error_A": 4.1,
+      "dG_transfer": -59.45,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 85.59
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4QI1",
+    "chain": "",
+    "reference_thickness_A": 31.8,
+    "superposition_rmsd_A": 0.008,
+    "n_superposed_atoms": 228,
+    "3d_energy": {
+      "normal_error_deg": 0.79,
+      "midplane_offset_A": 1.56,
+      "thickness_A": 29.0,
+      "thickness_error_A": -2.8,
+      "dG_transfer": -91.28,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 9.8
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7VLS",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1141,
+    "3d_energy": {
+      "normal_error_deg": 2.97,
+      "midplane_offset_A": 0.17,
+      "thickness_A": 29.3,
+      "thickness_error_A": -1.1,
+      "dG_transfer": -63.09,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.35
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6H7D",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 487,
+    "3d_energy": {
+      "normal_error_deg": 5.21,
+      "midplane_offset_A": 0.21,
+      "thickness_A": 29.0,
+      "thickness_error_A": -2.4,
+      "dG_transfer": -60.88,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 3.31
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "4M58",
+    "chain": "",
+    "reference_thickness_A": 29.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 227,
+    "3d_energy": {
+      "normal_error_deg": 10.25,
+      "midplane_offset_A": 3.36,
+      "thickness_A": 30.3,
+      "thickness_error_A": 0.5,
+      "dG_transfer": -44.18,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 16.56
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6SLI",
+    "chain": "",
+    "reference_thickness_A": 26.6,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 482,
+    "3d_energy": {
+      "normal_error_deg": 12.75,
+      "midplane_offset_A": 6.85,
+      "thickness_A": 20.0,
+      "thickness_error_A": -6.6,
+      "dG_transfer": -55.45,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 35.36
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "1ILZ",
+    "chain": "",
+    "reference_thickness_A": 24.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 257,
+    "3d_energy": {
+      "normal_error_deg": 2.83,
+      "midplane_offset_A": 0.23,
+      "thickness_A": 20.0,
+      "thickness_error_A": -4.4,
+      "dG_transfer": -35.02,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 17.89
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6TOD",
+    "chain": "",
+    "reference_thickness_A": 33.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 301,
+    "3d_energy": {
+      "normal_error_deg": 20.27,
+      "midplane_offset_A": 3.74,
+      "thickness_A": 20.0,
+      "thickness_error_A": -13.0,
+      "dG_transfer": -17.78,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.21
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7BXU",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 203,
+    "3d_energy": {
+      "normal_error_deg": 0.55,
+      "midplane_offset_A": 0.47,
+      "thickness_A": 28.8,
+      "thickness_error_A": -2.6,
+      "dG_transfer": -119.95,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.06
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7Q0L",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 482,
+    "3d_energy": {
+      "normal_error_deg": 2.19,
+      "midplane_offset_A": 0.1,
+      "thickness_A": 26.0,
+      "thickness_error_A": -4.2,
+      "dG_transfer": -85.44,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 6.33
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7ASY",
+    "chain": "",
+    "reference_thickness_A": 23.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 33,
+    "3d_energy": {
+      "normal_error_deg": 76.24,
+      "midplane_offset_A": 4.15,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.6,
+      "dG_transfer": -20.77,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 44.08
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "3AOB",
+    "chain": "",
+    "reference_thickness_A": 28.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 1022,
+    "3d_energy": {
+      "normal_error_deg": 1.59,
+      "midplane_offset_A": 0.39,
+      "thickness_A": 21.5,
+      "thickness_error_A": -6.9,
+      "dG_transfer": -117.14,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 8.23
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6AFS",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 740,
+    "3d_energy": {
+      "normal_error_deg": 0.6,
+      "midplane_offset_A": 0.07,
+      "thickness_A": 27.7,
+      "thickness_error_A": -2.5,
+      "dG_transfer": -111.85,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.2
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7ZDB",
+    "chain": "",
+    "reference_thickness_A": 30.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 554,
+    "3d_energy": {
+      "normal_error_deg": 6.4,
+      "midplane_offset_A": 1.06,
+      "thickness_A": 23.8,
+      "thickness_error_A": -7.0,
+      "dG_transfer": -60.95,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 15.73
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7WU2",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 210,
+    "3d_energy": {
+      "normal_error_deg": 10.34,
+      "midplane_offset_A": 0.84,
+      "thickness_A": 28.5,
+      "thickness_error_A": -1.7,
+      "dG_transfer": -51.78,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 76.81
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6ME2",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.01,
+    "n_superposed_atoms": 484,
+    "3d_energy": {
+      "normal_error_deg": 7.61,
+      "midplane_offset_A": 0.48,
+      "thickness_A": 28.8,
+      "thickness_error_A": -2.6,
+      "dG_transfer": -58.91,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 3.81
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2J5D",
+    "chain": "",
+    "reference_thickness_A": 31.6,
+    "superposition_rmsd_A": 0.221,
+    "n_superposed_atoms": 45,
+    "3d_energy": {
+      "normal_error_deg": 8.17,
+      "midplane_offset_A": 1.56,
+      "thickness_A": 20.3,
+      "thickness_error_A": -11.3,
+      "dG_transfer": -18.02,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 11.55
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6BPO",
+    "chain": "",
+    "reference_thickness_A": 24.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 711,
+    "3d_energy": {
+      "normal_error_deg": 50.2,
+      "midplane_offset_A": 59.07,
+      "thickness_A": 20.0,
+      "thickness_error_A": -4.2,
+      "dG_transfer": -18.25,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 16.89
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7O3N",
+    "chain": "",
+    "reference_thickness_A": 29.6,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1044,
+    "3d_energy": {
+      "normal_error_deg": 76.17,
+      "midplane_offset_A": 107.23,
+      "thickness_A": 39.0,
+      "thickness_error_A": 9.4,
+      "dG_transfer": -2.44,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.1
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6IZ6",
+    "chain": "",
+    "reference_thickness_A": 28.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 224,
+    "3d_energy": {
+      "normal_error_deg": 6.79,
+      "midplane_offset_A": 2.18,
+      "thickness_A": 24.5,
+      "thickness_error_A": -3.7,
+      "dG_transfer": -46.55,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 4.64
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6UQF",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 531,
+    "3d_energy": {
+      "normal_error_deg": 0.75,
+      "midplane_offset_A": 0.55,
+      "thickness_A": 30.3,
+      "thickness_error_A": -1.1,
+      "dG_transfer": -166.88,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 15.06
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6LR4",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 667,
+    "3d_energy": {
+      "normal_error_deg": 0.75,
+      "midplane_offset_A": 0.6,
+      "thickness_A": 28.2,
+      "thickness_error_A": -3.2,
+      "dG_transfer": -106.1,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.63
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8EX4",
+    "chain": "",
+    "reference_thickness_A": 31.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 417,
+    "3d_energy": {
+      "normal_error_deg": 2.41,
+      "midplane_offset_A": 0.41,
+      "thickness_A": 29.2,
+      "thickness_error_A": -2.2,
+      "dG_transfer": -69.77,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 9.57
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2J8S",
+    "chain": "",
+    "reference_thickness_A": 26.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 1044,
+    "3d_energy": {
+      "normal_error_deg": 0.74,
+      "midplane_offset_A": 1.4,
+      "thickness_A": 21.5,
+      "thickness_error_A": -5.3,
+      "dG_transfer": -114.86,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.9
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6C70",
+    "chain": "",
+    "reference_thickness_A": 29.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 388,
+    "3d_energy": {
+      "normal_error_deg": 0.52,
+      "midplane_offset_A": 0.18,
+      "thickness_A": 27.0,
+      "thickness_error_A": -2.8,
+      "dG_transfer": -154.23,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.08
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7QAL",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 35,
+    "3d_energy": {
+      "normal_error_deg": 55.98,
+      "midplane_offset_A": 0.78,
+      "thickness_A": 29.9,
+      "thickness_error_A": -0.5,
+      "dG_transfer": -17.1,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 72.53
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2MHL",
+    "chain": "",
+    "reference_thickness_A": 23.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 192,
+    "3d_energy": {
+      "normal_error_deg": 6.32,
+      "midplane_offset_A": 0.34,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -22.23,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 23.9
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6WHT",
+    "chain": "",
+    "reference_thickness_A": 31.0,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 793,
+    "3d_energy": {
+      "normal_error_deg": 1.3,
+      "midplane_offset_A": 0.53,
+      "thickness_A": 29.7,
+      "thickness_error_A": -1.3,
+      "dG_transfer": -97.98,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 21.31
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7RI5",
+    "chain": "",
+    "reference_thickness_A": 24.0,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 782,
+    "3d_energy": {
+      "normal_error_deg": 2.15,
+      "midplane_offset_A": 0.51,
+      "thickness_A": 20.0,
+      "thickness_error_A": -4.0,
+      "dG_transfer": -36.46,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 59.73
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6V78",
+    "chain": "",
+    "reference_thickness_A": 23.4,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 353,
+    "3d_energy": {
+      "normal_error_deg": 0.17,
+      "midplane_offset_A": 1.47,
+      "thickness_A": 20.0,
+      "thickness_error_A": -3.4,
+      "dG_transfer": -55.85,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.33
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6YC1",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 273,
+    "3d_energy": {
+      "normal_error_deg": 0.73,
+      "midplane_offset_A": 2.12,
+      "thickness_A": 25.0,
+      "thickness_error_A": -5.2,
+      "dG_transfer": -105.36,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 15.81
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6N52",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 774,
+    "3d_energy": {
+      "normal_error_deg": 0.8,
+      "midplane_offset_A": 0.15,
+      "thickness_A": 28.0,
+      "thickness_error_A": -2.2,
+      "dG_transfer": -101.81,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.46
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6K7G",
+    "chain": "",
+    "reference_thickness_A": 30.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 988,
+    "3d_energy": {
+      "normal_error_deg": 2.08,
+      "midplane_offset_A": 1.15,
+      "thickness_A": 30.2,
+      "thickness_error_A": 0.0,
+      "dG_transfer": -73.64,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 10.63
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7RNX",
+    "chain": "",
+    "reference_thickness_A": 28.8,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 450,
+    "3d_energy": {
+      "normal_error_deg": 2.16,
+      "midplane_offset_A": 1.46,
+      "thickness_A": 20.0,
+      "thickness_error_A": -8.8,
+      "dG_transfer": -67.83,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 2.72
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "8AYN",
+    "chain": "",
+    "reference_thickness_A": 31.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 405,
+    "3d_energy": {
+      "normal_error_deg": 2.4,
+      "midplane_offset_A": 1.46,
+      "thickness_A": 26.8,
+      "thickness_error_A": -4.4,
+      "dG_transfer": -103.66,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 12.62
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "7VFS",
+    "chain": "",
+    "reference_thickness_A": 30.4,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 1266,
+    "3d_energy": {
+      "normal_error_deg": 1.85,
+      "midplane_offset_A": 0.99,
+      "thickness_A": 22.2,
+      "thickness_error_A": -8.2,
+      "dG_transfer": -107.26,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.14
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6ZGR",
+    "chain": "",
+    "reference_thickness_A": 31.2,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 399,
+    "3d_energy": {
+      "normal_error_deg": 76.3,
+      "midplane_offset_A": 19.62,
+      "thickness_A": 20.0,
+      "thickness_error_A": -11.2,
+      "dG_transfer": -44.44,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 24.8
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "6N24",
+    "chain": "",
+    "reference_thickness_A": 28.2,
+    "superposition_rmsd_A": 0.0,
+    "n_superposed_atoms": 306,
+    "3d_energy": {
+      "normal_error_deg": 0.56,
+      "midplane_offset_A": 0.18,
+      "thickness_A": 22.7,
+      "thickness_error_A": -5.5,
+      "dG_transfer": -78.91,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 5.55
+    }
+  },
+  {
+    "accession": "",
+    "pdb_id": "2JLN",
+    "chain": "",
+    "reference_thickness_A": 29.8,
+    "superposition_rmsd_A": 0.001,
+    "n_superposed_atoms": 463,
+    "3d_energy": {
+      "normal_error_deg": 5.34,
+      "midplane_offset_A": 1.72,
+      "thickness_A": 26.7,
+      "thickness_error_A": -3.1,
+      "dG_transfer": -68.54,
+      "curved": false,
+      "curvature_radius_A": null
+    },
+    "3d_slab_geom": {
+      "normal_error_deg": 14.18
+    }
+  }
+]

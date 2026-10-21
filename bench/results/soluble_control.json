@@ -1,0 +1,132 @@
+[
+  {
+    "accession": "P00698",
+    "pdb_id": "2VB1",
+    "chain": "A",
+    "n_residues": 129,
+    "dG_transfer_kcal_per_mol": 2.0903903165344273,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Lysozyme C"
+  },
+  {
+    "accession": "P0CG47",
+    "pdb_id": "5NVG",
+    "chain": "A",
+    "n_residues": 76,
+    "dG_transfer_kcal_per_mol": -1.1926435802134323,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Polyubiquitin-B"
+  },
+  {
+    "accession": "P02185",
+    "pdb_id": "5YCE",
+    "chain": "A",
+    "n_residues": 151,
+    "dG_transfer_kcal_per_mol": 4.6047378003277135,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Myoglobin"
+  },
+  {
+    "accession": "P00099",
+    "pdb_id": "5XEC",
+    "chain": "A",
+    "n_residues": 82,
+    "dG_transfer_kcal_per_mol": 0.1788856467171575,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Cytochrome c-551"
+  },
+  {
+    "accession": "P42212",
+    "pdb_id": "6L27",
+    "chain": "A",
+    "n_residues": 226,
+    "dG_transfer_kcal_per_mol": 0.4737738670797657,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Green fluorescent protein"
+  },
+  {
+    "accession": "P02752",
+    "pdb_id": "6HCE",
+    "chain": "A",
+    "n_residues": 200,
+    "dG_transfer_kcal_per_mol": 1.5897386617582947,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Riboflavin-binding protein"
+  },
+  {
+    "accession": "P02766",
+    "pdb_id": "1F86",
+    "chain": "A",
+    "n_residues": 115,
+    "dG_transfer_kcal_per_mol": 0.066679702448246,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Transthyretin"
+  },
+  {
+    "accession": "P04040",
+    "pdb_id": "1DGF",
+    "chain": "A",
+    "n_residues": 497,
+    "dG_transfer_kcal_per_mol": 0.010269504200394183,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Catalase"
+  },
+  {
+    "accession": "P69441",
+    "pdb_id": "7APU",
+    "chain": "A",
+    "n_residues": 214,
+    "dG_transfer_kcal_per_mol": 0.04848849309240167,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Adenylate kinase"
+  },
+  {
+    "accession": "P00760",
+    "pdb_id": "4I8H",
+    "chain": "A",
+    "n_residues": 223,
+    "dG_transfer_kcal_per_mol": 0.8641785429439366,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Serine protease 1"
+  },
+  {
+    "accession": "P0DP23",
+    "pdb_id": "9MXD",
+    "chain": "A",
+    "n_residues": 143,
+    "dG_transfer_kcal_per_mol": 8.273901500985037,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Calmodulin-1"
+  },
+  {
+    "accession": "P00533",
+    "pdb_id": "8A27",
+    "chain": "A",
+    "n_residues": 269,
+    "dG_transfer_kcal_per_mol": 0.1271506721787269,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "Epidermal growth factor receptor"
+  },
+  {
+    "accession": "P10809",
+    "pdb_id": "9SHG",
+    "chain": "A",
+    "n_residues": 527,
+    "dG_transfer_kcal_per_mol": 8.375338414735893e-08,
+    "n_tm_segments": 0,
+    "called_membrane": false,
+    "protein_name": "60 kDa heat shock protein, mitochondrial"
+  }
+]

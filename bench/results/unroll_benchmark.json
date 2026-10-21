@@ -1,0 +1,498 @@
+[
+  {
+    "pdb_id": "7YK7",
+    "accession": "Q8TDU9",
+    "chain": "R",
+    "n_crossings": 7,
+    "n_loops": 6,
+    "n_loops_closed": 6,
+    "n_loops_schematic": 0,
+    "closure_rmsd": [
+      0.17,
+      0.11,
+      0.05,
+      0.25,
+      0.11
+    ],
+    "path_deviation": [
+      3.1,
+      7.2,
+      6.3,
+      5.6,
+      5.4
+    ],
+    "clashes": 25,
+    "broken_peptide_bonds": 0,
+    "broken_disulfides": 1,
+    "max_peptide_bond": 1.41,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "9DWY",
+    "accession": "P36021",
+    "chain": "A",
+    "n_crossings": 12,
+    "n_loops": 9,
+    "n_loops_closed": 4,
+    "n_loops_schematic": 5,
+    "closure_rmsd": [
+      6.33,
+      4.71,
+      0.51,
+      0.3,
+      0.23,
+      2.81,
+      11.48
+    ],
+    "path_deviation": [
+      6.8,
+      5.9,
+      3.9,
+      7.9,
+      3.9,
+      7.3,
+      3.8
+    ],
+    "clashes": 96,
+    "broken_peptide_bonds": 5,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 7.17,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "8VSZ",
+    "accession": "O00591",
+    "chain": "A",
+    "n_crossings": 4,
+    "n_loops": 3,
+    "n_loops_closed": 3,
+    "n_loops_schematic": 0,
+    "closure_rmsd": [
+      0.25,
+      0.1
+    ],
+    "path_deviation": [
+      3,
+      3.2
+    ],
+    "clashes": 74,
+    "broken_peptide_bonds": 0,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 1.35,
+    "n_warnings": 1,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "8HSI",
+    "accession": "Q8NBN3",
+    "chain": "A",
+    "n_crossings": 7,
+    "n_loops": 6,
+    "n_loops_closed": 4,
+    "n_loops_schematic": 2,
+    "closure_rmsd": [
+      0.05,
+      0.47,
+      0.05,
+      0.19,
+      5.1,
+      0.05
+    ],
+    "path_deviation": [
+      3.6,
+      3.5,
+      6.2,
+      2.8,
+      9.3,
+      4.7
+    ],
+    "clashes": 57,
+    "broken_peptide_bonds": 1,
+    "broken_disulfides": 1,
+    "max_peptide_bond": 5.08,
+    "n_warnings": 3,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "9DMS",
+    "accession": "Q04844",
+    "chain": "B",
+    "n_crossings": 4,
+    "n_loops": 3,
+    "n_loops_closed": 3,
+    "n_loops_schematic": 0,
+    "closure_rmsd": [
+      0.12,
+      0.19
+    ],
+    "path_deviation": [
+      4.5,
+      3.7
+    ],
+    "clashes": 328,
+    "broken_peptide_bonds": 0,
+    "broken_disulfides": 1,
+    "max_peptide_bond": 1.38,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "9EO4",
+    "accession": "Q01959",
+    "chain": "B",
+    "n_crossings": 12,
+    "n_loops": 11,
+    "n_loops_closed": 7,
+    "n_loops_schematic": 4,
+    "closure_rmsd": [
+      2.52,
+      0.21,
+      6.95,
+      0.12,
+      0.14,
+      0.05,
+      5.14,
+      0.91,
+      0.09,
+      0.16
+    ],
+    "path_deviation": [
+      4.3,
+      3.6,
+      4.7,
+      7.1,
+      5,
+      6.1,
+      7.8,
+      4.2,
+      6.1,
+      7.1
+    ],
+    "clashes": 46,
+    "broken_peptide_bonds": 3,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 7.14,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "7Y3G",
+    "accession": "P47775",
+    "chain": "R",
+    "n_crossings": 7,
+    "n_loops": 6,
+    "n_loops_closed": 6,
+    "n_loops_schematic": 0,
+    "closure_rmsd": [
+      0.05,
+      0.05,
+      0.09,
+      0.05,
+      0.05
+    ],
+    "path_deviation": [
+      3.1,
+      6.9,
+      6,
+      4.3,
+      4.1
+    ],
+    "clashes": 1,
+    "broken_peptide_bonds": 0,
+    "broken_disulfides": 1,
+    "max_peptide_bond": 1.43,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "9VDK",
+    "accession": "O75110",
+    "chain": "A",
+    "n_crossings": 10,
+    "n_loops": 9,
+    "n_loops_closed": 6,
+    "n_loops_schematic": 3,
+    "closure_rmsd": [
+      0.18,
+      0.05,
+      0.29,
+      0.37,
+      0.08,
+      0.57,
+      0.33,
+      0.05
+    ],
+    "path_deviation": [
+      5.7,
+      13.1,
+      3.4,
+      3.2,
+      6.4,
+      2.6,
+      2.4,
+      3.2
+    ],
+    "clashes": 911,
+    "broken_peptide_bonds": 0,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 1.34,
+    "n_warnings": 1,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "9ITB",
+    "accession": "P43657",
+    "chain": "R",
+    "n_crossings": 7,
+    "n_loops": 6,
+    "n_loops_closed": 3,
+    "n_loops_schematic": 3,
+    "closure_rmsd": [
+      0.31,
+      0.68,
+      0.32,
+      0.3
+    ],
+    "path_deviation": [
+      3.1,
+      4.6,
+      6.7,
+      4.7
+    ],
+    "clashes": 64,
+    "broken_peptide_bonds": 1,
+    "broken_disulfides": 2,
+    "max_peptide_bond": 1.53,
+    "n_warnings": 4,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "7TMW",
+    "accession": "Q9HBX9",
+    "chain": "R",
+    "n_crossings": 7,
+    "n_loops": 6,
+    "n_loops_closed": 5,
+    "n_loops_schematic": 1,
+    "closure_rmsd": [
+      0.14,
+      0.39
+    ],
+    "path_deviation": [
+      5.6,
+      3
+    ],
+    "clashes": 8,
+    "broken_peptide_bonds": 0,
+    "broken_disulfides": 1,
+    "max_peptide_bond": 1.35,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "6OB7",
+    "accession": "Q99808",
+    "chain": "A",
+    "n_crossings": 11,
+    "n_loops": 8,
+    "n_loops_closed": 5,
+    "n_loops_schematic": 3,
+    "closure_rmsd": [
+      0.65,
+      3.58,
+      3.54,
+      0.3,
+      0.05,
+      0.05
+    ],
+    "path_deviation": [
+      3.4,
+      5.2,
+      4.9,
+      6.6,
+      3.8,
+      4.4
+    ],
+    "clashes": 43,
+    "broken_peptide_bonds": 2,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 3.88,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "8J0O",
+    "accession": "Q9BV81",
+    "chain": "F",
+    "n_crossings": 3,
+    "n_loops": 2,
+    "n_loops_closed": 1,
+    "n_loops_schematic": 1,
+    "closure_rmsd": [
+      4.44,
+      0.05
+    ],
+    "path_deviation": [
+      4.6,
+      7.3
+    ],
+    "clashes": 6,
+    "broken_peptide_bonds": 1,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 3.95,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "7CH1",
+    "accession": "Q7LBE3",
+    "chain": "A",
+    "n_crossings": 14,
+    "n_loops": 12,
+    "n_loops_closed": 10,
+    "n_loops_schematic": 2,
+    "closure_rmsd": [
+      0.05,
+      0.05,
+      0.1,
+      0.14,
+      0.05,
+      0.05,
+      3.86,
+      0.13,
+      0.25,
+      0.1,
+      7.48
+    ],
+    "path_deviation": [
+      3.5,
+      5.7,
+      5,
+      8.4,
+      5.3,
+      8,
+      6.4,
+      5.2,
+      4.1,
+      4.3,
+      8
+    ],
+    "clashes": 274,
+    "broken_peptide_bonds": 2,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 8.37,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "8GMP",
+    "accession": "Q8IU99",
+    "chain": "A",
+    "n_crossings": 5,
+    "n_loops": 4,
+    "n_loops_closed": 3,
+    "n_loops_schematic": 1,
+    "closure_rmsd": [
+      0.07,
+      7.03
+    ],
+    "path_deviation": [
+      5.1,
+      11.1
+    ],
+    "clashes": 122,
+    "broken_peptide_bonds": 1,
+    "broken_disulfides": 2,
+    "max_peptide_bond": 8.3,
+    "n_warnings": 4,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "5LXG",
+    "accession": "Q96A54",
+    "chain": "A",
+    "n_crossings": 7,
+    "n_loops": 5,
+    "n_loops_closed": 3,
+    "n_loops_schematic": 2,
+    "closure_rmsd": [
+      0.09,
+      0.59,
+      5.8,
+      0.14,
+      0.07
+    ],
+    "path_deviation": [
+      7.6,
+      5.7,
+      7.4,
+      7.5,
+      5.1
+    ],
+    "clashes": 143,
+    "broken_peptide_bonds": 1,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 7.32,
+    "n_warnings": 2,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  },
+  {
+    "pdb_id": "8INZ",
+    "accession": "Q9P1Z3",
+    "chain": "A",
+    "n_crossings": 6,
+    "n_loops": 5,
+    "n_loops_closed": 5,
+    "n_loops_schematic": 0,
+    "closure_rmsd": [
+      0.05,
+      0.3,
+      0.05
+    ],
+    "path_deviation": [
+      2.7,
+      3.5,
+      10.5
+    ],
+    "clashes": 14,
+    "broken_peptide_bonds": 0,
+    "broken_disulfides": 0,
+    "max_peptide_bond": 1.4,
+    "n_warnings": 1,
+    "aligned_max_peptide_bond": null,
+    "aligned_clashes": 0,
+    "aligned_broken_peptide_bonds": 0
+  }
+]

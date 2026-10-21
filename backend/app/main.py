@@ -22,8 +22,8 @@ from app.api.analysis import router as analysis_router
 
 app = FastAPI(
     title="ProteinLab API",
-    version="0.1.0",
-    description="MVP backend for protein structure upload and analysis.",
+    version="0.2.0",
+    description="Structure-derived transmembrane topology annotation for membrane proteins.",
 )
 
 app.add_middleware(
@@ -37,7 +37,8 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"message": "ProteinLab API is running on Render!"}
+    return {"message": "ProteinLab API: structure-derived transmembrane topology annotation.",
+            "docs": "/docs"}
 
 @app.get("/api/health")
 @app.get("/health")
@@ -47,7 +48,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "service": "ProteinLab API",
-        "version": "0.1.0",
+        "version": "0.2.0",
     }
 
 

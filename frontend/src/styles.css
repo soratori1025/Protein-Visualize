@@ -129,6 +129,24 @@ height: 410px;
 .viewer-stage.light-mode .viewer-caption { color: #8492a6; }
 .empty-state { display: grid; min-height: 370px; place-items: center; color: #718895; text-align: center; }
 
+/* Layout audit: the geometric distortion introduced by the 2-D unrolling is measured
+   and disclosed rather than hidden. */
+.layout-audit { position: relative; margin-top: 6px; border-top: 1px solid rgba(120, 216, 193, 0.18); padding-top: 6px; }
+.viewer-stage.light-mode .layout-audit { border-top-color: #d7e0ea; }
+.layout-audit-toggle { background: none; border: none; color: #78d8c1; cursor: pointer; font-size: 11px; font-weight: 600; letter-spacing: .04em; padding: 2px 0; text-transform: uppercase; }
+.viewer-stage.light-mode .layout-audit-toggle { color: #1d7a6c; }
+.layout-audit-flag { color: #f6a04d; font-weight: 600; }
+.layout-audit-body { margin: 6px 0 10px; font-size: 11.5px; color: #a9bcc9; }
+.viewer-stage.light-mode .layout-audit-body { color: #44576b; }
+.layout-audit-stats { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 8px; }
+.layout-audit-stats div { display: flex; flex-direction: column; gap: 2px; }
+.layout-audit-stats dt { color: #6f8998; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+.layout-audit-stats dd { margin: 0; font-weight: 600; }
+.layout-audit-table { border-collapse: collapse; width: 100%; margin-bottom: 8px; }
+.layout-audit-table th, .layout-audit-table td { border-bottom: 1px solid rgba(120, 216, 193, 0.14); padding: 3px 6px; text-align: left; }
+.viewer-stage.light-mode .layout-audit-table th, .viewer-stage.light-mode .layout-audit-table td { border-bottom-color: #d7e0ea; }
+.layout-audit-warnings { margin: 4px 0 0; padding-left: 18px; color: #f6a04d; }
+
 .spread-map-wrap { overflow-x: auto; border: 1px solid #253a46; border-radius: 8px; background: linear-gradient(180deg, #0b151e 0%, #0d1a22 100%); padding: 8px 8px 12px; }
 .spread-map { display: block; min-width: 920px; width: 100%; min-height: 250px; }
 .outer-connector { fill: none; stroke: #78d8c1; stroke-width: 3; stroke-linecap: round; opacity: .8; }

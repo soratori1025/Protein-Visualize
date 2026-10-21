@@ -22,6 +22,7 @@ TOOLS_BIN = ROOT / "tools" / "bin"
 TOOLS_SHARE = ROOT / "tools" / "share" / "libcifpp"
 
 CIF_SUFFIXES = {".cif", ".mmcif"}
+DSSP_TIMEOUT_S = 600
 # mkdssp 4.x refuses some PDB files that have no CRYST1 record; a unit cell of 1 A
 # is the conventional placeholder for non-crystallographic models.
 DUMMY_CRYST1 = "CRYST1    1.000    1.000    1.000  90.00  90.00  90.00 P 1           1"
@@ -63,14 +64,34 @@ class DSSPMethod(SecondaryStructureMethod):
                 working_path = Path(temp_dir_obj.name) / f"{structure_path.stem}.pdb"
                 working_path.write_text("\n".join(cleaned) + "\n", encoding="utf-8")
         try:
-            try:
-                residues = self._via_biopython(working_path, is_cif, model_id)
-            except (PDBException, KeyError) as error:
-                # Bio.PDB.DSSP cross-checks every residue against the structure and aborts
-                # the WHOLE run on one disagreement (e.g. MSE printed as 'M' by mkdssp).
-                # The raw DSSP table does not need that check.
-                print(f"[DSSP] Bio.PDB.DSSP mapping failed ({error}); using raw DSSP output")
-                residues = self._via_raw_output(working_path)
+            # 1. call the program on the file itself (works for mmCIF on the
+            #    mmCIF-only builds of DSSP 4.4+)
+            residues = self._via_classic_output(working_path)
+            if not residues and not is_cif:
+                # 2. the program may be an mmCIF-only build and the input is PDB
+                with tempfile.TemporaryDirectory(prefix="proteinlab-dssp-cif-") as temporary_dir:
+                    cif_path = Path(temporary_dir) / f"{structure_path.stem}.cif"
+                    try:
+                        self._convert_to_mmcif(working_path, cif_path)
+                    except Exception:
+                        cif_path = None
+                    if cif_path is not None:
+                        residues = self._via_classic_output(cif_path)
+            if not residues:
+                # 3. fall back to the Biopython mapping, which cross-checks every
+                #    residue against the structure and aborts the whole run on one
+                #    disagreement (e.g. MSE printed as 'M' by mkdssp)
+                try:
+                    residues = self._via_biopython(working_path, is_cif, model_id)
+                except (PDBException, KeyError) as error:
+                    print(f"[DSSP] Bio.PDB.DSSP mapping failed ({error}); "
+                          f"using raw DSSP output")
+                    residues = self._via_raw_output(working_path)
+            if not residues:
+                raise RuntimeError(
+                    f"DSSP produced no assignment for {structure_path.name}. The "
+                    f"executable {self.executable} may be missing, may need a "
+                    f"CRYST1 record, or may not accept this file format.")
             return SecondaryStructureResult(method=self.name, residues=residues)
         finally:
             if temp_dir_obj:
@@ -139,3 +160,90 @@ class DSSPMethod(SecondaryStructureMethod):
                 insertion_code=(icode or "").strip(),
             ))
         return residues
+
+    # ------------------------------------------------------- direct invocation
+    def _via_classic_output(self, structure_path: Path) -> list:
+        """Run the executable on the file itself and parse the classic DSSP table.
+
+        Bio.PDB.DSSP always rewrites the input as PDB before calling the program,
+        which fails on the mmCIF-only builds of DSSP 4.4 and newer (they refuse a PDB
+        file with "This file does not seem to be an mmCIF file").  Calling the program
+        directly keeps the input format and therefore keeps the mmCIF path working.
+        The classic table is fixed-width, so it can be parsed exactly.
+        """
+        with tempfile.TemporaryDirectory(prefix="proteinlab-dssp-") as temporary_dir:
+            out_path = Path(temporary_dir) / "out.dssp"
+            command = [self.executable, "--output-format=dssp", str(structure_path),
+                       str(out_path)]
+            try:
+                completed = subprocess.run(command, capture_output=True, text=True,
+                                           timeout=DSSP_TIMEOUT_S)
+            except (OSError, subprocess.SubprocessError):
+                return []
+            if completed.returncode != 0 or not out_path.exists():
+                return []
+            text = out_path.read_text(encoding="utf-8", errors="replace")
+        return self._parse_classic(text)
+
+    def _parse_classic(self, text: str) -> list:
+        """Parse the classic DSSP table.
+
+        Columns (1-based, as documented in the table header):
+          1-5   DSSP index      6-10  residue number   11  insertion code
+          12    chain          14-15 amino acid       17  structure code
+          35-38 relative accessibility
+          104-109 phi          110-116 psi
+        """
+        max_acc = residue_max_acc[self.asa_scale]
+        residues = []
+        started = False
+        for line in text.splitlines():
+            if not started:
+                if line.lstrip().startswith("#  RESIDUE"):
+                    started = True
+                continue
+            if len(line) < 38:
+                continue
+            if line[9] == " " and line[10] == " ":
+                continue                                   # missing residue
+            try:
+                resseq = int(line[5:10])
+            except ValueError:
+                continue
+            icode = (line[10] or " ").strip()
+            chain_id = (line[11] or " ").strip()
+            aa = line[13:15].strip()
+            code = line[16:17].strip() or " "
+            try:
+                acc = float(line[34:38])
+            except ValueError:
+                acc = None
+            three = _ONE_TO_THREE.get(aa)
+            rel = min(1.0, acc / max_acc[three]) if (acc is not None and three in max_acc) else None
+            residues.append(ResidueSecondaryStructure(
+                chain_id=chain_id,
+                residue_number=resseq,
+                residue_name=aa,
+                code=code,
+                phi=clean_angle(line[103:109].strip()) if len(line) >= 109 else None,
+                psi=clean_angle(line[109:116].strip()) if len(line) >= 116 else None,
+                asa=clean_float(rel),
+                insertion_code=icode,
+            ))
+        return residues
+
+    @staticmethod
+    def _convert_to_mmcif(structure_path: Path, output_path: Path) -> None:
+        """Write one model as mmCIF, keeping the author residue numbering.
+
+        Needed when the installed DSSP is an mmCIF-only build and the input is PDB.
+        """
+        from Bio.PDB import MMCIFWriter, PDBParser
+
+        structure = PDBParser(QUIET=True).get_structure(structure_path.stem,
+                                                        str(structure_path))
+        writer = MMCIFWriter()
+        writer.set_structure(structure[0])
+        with open(output_path, "w", encoding="utf-8") as handle:
+            writer.save(handle)
+        writer.close()

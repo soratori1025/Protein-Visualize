@@ -81,6 +81,23 @@ REMOVED_FLOWS = {"tm_then_ss", "tm_first", "ss_then_tm", "structure_guided"}
 POSITIVE_INSIDE_FLANK = 15
 MIN_SS_COVERAGE_WARN = 0.8
 
+
+def _ss_suffix(index: int) -> str:
+    """Short lowercase label for the n-th secondary-structure element of a loop.
+
+    Spreadsheet-style: a, b, ... z, aa, ab, ...  A single letter is not enough -
+    a long loop easily holds more than 26 helices, and the label must not run out.
+    """
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    if index < 0:
+        index = 0
+    out = ""
+    index += 1
+    while index > 0:
+        index, remainder = divmod(index - 1, len(letters))
+        out = letters[remainder] + out
+    return out
+
 Span = tuple[int, int, Optional[str]]      # (start_pos, end_pos, 'H' | 'E' | None)
 
 # Plausible lengths of one crossing (residues) - validation warnings only.
@@ -789,7 +806,6 @@ class TopologyOrchestrator:
         for loop, (label, short) in names.items():
             members = [r for r, x in zip(regions, loop_of) if x == loop]
             ss_elems = [id(r) for r in members if r.type == "Topological domain" and r.ss in ("Helix", "Strand")]
-            letters = "abcdefghijklmnopqrstuvwxyz"
             for r in members:
                 if r.type == L.INTRA:
                     re_count += 1
@@ -800,7 +816,7 @@ class TopologyOrchestrator:
                     r.membrane_role = "INTERFACIAL" if L.INTERFACIAL in r.description else "EXTRAMEMBRANE"
                     if id(r) in ss_elems:
                         k = ss_elems.index(id(r))
-                        r.topology_label = short + (letters[k] if len(ss_elems) > 1 else "")
+                        r.topology_label = short + (_ss_suffix(k) if len(ss_elems) > 1 else "")
                     else:
                         r.topology_label = label
         for r in regions:
@@ -906,4 +922,6 @@ class TopologyOrchestrator:
             membrane=membrane.as_dict() if membrane is not None else None,
             residues=residues,
             consensus_map=consensus_map,
+            placement_quality=getattr(tm_pred, "placement_quality", "ok") or "ok",
+            placement_flags=list(getattr(tm_pred, "placement_flags", []) or []),
         )

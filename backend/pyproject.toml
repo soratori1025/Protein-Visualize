@@ -1,22 +1,77 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
-name = "protein-lab-backend"
-version = "0.1.0"
-description = "FastAPI backend for ProteinLab MVP"
+name = "proteinlab"
+version = "0.2.0"
+description = "Structure-derived transmembrane topology annotation and interactive visualization of membrane proteins"
 readme = "../README.md"
 requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "ProteinLab developers" },
+]
+keywords = [
+  "membrane protein",
+  "transmembrane topology",
+  "implicit solvation",
+  "secondary structure",
+  "visualization",
+  "bioinformatics",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
 dependencies = [
   "fastapi[standard]>=0.115.0",
   "biopython>=1.84",
   "numpy>=1.26",
   "scipy>=1.11",
-  "networkx>=3.2",
   "pydantic>=2.7",
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0",
+]
+bench = [
+  "matplotlib>=3.8",
+  "scipy>=1.11",
+]
+
+[project.urls]
+Homepage = "https://protein-visualize.vercel.app"
+Repository = "https://github.com/soratori1025/Protein-Visualize"
+Documentation = "https://github.com/soratori1025/Protein-Visualize#readme"
+
+[project.scripts]
+proteinlab = "app.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app", "../protein_engine"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", ".."]
+filterwarnings = [
+  "ignore::UserWarning:Bio.PDB.DSSP",
+  "ignore::UserWarning:Bio.PDB",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
 
 [tool.pyright]
 extraPaths = [".."]
-

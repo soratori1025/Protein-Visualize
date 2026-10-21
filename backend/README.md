@@ -32,15 +32,15 @@ This is our most advanced, **completely self-implemented** biophysics algorithm.
 * **FFT Optimization:** It samples rotational states using a Fibonacci sphere and utilizes 1D Fast Fourier Transform (`np.fft.rfft`) for a lightning-fast exhaustive grid search along the Z-axis (translation and thickness).
 
 ### 2. 3D Slab Geometry
-A fast geometric heuristic that identifies the membrane by clustering hydrophobic residues in 3D space.
-* **Fibonacci Sphere Sampling:** Tests hundreds of possible membrane normal vectors.
-* **Slab Scoring:** Scores each orientation based on the density of hydrophobic C-alpha atoms inside the defined slab minus the penalty for charged residues.
+A fast geometric heuristic that identifies the membrane by maximising the two-sided contrast of signed Kyte-Doolittle hydropathy across a slab.
+* **Fibonacci Sphere Sampling:** Tests 500 candidate membrane normal vectors.
+* **Slab Scoring:** For each normal and each slab centre, scores `min(<h>_in - <h>_below, <h>_in - <h>_above)` over the signed Kyte-Doolittle hydropathy of the C-alpha trace (smoothed over 7 residues, never across a chain break). An orientation term penalises slabs fitted nearly perpendicular to the local chain directions, which is what suppresses the degenerate solution in which the whole transmembrane domain is swallowed by a tilted slab.
 * **Consensus Mapping:** After finding the optimal plane, it slices the sequence and ensures runs of residues spanning across the slab are classified as TM helices/strands.
 
 ### 3. Kyte-Doolittle (Sequence-based)
 A classic 1D sliding-window hydropathy scan. 
 * Operates solely on the primary amino acid sequence.
-* Uses a **hysteresis** thresholding system (upper and lower bounds) to cleanly separate hydrophobic core segments without being interrupted by single hydrophilic mutations.
+* Uses a **two-scale** thresholding system: a 19-residue windowed mean above 1.6 *detects* a transmembrane segment, and the maximal run in which the 9-residue windowed mean stays at or above 0.5 determines its *extent*. The shorter window is used for the extent because the 19-residue profile cannot place the ends and the 9-residue profile does not dip between two helices joined by a short loop.
 
 ### 4. UniProt API (Database Lookup)
 Fetches curated annotations directly from the UniProt database using the protein's accession ID. Reliable for established proteins, returning exact boundaries for Extracellular, Transmembrane, and Cytoplasmic domains.

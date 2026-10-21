@@ -8,6 +8,26 @@ __pycache__/
 # Node
 frontend/node_modules/
 frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Benchmark artefacts
+bench/results/structures/
+bench/results/opm/
+bench/results/alphafold/
+bench/results2/
+bench/frame/
+bench/results_n64/
+bench/figures_test/
+*.log
+
+# The manuscript and the publication working material are deliberately NOT in the
+# repository: several journals require that a submitted paper is not publicly
+# available before publication.  Keep them local, and publish the code and the
+# benchmark instead.
+manuscript/
+docs/
 
 # IDE
 .vscode/

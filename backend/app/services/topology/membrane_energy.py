@@ -51,7 +51,9 @@ out of the fit: disordered loops drawn as ribbons through the bilayer region oth
 shrink the fitted thickness to its 20 A lower bound and can lose most TM segments (stress
 test with polar low-pLDDT loops on Piezo1: 8/26 UniProt TMs without, 26/26 with the filter).
 
-Checked on 54 PDB structures (2026-09-30; small set, re-validate on OPM before publishing):
+Provisional checks (2026-09-30, small set; NOT a reproducible benchmark - the numbers
+below were produced by an ad-hoc script that is not part of the repository, so they must
+not be quoted in a publication until `bench/benchmark_tm_topology.py` reproduces them):
   * 7 membrane proteins with a reference membrane frame (PDBTM/OPM), randomly rotated:
     normal error median 8.7 deg (max 13), centre error 2.3 A, hydrophobic thickness
     27.7 A on average (OPM 34 A for 4ib4, fitted 31.7 A); all 33 TM segments of the
@@ -69,6 +71,12 @@ Checked on 54 PDB structures (2026-09-30; small set, re-validate on OPM before p
     inner helix; stable under random rotations (boundaries within 3 residues) and from a
     C-alpha-only copy (26/26). The MDFIC C-terminal helix is correctly left out (it lies
     in the inner interface, 71 deg from the local normal).
+
+Reproducible evaluation: `bench/benchmark_tm_topology.py` (topology agreement with
+curated UniProtKB annotation, and the membrane/soluble decision on a soluble control
+cohort).  A companion benchmark of the fitted membrane *frame* against OPM/PPM (normal
+error, mid-plane offset, hydrophobic thickness) is still to be written; until it exists,
+no frame-accuracy number from this module may be quoted.
 
 References (verify the tabulated values against the original tables before publishing):
   Engelman, Steitz & Goldman (1986) Annu Rev Biophys Biophys Chem 15:321 (GES scale);

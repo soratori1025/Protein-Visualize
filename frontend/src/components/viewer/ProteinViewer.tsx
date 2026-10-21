@@ -5,7 +5,7 @@ import type { ColorScheme, RepresentationStyle } from '../../types/viewer';
 import { generateRibbonSpline, getHydropathyColor } from '../../utils/ribbonSpline';
 import { API_URL } from '../../services/api';
 import type { ConsensusResidue } from '../../types/secondaryStructure';
-import { spreadStructure } from '../structure/spreadStructure';
+import { spreadStructureWithReport, type SpreadReport } from '../structure/spreadStructure';
 
 interface Props {
   chain: Chain | undefined;
@@ -36,6 +36,11 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
   const [layoutMode, setLayoutMode] = useState<'native' | 'aligned' | 'spread'>('native');
   const [showMembraneRegions, setShowMembraneRegions] = useState(false);
   const [orthographic, setOrthographic] = useState(false);
+  // The 2-D layout measures the geometric distortion it introduces (stretched peptide
+  // bonds, new atom clashes, broken disulfides).  The report is kept and shown, never
+  // discarded: a layout that cannot be closed honestly says so.
+  const [spreadReport, setSpreadReport] = useState<SpreadReport | null>(null);
+  const [showAudit, setShowAudit] = useState(false);
 
   useEffect(() => {
     if (defaultColorScheme) {
@@ -86,7 +91,11 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
       let structure = await response.text();
 
       if ((layoutMode === 'spread' || layoutMode === 'aligned') && consensusMap && consensusMap.length > 0) {
-        structure = spreadStructure(structure, consensusMap, { mode: layoutMode === 'spread' ? 'unrolled' : 'aligned' });
+        const laid = spreadStructureWithReport(structure, consensusMap, { mode: layoutMode === 'spread' ? 'unrolled' : 'aligned' });
+        structure = laid.pdb;
+        setSpreadReport(laid.report);
+      } else {
+        setSpreadReport(null);
       }
 
       viewer = $3Dmol.createViewer(containerRef.current, { antialias: true });
@@ -330,6 +339,56 @@ export function ProteinViewer({ chain, chains, filename, variant = 'interactive'
         <span className="viewer-caption">
           {focusChainId ? `Isolated chain ${focusChainId} · style: ${style} · color: ${colorScheme}` : variant === 'overview' ? `Full biological assembly · style: ${style}` : `Drag to rotate · scroll to zoom · click a residue`}
         </span>
+        {spreadReport && (
+          <div className="layout-audit">
+            <button
+              type="button"
+              className="layout-audit-toggle"
+              onClick={() => setShowAudit((v) => !v)}
+              aria-expanded={showAudit}
+            >
+              {showAudit ? 'Hide' : 'Show'} layout audit
+              {spreadReport.warnings.length > 0 && (
+                <span className="layout-audit-flag"> · {spreadReport.warnings.length} warning{spreadReport.warnings.length > 1 ? 's' : ''}</span>
+              )}
+            </button>
+            {showAudit && (
+              <div className="layout-audit-body">
+                <dl className="layout-audit-stats">
+                  <div><dt>Longest C–N bond</dt><dd>{spreadReport.maxPeptideBond != null ? `${spreadReport.maxPeptideBond.toFixed(2)} Å` : 'n/a'}</dd></div>
+                  <div><dt>Stretched bonds (&gt;1.5 Å)</dt><dd>{spreadReport.brokenPeptideBonds}</dd></div>
+                  <div><dt>New atom clashes</dt><dd>{spreadReport.clashes}</dd></div>
+                  <div><dt>Broken disulfides</dt><dd>{spreadReport.brokenDisulfides}</dd></div>
+                  <div><dt>Crossings laid out</dt><dd>{spreadReport.crossings.length}</dd></div>
+                  <div><dt>Membrane frame</dt><dd>{spreadReport.membraneSource}</dd></div>
+                </dl>
+                {spreadReport.loops.length > 0 && (
+                  <table className="layout-audit-table">
+                    <thead>
+                      <tr><th>Loop</th><th>Residues</th><th>Closure RMSD</th><th>Clashes</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      {spreadReport.loops.map((loop) => (
+                        <tr key={`${loop.from}-${loop.to}`}>
+                          <td>{loop.from} → {loop.to}</td>
+                          <td>{loop.residues}</td>
+                          <td>{loop.closureRmsd != null ? `${loop.closureRmsd.toFixed(2)} Å` : '—'}</td>
+                          <td>{loop.clashes ?? 0}</td>
+                          <td>{loop.schematic ? 'schematic (not closed)' : loop.closed ? 'closed' : 'not closed'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+                {spreadReport.warnings.length > 0 && (
+                  <ul className="layout-audit-warnings">
+                    {spreadReport.warnings.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }

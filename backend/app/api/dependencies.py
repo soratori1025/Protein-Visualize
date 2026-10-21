@@ -24,7 +24,9 @@ def get_tm_params(
 def get_topology_orchestrator(
     tm_algo: str = Query("3d_slab_geom", description="TM Algorithm: kyte_doolittle_seq, 3d_slab_geom, uniprot_api, 3d_energy, tmhmm"),
     ss_algo: str = Query("dssp", description="SS Algorithm: dssp, stride, none"),
-    flow_type: str = Query("ss_then_tm", description="Flow Type: ss_then_tm, tm_then_ss, parallel_merge")
+    flow_type: str = Query("consensus", description="Flow Type: consensus (the only flow). "
+                                                     "The former ss_then_tm / tm_then_ss names are "
+                                                     "accepted for compatibility and run as consensus.")
 ):
     from app.services.topology.orchestrator import TopologyOrchestrator
     from app.services.topology.service import TM_ALGORITHMS, SS_ALGORITHMS

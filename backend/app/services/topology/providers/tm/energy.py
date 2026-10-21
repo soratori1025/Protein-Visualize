@@ -60,6 +60,50 @@ def _drop_low_confidence(classes, frame, d, T, predicted: bool = False):
 class EnergyTMProvider(TMProvider):
     LABELER = "3D_Energy"
 
+    @staticmethod
+    def _placement_quality(half_thickness: float, energy: float, n_segments: int,
+                            n_chains: int, predicted: bool):
+        """Is the placement determined by the data, or is it a guess?
+
+        Three situations make the fit under-determined, and all three have been
+        observed:
+
+        * the fitted hydrophobic thickness sits at the edge of the search range,
+          which happens when the structure does not constrain the bilayer - a
+          monomeric subunit of a curved assembly, for instance;
+        * the transfer free energy is barely below the decision threshold, so the
+          structure is only marginally membrane-like;
+        * very few transmembrane segments were found in a large assembly, so the
+          membrane is inferred from a handful of helices.
+
+        The result is a set of flags and a coarse quality label, both reported to the
+        user instead of being left implicit in the numbers.
+        """
+        flags = []
+        tolerance = 0.05 * ME.MAX_HALF
+        if half_thickness <= ME.MIN_HALF + tolerance:
+            flags.append("the fitted hydrophobic thickness is at the lower bound of the "
+                         "search range: the bilayer is not well determined by this structure")
+        elif half_thickness >= ME.MAX_HALF - tolerance:
+            flags.append("the fitted hydrophobic thickness is at the upper bound of the "
+                         "search range: the bilayer is not well determined by this structure")
+        if energy > 1.5 * ME.MAX_MEMBRANE_DG:
+            flags.append(f"the transfer free energy ({energy:.1f} kcal/mol) is only just "
+                         f"below the membrane threshold: the structure is marginally "
+                         f"membrane-like")
+        if n_segments <= 2 and n_chains > 1:
+            flags.append(f"only {n_segments} transmembrane segment(s) were found in an "
+                         f"assembly of {n_chains} chains: the membrane placement rests on "
+                         f"very little evidence")
+        if predicted:
+            flags.append("the structure is a prediction: the placement depends on the "
+                         "pLDDT filter, which excludes the low-confidence residues")
+        if not flags:
+            return [], "ok"
+        if any("not well determined" in f or "very little evidence" in f for f in flags):
+            return flags, "uncertain"
+        return flags, "caution"
+
     def predict_tm(self, file_path: Path, params: Optional[TMParams] = None,
                    frame: Optional[ResidueFrame] = None, **kwargs) -> TMPrediction:
         # shared post-processing lives with the slab provider (imported lazily: large module)
@@ -98,6 +142,10 @@ class EnergyTMProvider(TMProvider):
             return TMPrediction(
                 labels=labels, segments=[], membrane_score=-dg, membrane_normal=normal,
                 labeler=labeler, **geometry,
+                placement_quality="uncertain",
+                placement_flags=[f"the transfer free energy ({dg:.1f} kcal/mol) is above "
+                                 f"the membrane threshold, so the structure is treated as "
+                                 f"soluble"],
                 warnings=warnings + [f"dG_transfer {dg:.1f} kcal/mol > {ME.MAX_MEMBRANE_DG} "
                                      "- treated as soluble (no TM segments)"])
 
@@ -120,6 +168,10 @@ class EnergyTMProvider(TMProvider):
                             "residue crossing it")
         labels = T._apply_positive_inside_rule(classes, residues_data)
         segments = T._tm_runs(labels, breaks=breaks)
+        flags, quality = self._placement_quality(half, dg, len(segments), fit.n_chains,
+                                                  fit.predicted)
+        for flag in flags:
+            warnings.append(f"placement quality: {flag}")
         return TMPrediction(
             regions=L.build_regions(frame, labels, T._groups_for_runs(n, segments)),
             labels=labels,
@@ -128,5 +180,7 @@ class EnergyTMProvider(TMProvider):
             membrane_score=-dg,
             labeler=labeler,
             warnings=warnings,
+            placement_flags=flags,
+            placement_quality=quality,
             **geometry,
         )

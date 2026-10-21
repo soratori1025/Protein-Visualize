@@ -32,6 +32,12 @@ class TMPrediction(BaseModel):
     membrane_center: Optional[List[float]] = None         # a point on the mid-surface
     sphere_center: Optional[List[float]] = None           # curved membranes only
     membrane_radius: Optional[float] = None               # curved: mid-surface radius (A)
+    # How trustworthy is the placement itself?  A fit whose thickness sits at the edge
+    # of the search range, or whose free energy is barely below the decision threshold,
+    # is under-determined - the data do not pin the bilayer down.  The flags are
+    # reported so that a user is told when a result should not be trusted.
+    placement_flags: List[str] = Field(default_factory=list)
+    placement_quality: str = "ok"         # "ok" | "caution" | "uncertain"
 
 
 class TMProvider(ABC):

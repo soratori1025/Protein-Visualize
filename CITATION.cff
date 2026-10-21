@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use ProteinLab in your research, please cite it as below."
+title: "ProteinLab: structure-derived transmembrane topology annotation and interactive visualization of membrane proteins"
+abstract: >-
+  ProteinLab derives a residue-level, side-resolved transmembrane topology directly
+  from atomic coordinates. An implicit-membrane transfer-energy model places the
+  bilayer, a consensus annotation engine merges the topology with an independent
+  secondary-structure assignment on a shared residue frame, and the result is
+  presented as an interactive, publication-quality figure with machine-readable
+  export.
+type: software
+authors:
+  - name: "⟨AUTHOR⟩"
+    orcid: "⟨ORCID⟩"
+    affiliation: "⟨AFFILIATION⟩"
+license: MIT
+repository-code: "https://github.com/soratori1025/Protein-Visualize"
+url: "https://protein-visualize.vercel.app"
+keywords:
+  - membrane protein
+  - transmembrane topology
+  - implicit solvation
+  - secondary structure
+  - visualization
+preferred-citation:
+  type: article
+  title: "ProteinLab: structure-derived transmembrane topology annotation and interactive visualization of membrane proteins"
+  journal: "Bioinformatics"
+  year: 2026
+  authors:
+    - name: "⟨AUTHOR⟩"
+  doi: "⟨DOI_AFTER_ACCEPTANCE⟩"
