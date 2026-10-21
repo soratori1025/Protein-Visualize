@@ -1,0 +1,5983 @@
+{
+  "story_a": [
+    {
+      "accession": "Q8TDU9",
+      "pdb_id": "7YK7",
+      "chain": "R",
+      "protein": "Relaxin-3 receptor 2",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.0,
+      "membrane_score": 54.734,
+      "placement_quality": "ok",
+      "seconds": 7.48,
+      "roles": {
+        "EXTRAMEMBRANE": 17,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 211,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P36021",
+      "pdb_id": "9DWY",
+      "chain": "A",
+      "protein": "Monocarboxylate transporter 8",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 65.523,
+      "placement_quality": "ok",
+      "seconds": 2.52,
+      "roles": {
+        "EXTRAMEMBRANE": 27,
+        "TM_CROSSING": 12,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 305,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O00591",
+      "pdb_id": "8VSZ",
+      "chain": "A",
+      "protein": "Gamma-aminobutyric acid receptor subunit pi",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 1.0,
+      "membrane_score": 109.21,
+      "placement_quality": "ok",
+      "seconds": 5.63,
+      "roles": {
+        "EXTRAMEMBRANE": 36,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 102,
+        "n_helices_in_string": 3,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8NBN3",
+      "pdb_id": "8HSI",
+      "chain": "A",
+      "protein": "Golgi-pH regulating cation channel",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 0.8571,
+      "boundary_median": 2.0,
+      "membrane_score": 59.952,
+      "placement_quality": "ok",
+      "seconds": 2.67,
+      "roles": {
+        "EXTRAMEMBRANE": 32,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 195,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q04844",
+      "pdb_id": "9DMS",
+      "chain": "B",
+      "protein": "Acetylcholine receptor subunit epsilon",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.5,
+      "membrane_score": 98.794,
+      "placement_quality": "ok",
+      "seconds": 10.77,
+      "roles": {
+        "EXTRAMEMBRANE": 44,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 165,
+        "n_helices_in_string": 3,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q01959",
+      "pdb_id": "9EO4",
+      "chain": "B",
+      "protein": "Sodium-dependent dopamine transporter",
+      "n_curated_tm": 12,
+      "n_computed_tm": 18,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.5,
+      "membrane_score": 72.437,
+      "placement_quality": "ok",
+      "seconds": 3.46,
+      "roles": {
+        "EXTRAMEMBRANE": 43,
+        "TM_CROSSING": 9,
+        "BROKEN_TM": 6,
+        "UNWOUND": 3,
+        "INTERFACIAL": 2
+      },
+      "n_broken_helix": 6,
+      "n_unwound": 3,
+      "n_interfacial": 2,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 394,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P47775",
+      "pdb_id": "7Y3G",
+      "chain": "R",
+      "protein": "G protein-coupled receptor 12",
+      "n_curated_tm": 7,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 55.718,
+      "placement_quality": "ok",
+      "seconds": 3.95,
+      "roles": {
+        "EXTRAMEMBRANE": 19,
+        "TM_CROSSING": 6,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 198,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O75110",
+      "pdb_id": "9VDK",
+      "chain": "A",
+      "protein": "Probable phospholipid-transporting ATPase IIA",
+      "n_curated_tm": 10,
+      "n_computed_tm": 10,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 68.37,
+      "placement_quality": "ok",
+      "seconds": 4.21,
+      "roles": {
+        "EXTRAMEMBRANE": 133,
+        "TM_CROSSING": 10
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 515,
+        "n_helices_in_string": 10,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P43657",
+      "pdb_id": "9ITB",
+      "chain": "R",
+      "protein": "Lysophosphatidic acid receptor 6",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 68.417,
+      "placement_quality": "ok",
+      "seconds": 3.9,
+      "roles": {
+        "EXTRAMEMBRANE": 19,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 201,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9HBX9",
+      "pdb_id": "7TMW",
+      "chain": "R",
+      "protein": "Relaxin receptor 1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 1.0,
+      "membrane_score": 62.115,
+      "placement_quality": "ok",
+      "seconds": 3.81,
+      "roles": {
+        "EXTRAMEMBRANE": 52,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 332,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q99808",
+      "pdb_id": "6OB7",
+      "chain": "A",
+      "protein": "Equilibrative nucleoside transporter 1",
+      "n_curated_tm": 11,
+      "n_computed_tm": 11,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 65.316,
+      "placement_quality": "ok",
+      "seconds": 2.63,
+      "roles": {
+        "EXTRAMEMBRANE": 31,
+        "TM_CROSSING": 11
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 305,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9BV81",
+      "pdb_id": "8J0O",
+      "chain": "F",
+      "protein": "ER membrane protein complex subunit 6",
+      "n_curated_tm": 3,
+      "n_computed_tm": 3,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 61.461,
+      "placement_quality": "uncertain",
+      "seconds": 7.36,
+      "roles": {
+        "EXTRAMEMBRANE": 11,
+        "TM_CROSSING": 3
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 77,
+        "n_helices_in_string": 3,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q7LBE3",
+      "pdb_id": "7CH1",
+      "chain": "A",
+      "protein": "Solute carrier family 26 member 9",
+      "n_curated_tm": 14,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 0.9286,
+      "boundary_median": 3.0,
+      "membrane_score": 88.184,
+      "placement_quality": "uncertain",
+      "seconds": 4.6,
+      "roles": {
+        "EXTRAMEMBRANE": 65,
+        "TM_CROSSING": 14,
+        "INTERFACIAL": 2
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 2,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 369,
+        "n_helices_in_string": 10,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8IU99",
+      "pdb_id": "8GMP",
+      "chain": "A",
+      "protein": "Calcium homeostasis modulator protein 1",
+      "n_curated_tm": 4,
+      "n_computed_tm": 5,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 181.853,
+      "placement_quality": "ok",
+      "seconds": 5.72,
+      "roles": {
+        "EXTRAMEMBRANE": 18,
+        "TM_CROSSING": 5
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 131,
+        "n_helices_in_string": 3,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q96A54",
+      "pdb_id": "5LXG",
+      "chain": "A",
+      "protein": "Adiponectin receptor protein 1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 55.009,
+      "placement_quality": "ok",
+      "seconds": 2.76,
+      "roles": {
+        "EXTRAMEMBRANE": 20,
+        "TM_CROSSING": 6,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 190,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9P1Z3",
+      "pdb_id": "8INZ",
+      "chain": "A",
+      "protein": "Potassium/sodium hyperpolarization-activated cyclic nucleotide-gated c",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.5,
+      "membrane_score": 180.402,
+      "placement_quality": "ok",
+      "seconds": 6.12,
+      "roles": {
+        "EXTRAMEMBRANE": 56,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 294,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O95477",
+      "pdb_id": "7TBW",
+      "chain": "A",
+      "protein": "Phospholipid-transporting ATPase ABCA1",
+      "n_curated_tm": 15,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 0.8889,
+      "boundary_median": 3.0,
+      "membrane_score": 78.56,
+      "placement_quality": "ok",
+      "seconds": 7.7,
+      "roles": {
+        "EXTRAMEMBRANE": 219,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 976,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q15125",
+      "pdb_id": "8W0R",
+      "chain": "A",
+      "protein": "3-beta-hydroxysteroid-Delta(8),Delta(7)-isomerase",
+      "n_curated_tm": 4,
+      "n_computed_tm": 5,
+      "f1_vs_curation": 0.8889,
+      "boundary_median": 3.0,
+      "membrane_score": 66.653,
+      "placement_quality": "ok",
+      "seconds": 2.56,
+      "roles": {
+        "EXTRAMEMBRANE": 19,
+        "TM_CROSSING": 5
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 157,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9H221",
+      "pdb_id": "7R89",
+      "chain": "B",
+      "protein": "ATP-binding cassette sub-family G member 8",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 80.015,
+      "placement_quality": "ok",
+      "seconds": 4.7,
+      "roles": {
+        "EXTRAMEMBRANE": 54,
+        "INTERFACIAL": 1,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 279,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q99437",
+      "pdb_id": "6WLW",
+      "chain": "0",
+      "protein": "V-type proton ATPase 21 kDa proteolipid subunit c''",
+      "n_curated_tm": 5,
+      "n_computed_tm": 5,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 1.0,
+      "membrane_score": 184.565,
+      "placement_quality": "ok",
+      "seconds": 6.1,
+      "roles": {
+        "EXTRAMEMBRANE": 18,
+        "TM_CROSSING": 5
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 169,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P08183",
+      "pdb_id": "8Y6H",
+      "chain": "A",
+      "protein": "ATP-dependent translocase ABCB1",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 71.695,
+      "placement_quality": "ok",
+      "seconds": 4.03,
+      "roles": {
+        "EXTRAMEMBRANE": 51,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 528,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8TCJ2",
+      "pdb_id": "6S7T",
+      "chain": "A",
+      "protein": "Dolichyl-diphosphooligosaccharide--protein glycosyltransferase subunit",
+      "n_curated_tm": 12,
+      "n_computed_tm": 13,
+      "f1_vs_curation": 0.96,
+      "boundary_median": 4.0,
+      "membrane_score": 92.102,
+      "placement_quality": "uncertain",
+      "seconds": 8.3,
+      "roles": {
+        "EXTRAMEMBRANE": 69,
+        "TM_CROSSING": 13,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 391,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P41181",
+      "pdb_id": "8VVX",
+      "chain": "A",
+      "protein": "Aquaporin-2",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 105.393,
+      "placement_quality": "ok",
+      "seconds": 4.25,
+      "roles": {
+        "EXTRAMEMBRANE": 18,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 164,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O15399",
+      "pdb_id": "9D37",
+      "chain": "D",
+      "protein": "Glutamate receptor ionotropic, NMDA 2D",
+      "n_curated_tm": 3,
+      "n_computed_tm": 3,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 88.121,
+      "placement_quality": "ok",
+      "seconds": 7.59,
+      "roles": {
+        "EXTRAMEMBRANE": 90,
+        "TM_CROSSING": 3
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 293,
+        "n_helices_in_string": 3,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9UHC9",
+      "pdb_id": "7DFW",
+      "chain": "A",
+      "protein": "NPC1-like intracellular cholesterol transporter 1",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.5,
+      "membrane_score": 85.508,
+      "placement_quality": "ok",
+      "seconds": 3.98,
+      "roles": {
+        "EXTRAMEMBRANE": 95,
+        "TM_CROSSING": 12,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 514,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9UPC5",
+      "pdb_id": "8K4N",
+      "chain": "D",
+      "protein": "Probable G protein-coupled receptor 34",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 55.607,
+      "placement_quality": "ok",
+      "seconds": 4.57,
+      "roles": {
+        "EXTRAMEMBRANE": 22,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 162,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9Y6G1",
+      "pdb_id": "2LOO",
+      "chain": "A",
+      "protein": "Transmembrane protein 14A",
+      "n_curated_tm": 3,
+      "n_computed_tm": 1,
+      "f1_vs_curation": 0.5,
+      "boundary_median": 2.0,
+      "membrane_score": 14.236,
+      "placement_quality": "uncertain",
+      "seconds": 3.01,
+      "roles": {
+        "EXTRAMEMBRANE": 8,
+        "TM_CROSSING": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 60,
+        "n_helices_in_string": 1,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9Y666",
+      "pdb_id": "7D99",
+      "chain": "A",
+      "protein": "Solute carrier family 12 member 7",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 0.9091,
+      "boundary_median": 3.5,
+      "membrane_score": 103.75,
+      "placement_quality": "ok",
+      "seconds": 5.82,
+      "roles": {
+        "EXTRAMEMBRANE": 92,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1,
+        "TM_CROSSING": 9
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 468,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O75027",
+      "pdb_id": "7VGF",
+      "chain": "A",
+      "protein": "Iron-sulfur clusters transporter ABCB7, mitochondrial",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 7.0,
+      "membrane_score": 63.782,
+      "placement_quality": "uncertain",
+      "seconds": 4.19,
+      "roles": {
+        "EXTRAMEMBRANE": 56,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 349,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P30531",
+      "pdb_id": "7Y7V",
+      "chain": "A",
+      "protein": "Sodium- and chloride-dependent GABA transporter 1",
+      "n_curated_tm": 12,
+      "n_computed_tm": 13,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 68.667,
+      "placement_quality": "ok",
+      "seconds": 2.94,
+      "roles": {
+        "EXTRAMEMBRANE": 39,
+        "TM_CROSSING": 13,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 393,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9NZD1",
+      "pdb_id": "9IMA",
+      "chain": "A",
+      "protein": "G protein-coupled receptor family C group 5 member D",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 90.839,
+      "placement_quality": "ok",
+      "seconds": 4.12,
+      "roles": {
+        "EXTRAMEMBRANE": 21,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 199,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q96FL8",
+      "pdb_id": "9R1F",
+      "chain": "A",
+      "protein": "Multidrug and toxin extrusion protein 1",
+      "n_curated_tm": 13,
+      "n_computed_tm": 15,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 74.768,
+      "placement_quality": "ok",
+      "seconds": 3.64,
+      "roles": {
+        "EXTRAMEMBRANE": 40,
+        "TM_CROSSING": 12,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 412,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P48029",
+      "pdb_id": "9V8W",
+      "chain": "A",
+      "protein": "Sodium- and chloride-dependent creatine transporter 1",
+      "n_curated_tm": 12,
+      "n_computed_tm": 16,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.5,
+      "membrane_score": 72.516,
+      "placement_quality": "ok",
+      "seconds": 2.92,
+      "roles": {
+        "EXTRAMEMBRANE": 36,
+        "TM_CROSSING": 10,
+        "INTERFACIAL": 1,
+        "BROKEN_TM": 4,
+        "UNWOUND": 2
+      },
+      "n_broken_helix": 4,
+      "n_unwound": 2,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 344,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9H6D3",
+      "pdb_id": "8XEJ",
+      "chain": "X",
+      "protein": "XK-related protein 8",
+      "n_curated_tm": 8,
+      "n_computed_tm": 8,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.5,
+      "membrane_score": 70.914,
+      "placement_quality": "ok",
+      "seconds": 4.17,
+      "roles": {
+        "EXTRAMEMBRANE": 23,
+        "TM_CROSSING": 8
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 276,
+        "n_helices_in_string": 8,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q96P68",
+      "pdb_id": "9VMO",
+      "chain": "R",
+      "protein": "2-oxoglutarate receptor 1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 49.2,
+      "placement_quality": "ok",
+      "seconds": 4.6,
+      "roles": {
+        "EXTRAMEMBRANE": 25,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 240,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8NBQ7",
+      "pdb_id": "9VXW",
+      "chain": "A",
+      "protein": "Aquaporin-11",
+      "n_curated_tm": 6,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 0.9231,
+      "boundary_median": 3.0,
+      "membrane_score": 44.984,
+      "placement_quality": "ok",
+      "seconds": 2.32,
+      "roles": {
+        "EXTRAMEMBRANE": 25,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 196,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q969F8",
+      "pdb_id": "8XGO",
+      "chain": "A",
+      "protein": "KiSS-1 receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 49.851,
+      "placement_quality": "ok",
+      "seconds": 4.59,
+      "roles": {
+        "EXTRAMEMBRANE": 26,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 236,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q14973",
+      "pdb_id": "7ZYI",
+      "chain": "A",
+      "protein": "Hepatic sodium/bile acid cotransporter",
+      "n_curated_tm": 9,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.0,
+      "membrane_score": 54.032,
+      "placement_quality": "ok",
+      "seconds": 3.69,
+      "roles": {
+        "EXTRAMEMBRANE": 28,
+        "TM_CROSSING": 9,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 234,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q16581",
+      "pdb_id": "9IPV",
+      "chain": "R",
+      "protein": "C3a anaphylatoxin chemotactic receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 58.327,
+      "placement_quality": "ok",
+      "seconds": 4.76,
+      "roles": {
+        "EXTRAMEMBRANE": 23,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 226,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9BXC1",
+      "pdb_id": "9XXT",
+      "chain": "R",
+      "protein": "Probable G protein-coupled receptor 174",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 65.998,
+      "placement_quality": "ok",
+      "seconds": 4.37,
+      "roles": {
+        "EXTRAMEMBRANE": 22,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 218,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P03923",
+      "pdb_id": "9I4I",
+      "chain": "m",
+      "protein": "NADH-ubiquinone oxidoreductase chain 6",
+      "n_curated_tm": 6,
+      "n_computed_tm": 5,
+      "f1_vs_curation": 0.9091,
+      "boundary_median": 5.0,
+      "membrane_score": 168.072,
+      "placement_quality": "ok",
+      "seconds": 21.99,
+      "roles": {
+        "EXTRAMEMBRANE": 13,
+        "TM_CROSSING": 5
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 117,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9NS75",
+      "pdb_id": "6RZ6",
+      "chain": "A",
+      "protein": "Cysteinyl leukotriene receptor 2",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 55.814,
+      "placement_quality": "ok",
+      "seconds": 2.91,
+      "roles": {
+        "EXTRAMEMBRANE": 26,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 304,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8TED4",
+      "pdb_id": "9UCM",
+      "chain": "A",
+      "protein": "Glucose-6-phosphate exchanger SLC37A2",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 134.364,
+      "placement_quality": "ok",
+      "seconds": 4.39,
+      "roles": {
+        "EXTRAMEMBRANE": 42,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 282,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q96LB2",
+      "pdb_id": "8JGF",
+      "chain": "R",
+      "protein": "Mas-related G protein-coupled receptor member X1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 64.394,
+      "placement_quality": "ok",
+      "seconds": 4.5,
+      "roles": {
+        "EXTRAMEMBRANE": 14,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 197,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P55011",
+      "pdb_id": "9C0H",
+      "chain": "A",
+      "protein": "Solute carrier family 12 member 2",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.5,
+      "membrane_score": 106.626,
+      "placement_quality": "ok",
+      "seconds": 5.97,
+      "roles": {
+        "EXTRAMEMBRANE": 94,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 484,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P48751",
+      "pdb_id": "8Y85",
+      "chain": "A",
+      "protein": "Anion exchange protein 3",
+      "n_curated_tm": 10,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 0.8333,
+      "boundary_median": 9.0,
+      "membrane_score": 126.346,
+      "placement_quality": "ok",
+      "seconds": 3.82,
+      "roles": {
+        "EXTRAMEMBRANE": 40,
+        "TM_CROSSING": 14
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 346,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O95484",
+      "pdb_id": "6OV2",
+      "chain": "A",
+      "protein": "Claudin-9",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 40.373,
+      "placement_quality": "ok",
+      "seconds": 2.25,
+      "roles": {
+        "EXTRAMEMBRANE": 17,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 103,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P49190",
+      "pdb_id": "7F16",
+      "chain": "R",
+      "protein": "Parathyroid hormone 2 receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 45.086,
+      "placement_quality": "ok",
+      "seconds": 5.1,
+      "roles": {
+        "EXTRAMEMBRANE": 27,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 252,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O95838",
+      "pdb_id": "7D68",
+      "chain": "R",
+      "protein": "Glucagon-like peptide 2 receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 11,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 43.618,
+      "placement_quality": "ok",
+      "seconds": 4.54,
+      "roles": {
+        "EXTRAMEMBRANE": 23,
+        "TM_CROSSING": 5,
+        "BROKEN_TM": 4,
+        "UNWOUND": 2
+      },
+      "n_broken_helix": 4,
+      "n_unwound": 2,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 209,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P28288",
+      "pdb_id": "8Z9X",
+      "chain": "A",
+      "protein": "ATP-binding cassette sub-family D member 3",
+      "n_curated_tm": 6,
+      "n_computed_tm": 8,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.5,
+      "membrane_score": 44.32,
+      "placement_quality": "uncertain",
+      "seconds": 4.02,
+      "roles": {
+        "EXTRAMEMBRANE": 61,
+        "TM_CROSSING": 5,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 334,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9NSA0",
+      "pdb_id": "9U5A",
+      "chain": "A",
+      "protein": "Solute carrier family 22 member 11",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.5,
+      "membrane_score": 74.699,
+      "placement_quality": "ok",
+      "seconds": 2.43,
+      "roles": {
+        "EXTRAMEMBRANE": 37,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 322,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P00395",
+      "pdb_id": "9I6F",
+      "chain": "A",
+      "protein": "Cytochrome c oxidase subunit 1",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 7.0,
+      "membrane_score": 95.445,
+      "placement_quality": "ok",
+      "seconds": 6.9,
+      "roles": {
+        "EXTRAMEMBRANE": 40,
+        "TM_CROSSING": 12,
+        "INTERFACIAL": 2
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 2,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 328,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P30968",
+      "pdb_id": "7BR3",
+      "chain": "A",
+      "protein": "Gonadotropin-releasing hormone receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 0.8571,
+      "boundary_median": 3.5,
+      "membrane_score": 50.204,
+      "placement_quality": "ok",
+      "seconds": 2.85,
+      "roles": {
+        "EXTRAMEMBRANE": 55,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 299,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O60741",
+      "pdb_id": "9BC6",
+      "chain": "A",
+      "protein": "Potassium/sodium hyperpolarization-activated cyclic nucleotide-gated c",
+      "n_curated_tm": 6,
+      "n_computed_tm": 8,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.5,
+      "membrane_score": 164.43,
+      "placement_quality": "ok",
+      "seconds": 7.05,
+      "roles": {
+        "EXTRAMEMBRANE": 56,
+        "TM_CROSSING": 5,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 305,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P46059",
+      "pdb_id": "7PMX",
+      "chain": "A",
+      "protein": "Solute carrier family 15 member 1",
+      "n_curated_tm": 11,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 0.9565,
+      "boundary_median": 2.0,
+      "membrane_score": 79.504,
+      "placement_quality": "ok",
+      "seconds": 3.53,
+      "roles": {
+        "EXTRAMEMBRANE": 71,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 358,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q6PJF5",
+      "pdb_id": "8SNN",
+      "chain": "B",
+      "protein": "Inactive rhomboid protein 2",
+      "n_curated_tm": 7,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 72.807,
+      "placement_quality": "ok",
+      "seconds": 3.39,
+      "roles": {
+        "EXTRAMEMBRANE": 45,
+        "TM_CROSSING": 6,
+        "INTERFACIAL": 2,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 2,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 218,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P08034",
+      "pdb_id": "7ZXM",
+      "chain": "A",
+      "protein": "Gap junction beta-1 protein",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 8.0,
+      "membrane_score": 163.297,
+      "placement_quality": "uncertain",
+      "seconds": 6.5,
+      "roles": {
+        "EXTRAMEMBRANE": 13,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 121,
+        "n_helices_in_string": 3,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P35462",
+      "pdb_id": "7CMV",
+      "chain": "R",
+      "protein": "Dopamine receptor D3",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 1.0,
+      "membrane_score": 47.227,
+      "placement_quality": "ok",
+      "seconds": 4.07,
+      "roles": {
+        "EXTRAMEMBRANE": 22,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 225,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P41968",
+      "pdb_id": "9K3F",
+      "chain": "R",
+      "protein": "Melanocortin receptor 3",
+      "n_curated_tm": 7,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 48.319,
+      "placement_quality": "ok",
+      "seconds": 4.08,
+      "roles": {
+        "EXTRAMEMBRANE": 23,
+        "TM_CROSSING": 6,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 205,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P14672",
+      "pdb_id": "7WSM",
+      "chain": "A",
+      "protein": "Solute carrier family 2, facilitated glucose transporter member 4",
+      "n_curated_tm": 12,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 64.3,
+      "placement_quality": "ok",
+      "seconds": 2.65,
+      "roles": {
+        "EXTRAMEMBRANE": 41,
+        "TM_CROSSING": 11,
+        "INTERFACIAL": 1,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 364,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P48065",
+      "pdb_id": "9LNN",
+      "chain": "A",
+      "protein": "Sodium- and chloride-dependent betaine transporter",
+      "n_curated_tm": 12,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.5,
+      "membrane_score": 69.397,
+      "placement_quality": "ok",
+      "seconds": 2.99,
+      "roles": {
+        "EXTRAMEMBRANE": 37,
+        "TM_CROSSING": 11,
+        "INTERFACIAL": 2,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 2,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 364,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9GZV3",
+      "pdb_id": "9BFJ",
+      "chain": "A",
+      "protein": "High affinity choline transporter 1",
+      "n_curated_tm": 13,
+      "n_computed_tm": 13,
+      "f1_vs_curation": 0.9231,
+      "boundary_median": 5.5,
+      "membrane_score": 80.773,
+      "placement_quality": "ok",
+      "seconds": 2.86,
+      "roles": {
+        "EXTRAMEMBRANE": 33,
+        "TM_CROSSING": 13,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 354,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P29371",
+      "pdb_id": "8JBG",
+      "chain": "B",
+      "protein": "Neuromedin-K receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 51.336,
+      "placement_quality": "ok",
+      "seconds": 4.1,
+      "roles": {
+        "EXTRAMEMBRANE": 21,
+        "TM_CROSSING": 6,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 219,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P35367",
+      "pdb_id": "8YN2",
+      "chain": "R",
+      "protein": "Histamine H1 receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 50.74,
+      "placement_quality": "ok",
+      "seconds": 4.43,
+      "roles": {
+        "EXTRAMEMBRANE": 20,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 229,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O15244",
+      "pdb_id": "8ET9",
+      "chain": "A",
+      "protein": "Solute carrier family 22 member 2",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.5,
+      "membrane_score": 78.302,
+      "placement_quality": "ok",
+      "seconds": 3.03,
+      "roles": {
+        "EXTRAMEMBRANE": 45,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 362,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P35414",
+      "pdb_id": "9LQY",
+      "chain": "A",
+      "protein": "Apelin receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 96.438,
+      "placement_quality": "ok",
+      "seconds": 3.06,
+      "roles": {
+        "EXTRAMEMBRANE": 22,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 224,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9BQB6",
+      "pdb_id": "6WVH",
+      "chain": "A",
+      "protein": "Vitamin K epoxide reductase complex subunit 1",
+      "n_curated_tm": 4,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.5,
+      "membrane_score": 75.14,
+      "placement_quality": "ok",
+      "seconds": 3.7,
+      "roles": {
+        "EXTRAMEMBRANE": 52,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1,
+        "TM_CROSSING": 3
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 135,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8WW43",
+      "pdb_id": "8OQY",
+      "chain": "C",
+      "protein": "Gamma-secretase subunit APH-1B",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 103.844,
+      "placement_quality": "ok",
+      "seconds": 4.57,
+      "roles": {
+        "EXTRAMEMBRANE": 16,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 190,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P32745",
+      "pdb_id": "8XIR",
+      "chain": "A",
+      "protein": "Somatostatin receptor type 3",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.0,
+      "membrane_score": 63.503,
+      "placement_quality": "ok",
+      "seconds": 3.9,
+      "roles": {
+        "EXTRAMEMBRANE": 23,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 233,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P21918",
+      "pdb_id": "8IRV",
+      "chain": "R",
+      "protein": "Dopamine receptor D5",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 50.434,
+      "placement_quality": "ok",
+      "seconds": 4.0,
+      "roles": {
+        "EXTRAMEMBRANE": 22,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 243,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9Y5N1",
+      "pdb_id": "7F61",
+      "chain": "A",
+      "protein": "Histamine H3 receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 57.463,
+      "placement_quality": "ok",
+      "seconds": 2.47,
+      "roles": {
+        "EXTRAMEMBRANE": 28,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 250,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P48764",
+      "pdb_id": "7X2U",
+      "chain": "A",
+      "protein": "Sodium/hydrogen exchanger 3",
+      "n_curated_tm": 13,
+      "n_computed_tm": 17,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 111.833,
+      "placement_quality": "ok",
+      "seconds": 5.09,
+      "roles": {
+        "EXTRAMEMBRANE": 39,
+        "TM_CROSSING": 11,
+        "BROKEN_TM": 4,
+        "UNWOUND": 2
+      },
+      "n_broken_helix": 4,
+      "n_unwound": 2,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 391,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P35610",
+      "pdb_id": "6P2J",
+      "chain": "A",
+      "protein": "Sterol O-acyltransferase 1",
+      "n_curated_tm": 9,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.0,
+      "membrane_score": 104.812,
+      "placement_quality": "ok",
+      "seconds": 3.64,
+      "roles": {
+        "EXTRAMEMBRANE": 34,
+        "TM_CROSSING": 9
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 288,
+        "n_helices_in_string": 8,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9UM01",
+      "pdb_id": "9KJU",
+      "chain": "B",
+      "protein": "Y+L amino acid transporter 1",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 0.9167,
+      "boundary_median": 5.0,
+      "membrane_score": 82.606,
+      "placement_quality": "ok",
+      "seconds": 3.8,
+      "roles": {
+        "EXTRAMEMBRANE": 31,
+        "TM_CROSSING": 12,
+        "INTERFACIAL": 3
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 3,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 337,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q5T848",
+      "pdb_id": "7SHE",
+      "chain": "A",
+      "protein": "Metabotropic glycine receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 84.039,
+      "placement_quality": "ok",
+      "seconds": 4.01,
+      "roles": {
+        "EXTRAMEMBRANE": 52,
+        "TM_CROSSING": 6,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 220,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9BSA4",
+      "pdb_id": "9G71",
+      "chain": "A",
+      "protein": "Protein tweety homolog 2",
+      "n_curated_tm": 5,
+      "n_computed_tm": 5,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 92.255,
+      "placement_quality": "ok",
+      "seconds": 3.33,
+      "roles": {
+        "EXTRAMEMBRANE": 25,
+        "TM_CROSSING": 5
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 335,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P50406",
+      "pdb_id": "7YS6",
+      "chain": "A",
+      "protein": "5-hydroxytryptamine receptor 6",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 69.052,
+      "placement_quality": "ok",
+      "seconds": 4.09,
+      "roles": {
+        "EXTRAMEMBRANE": 21,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 208,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P30939",
+      "pdb_id": "21AG",
+      "chain": "R",
+      "protein": "5-hydroxytryptamine receptor 1F",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 44.182,
+      "placement_quality": "ok",
+      "seconds": 4.17,
+      "roles": {
+        "EXTRAMEMBRANE": 25,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 222,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8WWT9",
+      "pdb_id": "8UVC",
+      "chain": "A",
+      "protein": "Na(+)/dicarboxylate cotransporter 3",
+      "n_curated_tm": 11,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 0.9565,
+      "boundary_median": 7.0,
+      "membrane_score": 90.962,
+      "placement_quality": "ok",
+      "seconds": 4.26,
+      "roles": {
+        "EXTRAMEMBRANE": 49,
+        "TM_CROSSING": 11,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 379,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q6DWJ6",
+      "pdb_id": "7VUG",
+      "chain": "R",
+      "protein": "Probable G protein-coupled receptor 139",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.0,
+      "membrane_score": 58.936,
+      "placement_quality": "ok",
+      "seconds": 4.0,
+      "roles": {
+        "EXTRAMEMBRANE": 19,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 237,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P08913",
+      "pdb_id": "6KUX",
+      "chain": "A",
+      "protein": "Alpha-2A adrenergic receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 1.0,
+      "membrane_score": 56.16,
+      "placement_quality": "ok",
+      "seconds": 2.37,
+      "roles": {
+        "EXTRAMEMBRANE": 26,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 296,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9NSD7",
+      "pdb_id": "9KFI",
+      "chain": "C",
+      "protein": "Relaxin-3 receptor 1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 0.8571,
+      "boundary_median": 2.5,
+      "membrane_score": 44.972,
+      "placement_quality": "ok",
+      "seconds": 4.74,
+      "roles": {
+        "EXTRAMEMBRANE": 20,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 212,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9H490",
+      "pdb_id": "7WLD",
+      "chain": "U",
+      "protein": "GPI-anchor transamidase component PIGU",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 88.59,
+      "placement_quality": "ok",
+      "seconds": 7.89,
+      "roles": {
+        "EXTRAMEMBRANE": 36,
+        "TM_CROSSING": 12,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 305,
+        "n_helices_in_string": 10,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P61803",
+      "pdb_id": "9N9J",
+      "chain": "M2",
+      "protein": "Dolichyl-diphosphooligosaccharide--protein glycosyltransferase subunit",
+      "n_curated_tm": 3,
+      "n_computed_tm": 3,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 162.413,
+      "placement_quality": "uncertain",
+      "seconds": 45.21,
+      "roles": {
+        "EXTRAMEMBRANE": 4,
+        "TM_CROSSING": 3
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 0,
+        "n_helices_in_string": 0,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q6ZMG9",
+      "pdb_id": "8QZ7",
+      "chain": "A",
+      "protein": "Ceramide synthase 6",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 61.812,
+      "placement_quality": "uncertain",
+      "seconds": 3.5,
+      "roles": {
+        "EXTRAMEMBRANE": 33,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 245,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P61619",
+      "pdb_id": "8DNZ",
+      "chain": "A",
+      "protein": "Protein transport protein Sec61 subunit alpha isoform 1",
+      "n_curated_tm": 10,
+      "n_computed_tm": 10,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 66.831,
+      "placement_quality": "ok",
+      "seconds": 2.72,
+      "roles": {
+        "EXTRAMEMBRANE": 51,
+        "TM_CROSSING": 10,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 291,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P00414",
+      "pdb_id": "9I6F",
+      "chain": "C",
+      "protein": "Cytochrome c oxidase subunit 3",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 8.0,
+      "membrane_score": 95.445,
+      "placement_quality": "ok",
+      "seconds": 6.51,
+      "roles": {
+        "EXTRAMEMBRANE": 18,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 191,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P32247",
+      "pdb_id": "9K07",
+      "chain": "R",
+      "protein": "Bombesin receptor subtype-3",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.0,
+      "membrane_score": 60.388,
+      "placement_quality": "uncertain",
+      "seconds": 4.94,
+      "roles": {
+        "EXTRAMEMBRANE": 17,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 213,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O95069",
+      "pdb_id": "4TWK",
+      "chain": "A",
+      "protein": "Potassium channel subfamily K member 2",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 65.093,
+      "placement_quality": "ok",
+      "seconds": 2.62,
+      "roles": {
+        "EXTRAMEMBRANE": 17,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 195,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q5JUK3",
+      "pdb_id": "8HK6",
+      "chain": "A",
+      "protein": "Potassium channel subfamily T member 1",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.5,
+      "membrane_score": 167.141,
+      "placement_quality": "ok",
+      "seconds": 7.43,
+      "roles": {
+        "EXTRAMEMBRANE": 125,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 417,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P0DMS8",
+      "pdb_id": "8X17",
+      "chain": "R",
+      "protein": "Adenosine receptor A3",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 58.919,
+      "placement_quality": "ok",
+      "seconds": 3.9,
+      "roles": {
+        "EXTRAMEMBRANE": 24,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 230,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q99527",
+      "pdb_id": "8XOF",
+      "chain": "R",
+      "protein": "G protein-coupled estrogen receptor 1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 53.745,
+      "placement_quality": "ok",
+      "seconds": 3.66,
+      "roles": {
+        "EXTRAMEMBRANE": 20,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 228,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P32239",
+      "pdb_id": "7F8W",
+      "chain": "R",
+      "protein": "Gastrin/cholecystokinin type B receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 59.385,
+      "placement_quality": "ok",
+      "seconds": 3.78,
+      "roles": {
+        "EXTRAMEMBRANE": 21,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 218,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q53FP2",
+      "pdb_id": "9H9E",
+      "chain": "B",
+      "protein": "Novel acetylcholine receptor chaperone",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 82.691,
+      "placement_quality": "ok",
+      "seconds": 4.06,
+      "roles": {
+        "EXTRAMEMBRANE": 11,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 104,
+        "n_helices_in_string": 3,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O75751",
+      "pdb_id": "7ZH0",
+      "chain": "A",
+      "protein": "Solute carrier family 22 member 3",
+      "n_curated_tm": 7,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 0.7368,
+      "boundary_median": 3.0,
+      "membrane_score": 70.246,
+      "placement_quality": "ok",
+      "seconds": 2.72,
+      "roles": {
+        "EXTRAMEMBRANE": 50,
+        "TM_CROSSING": 12,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 346,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P51582",
+      "pdb_id": "9K0K",
+      "chain": "I",
+      "protein": "P2Y purinoceptor 4",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 51.203,
+      "placement_quality": "ok",
+      "seconds": 3.75,
+      "roles": {
+        "EXTRAMEMBRANE": 21,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 229,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O60779",
+      "pdb_id": "8Z7Z",
+      "chain": "A",
+      "protein": "Thiamine transporter 1",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.5,
+      "membrane_score": 76.618,
+      "placement_quality": "ok",
+      "seconds": 2.45,
+      "roles": {
+        "EXTRAMEMBRANE": 28,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 305,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P47898",
+      "pdb_id": "7UM5",
+      "chain": "A",
+      "protein": "5-hydroxytryptamine receptor 5A",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 61.472,
+      "placement_quality": "ok",
+      "seconds": 3.97,
+      "roles": {
+        "EXTRAMEMBRANE": 17,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 204,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q5U3C3",
+      "pdb_id": "9LW1",
+      "chain": "A",
+      "protein": "Transmembrane protein 164",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 91.013,
+      "placement_quality": "ok",
+      "seconds": 2.83,
+      "roles": {
+        "EXTRAMEMBRANE": 17,
+        "INTERFACIAL": 2,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 2,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 174,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P40879",
+      "pdb_id": "8X1U",
+      "chain": "A",
+      "protein": "Chloride anion exchanger",
+      "n_curated_tm": 10,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 0.7273,
+      "boundary_median": 5.0,
+      "membrane_score": 93.576,
+      "placement_quality": "ok",
+      "seconds": 5.12,
+      "roles": {
+        "EXTRAMEMBRANE": 72,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 415,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9H1D0",
+      "pdb_id": "7S8B",
+      "chain": "A",
+      "protein": "Transient receptor potential cation channel subfamily V member 6",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 148.056,
+      "placement_quality": "ok",
+      "seconds": 8.04,
+      "roles": {
+        "EXTRAMEMBRANE": 60,
+        "TM_CROSSING": 6,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 333,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8N2C7",
+      "pdb_id": "7SX3",
+      "chain": "E",
+      "protein": "Protein unc-80 homolog",
+      "n_curated_tm": 4,
+      "n_computed_tm": 0,
+      "f1_vs_curation": 0.0,
+      "boundary_median": null,
+      "membrane_score": 138.142,
+      "placement_quality": "uncertain",
+      "seconds": 10.5,
+      "roles": {},
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 0,
+        "n_helices_in_string": 0,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P31639",
+      "pdb_id": "9KMN",
+      "chain": "A",
+      "protein": "Sodium/glucose cotransporter 2",
+      "n_curated_tm": 14,
+      "n_computed_tm": 16,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.5,
+      "membrane_score": 83.482,
+      "placement_quality": "ok",
+      "seconds": 3.32,
+      "roles": {
+        "EXTRAMEMBRANE": 41,
+        "TM_CROSSING": 13,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 418,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P24046",
+      "pdb_id": "9FRB",
+      "chain": "A",
+      "protein": "Gamma-aminobutyric acid receptor subunit rho-1",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 1.5,
+      "membrane_score": 125.194,
+      "placement_quality": "ok",
+      "seconds": 5.72,
+      "roles": {
+        "EXTRAMEMBRANE": 41,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 126,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P04001",
+      "pdb_id": "8Y01",
+      "chain": "R",
+      "protein": "Medium-wave-sensitive opsin 1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 60.312,
+      "placement_quality": "ok",
+      "seconds": 4.56,
+      "roles": {
+        "EXTRAMEMBRANE": 23,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 225,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P46098",
+      "pdb_id": "8AXD",
+      "chain": "A",
+      "protein": "5-hydroxytryptamine receptor 3A",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.5,
+      "membrane_score": 136.408,
+      "placement_quality": "ok",
+      "seconds": 8.01,
+      "roles": {
+        "EXTRAMEMBRANE": 42,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 180,
+        "n_helices_in_string": 3,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O94759",
+      "pdb_id": "8E6U",
+      "chain": "A",
+      "protein": "Transient receptor potential cation channel subfamily M member 2",
+      "n_curated_tm": 6,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 0.9231,
+      "boundary_median": 5.0,
+      "membrane_score": 179.087,
+      "placement_quality": "ok",
+      "seconds": 11.39,
+      "roles": {
+        "EXTRAMEMBRANE": 130,
+        "TM_CROSSING": 7,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 612,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q7L1W4",
+      "pdb_id": "6M04",
+      "chain": "A",
+      "protein": "Volume-regulated anion channel subunit LRRC8D",
+      "n_curated_tm": 4,
+      "n_computed_tm": 5,
+      "f1_vs_curation": 0.8889,
+      "boundary_median": 3.0,
+      "membrane_score": 110.76,
+      "placement_quality": "ok",
+      "seconds": 9.89,
+      "roles": {
+        "EXTRAMEMBRANE": 78,
+        "TM_CROSSING": 5
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 272,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8IWT6",
+      "pdb_id": "7XZH",
+      "chain": "A",
+      "protein": "Volume-regulated anion channel subunit LRRC8A",
+      "n_curated_tm": 4,
+      "n_computed_tm": 5,
+      "f1_vs_curation": 0.8889,
+      "boundary_median": 3.0,
+      "membrane_score": 100.081,
+      "placement_quality": "ok",
+      "seconds": 10.49,
+      "roles": {
+        "EXTRAMEMBRANE": 106,
+        "TM_CROSSING": 5
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 326,
+        "n_helices_in_string": 5,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9NRP0",
+      "pdb_id": "9N9J",
+      "chain": "J",
+      "protein": "Oligosaccharyltransferase complex subunit OSTC",
+      "n_curated_tm": 3,
+      "n_computed_tm": 3,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 162.413,
+      "placement_quality": "uncertain",
+      "seconds": 47.23,
+      "roles": {
+        "EXTRAMEMBRANE": 4,
+        "TM_CROSSING": 3
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 0,
+        "n_helices_in_string": 0,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O15552",
+      "pdb_id": "8J24",
+      "chain": "D",
+      "protein": "Free fatty acid receptor 2",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 54.45,
+      "placement_quality": "ok",
+      "seconds": 5.06,
+      "roles": {
+        "EXTRAMEMBRANE": 19,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 213,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9NZV8",
+      "pdb_id": "7UKG",
+      "chain": "A",
+      "protein": "A-type voltage-gated potassium channel KCND2",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 1.0,
+      "membrane_score": 183.584,
+      "placement_quality": "ok",
+      "seconds": 4.59,
+      "roles": {
+        "EXTRAMEMBRANE": 26,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 196,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O95800",
+      "pdb_id": "9XQC",
+      "chain": "R",
+      "protein": "Probable G protein-coupled receptor 75",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 58.185,
+      "placement_quality": "ok",
+      "seconds": 4.44,
+      "roles": {
+        "EXTRAMEMBRANE": 16,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 207,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9UKP6",
+      "pdb_id": "9JFK",
+      "chain": "R",
+      "protein": "Urotensin-2 receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 46.584,
+      "placement_quality": "ok",
+      "seconds": 3.77,
+      "roles": {
+        "EXTRAMEMBRANE": 21,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 207,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P55017",
+      "pdb_id": "8FHQ",
+      "chain": "A",
+      "protein": "Solute carrier family 12 member 3",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 99.116,
+      "placement_quality": "ok",
+      "seconds": 3.93,
+      "roles": {
+        "EXTRAMEMBRANE": 46,
+        "TM_CROSSING": 12
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 317,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "A0PK00",
+      "pdb_id": "7F73",
+      "chain": "A",
+      "protein": "Transmembrane protein 120B",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 0.8333,
+      "boundary_median": 3.0,
+      "membrane_score": 73.368,
+      "placement_quality": "ok",
+      "seconds": 3.11,
+      "roles": {
+        "EXTRAMEMBRANE": 18,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 239,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q99758",
+      "pdb_id": "7W01",
+      "chain": "A",
+      "protein": "Phospholipid-transporting ATPase ABCA3",
+      "n_curated_tm": 14,
+      "n_computed_tm": 18,
+      "f1_vs_curation": 0.9231,
+      "boundary_median": 4.0,
+      "membrane_score": 83.243,
+      "placement_quality": "ok",
+      "seconds": 6.28,
+      "roles": {
+        "EXTRAMEMBRANE": 170,
+        "TM_CROSSING": 9,
+        "BROKEN_TM": 6,
+        "UNWOUND": 3
+      },
+      "n_broken_helix": 6,
+      "n_unwound": 3,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 658,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9Y6M7",
+      "pdb_id": "9OVR",
+      "chain": "A",
+      "protein": "Sodium bicarbonate cotransporter 3",
+      "n_curated_tm": 11,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 0.88,
+      "boundary_median": 7.0,
+      "membrane_score": 126.521,
+      "placement_quality": "ok",
+      "seconds": 4.41,
+      "roles": {
+        "EXTRAMEMBRANE": 50,
+        "TM_CROSSING": 14
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 321,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P51677",
+      "pdb_id": "7X9Y",
+      "chain": "R",
+      "protein": "C-C chemokine receptor type 3",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 44.783,
+      "placement_quality": "ok",
+      "seconds": 4.57,
+      "roles": {
+        "EXTRAMEMBRANE": 22,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 232,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P55085",
+      "pdb_id": "5NDD",
+      "chain": "A",
+      "protein": "Proteinase-activated receptor 2",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.0,
+      "membrane_score": 56.626,
+      "placement_quality": "ok",
+      "seconds": 3.38,
+      "roles": {
+        "EXTRAMEMBRANE": 57,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 423,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8TDU6",
+      "pdb_id": "9GYO",
+      "chain": "R",
+      "protein": "G protein-coupled bile acid receptor 1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 52.447,
+      "placement_quality": "ok",
+      "seconds": 4.4,
+      "roles": {
+        "EXTRAMEMBRANE": 18,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 217,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9HAS3",
+      "pdb_id": "6KSW",
+      "chain": "A",
+      "protein": "Solute carrier family 28 member 3",
+      "n_curated_tm": 11,
+      "n_computed_tm": 11,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 158.862,
+      "placement_quality": "ok",
+      "seconds": 5.54,
+      "roles": {
+        "EXTRAMEMBRANE": 45,
+        "TM_CROSSING": 11,
+        "INTERFACIAL": 2
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 2,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 373,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9Y2Q0",
+      "pdb_id": "6K7L",
+      "chain": "A",
+      "protein": "Phospholipid-transporting ATPase IA",
+      "n_curated_tm": 10,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.5,
+      "membrane_score": 77.452,
+      "placement_quality": "ok",
+      "seconds": 5.38,
+      "roles": {
+        "EXTRAMEMBRANE": 110,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1,
+        "TM_CROSSING": 9
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 461,
+        "n_helices_in_string": 8,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P31641",
+      "pdb_id": "9JD5",
+      "chain": "A",
+      "protein": "Sodium- and chloride-dependent taurine transporter",
+      "n_curated_tm": 12,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 68.145,
+      "placement_quality": "ok",
+      "seconds": 2.96,
+      "roles": {
+        "EXTRAMEMBRANE": 44,
+        "TM_CROSSING": 11,
+        "INTERFACIAL": 1,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 367,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O00398",
+      "pdb_id": "8KGG",
+      "chain": "R",
+      "protein": "Putative P2Y purinoceptor 10",
+      "n_curated_tm": 7,
+      "n_computed_tm": 9,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 67.793,
+      "placement_quality": "ok",
+      "seconds": 4.35,
+      "roles": {
+        "EXTRAMEMBRANE": 17,
+        "TM_CROSSING": 6,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 210,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9GZQ4",
+      "pdb_id": "7W55",
+      "chain": "R",
+      "protein": "Neuromedin-U receptor 2",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 58.413,
+      "placement_quality": "ok",
+      "seconds": 4.98,
+      "roles": {
+        "EXTRAMEMBRANE": 27,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 241,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P25103",
+      "pdb_id": "6HLP",
+      "chain": "A",
+      "protein": "Substance-P receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 55.083,
+      "placement_quality": "ok",
+      "seconds": 2.98,
+      "roles": {
+        "EXTRAMEMBRANE": 56,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 323,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8N5M9",
+      "pdb_id": "6WVD",
+      "chain": "A",
+      "protein": "Protein jagunal homolog 1",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 32.363,
+      "placement_quality": "ok",
+      "seconds": 2.66,
+      "roles": {
+        "EXTRAMEMBRANE": 44,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 157,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O75907",
+      "pdb_id": "6VYI",
+      "chain": "A",
+      "protein": "Diacylglycerol O-acyltransferase 1",
+      "n_curated_tm": 9,
+      "n_computed_tm": 13,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 11.0,
+      "membrane_score": 58.187,
+      "placement_quality": "uncertain",
+      "seconds": 3.74,
+      "roles": {
+        "EXTRAMEMBRANE": 27,
+        "TM_CROSSING": 7,
+        "BROKEN_TM": 4,
+        "UNWOUND": 2,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 4,
+      "n_unwound": 2,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 285,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q401N2",
+      "pdb_id": "9LEZ",
+      "chain": "A",
+      "protein": "Ligand-gated cation channel ZACN",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 109.949,
+      "placement_quality": "ok",
+      "seconds": 5.47,
+      "roles": {
+        "EXTRAMEMBRANE": 31,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 105,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O43614",
+      "pdb_id": "5WQC",
+      "chain": "A",
+      "protein": "Orexin receptor type 2",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 59.976,
+      "placement_quality": "ok",
+      "seconds": 3.14,
+      "roles": {
+        "EXTRAMEMBRANE": 55,
+        "TM_CROSSING": 7,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 337,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P45844",
+      "pdb_id": "7R8D",
+      "chain": "A",
+      "protein": "ATP-binding cassette sub-family G member 1",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.5,
+      "membrane_score": 75.95,
+      "placement_quality": "ok",
+      "seconds": 4.31,
+      "roles": {
+        "EXTRAMEMBRANE": 58,
+        "INTERFACIAL": 1,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 294,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8TAA9",
+      "pdb_id": "9JK9",
+      "chain": "A",
+      "protein": "Vang-like protein 1",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 165.747,
+      "placement_quality": "ok",
+      "seconds": 8.28,
+      "roles": {
+        "EXTRAMEMBRANE": 46,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 219,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q6PRD1",
+      "pdb_id": "8IRJ",
+      "chain": "A",
+      "protein": "Probable G protein-coupled receptor 179",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 74.018,
+      "placement_quality": "ok",
+      "seconds": 4.02,
+      "roles": {
+        "EXTRAMEMBRANE": 49,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 241,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O75311",
+      "pdb_id": "9BWC",
+      "chain": "A",
+      "protein": "Glycine receptor subunit alpha-3",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 1.5,
+      "membrane_score": 98.114,
+      "placement_quality": "ok",
+      "seconds": 6.57,
+      "roles": {
+        "EXTRAMEMBRANE": 41,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 125,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q96N66",
+      "pdb_id": "8ERC",
+      "chain": "A",
+      "protein": "Membrane-bound acylglycerophosphatidylinositol O-acyltransferase MBOAT",
+      "n_curated_tm": 6,
+      "n_computed_tm": 13,
+      "f1_vs_curation": 0.7059,
+      "boundary_median": 5.0,
+      "membrane_score": 62.941,
+      "placement_quality": "ok",
+      "seconds": 2.62,
+      "roles": {
+        "EXTRAMEMBRANE": 38,
+        "TM_CROSSING": 10,
+        "INTERFACIAL": 3,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 3,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 318,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9HAB3",
+      "pdb_id": "8XSM",
+      "chain": "A",
+      "protein": "Solute carrier family 52, riboflavin transporter, member 2",
+      "n_curated_tm": 11,
+      "n_computed_tm": 13,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 68.674,
+      "placement_quality": "ok",
+      "seconds": 2.44,
+      "roles": {
+        "EXTRAMEMBRANE": 27,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1,
+        "TM_CROSSING": 10
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 281,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P48547",
+      "pdb_id": "8QUD",
+      "chain": "A",
+      "protein": "Voltage-gated potassium channel KCNC1",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 140.322,
+      "placement_quality": "ok",
+      "seconds": 5.76,
+      "roles": {
+        "EXTRAMEMBRANE": 46,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 262,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P78383",
+      "pdb_id": "9I20",
+      "chain": "A",
+      "protein": "Solute carrier family 35 member B1",
+      "n_curated_tm": 10,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 2.0,
+      "membrane_score": 58.689,
+      "placement_quality": "ok",
+      "seconds": 3.02,
+      "roles": {
+        "EXTRAMEMBRANE": 19,
+        "TM_CROSSING": 9,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 235,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q7Z2W7",
+      "pdb_id": "8BDC",
+      "chain": "A",
+      "protein": "Transient receptor potential cation channel subfamily M member 8",
+      "n_curated_tm": 6,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 172.872,
+      "placement_quality": "ok",
+      "seconds": 9.27,
+      "roles": {
+        "EXTRAMEMBRANE": 110,
+        "TM_CROSSING": 6,
+        "INTERFACIAL": 2
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 2,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 592,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O15440",
+      "pdb_id": "8WI0",
+      "chain": "A",
+      "protein": "ATP-binding cassette sub-family C member 5",
+      "n_curated_tm": 13,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 0.96,
+      "boundary_median": 2.5,
+      "membrane_score": 76.469,
+      "placement_quality": "ok",
+      "seconds": 4.62,
+      "roles": {
+        "EXTRAMEMBRANE": 141,
+        "INTERFACIAL": 1,
+        "TM_CROSSING": 11,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 767,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q99705",
+      "pdb_id": "8WWK",
+      "chain": "R",
+      "protein": "Melanin-concentrating hormone receptor 1",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 5.0,
+      "membrane_score": 48.275,
+      "placement_quality": "ok",
+      "seconds": 4.45,
+      "roles": {
+        "EXTRAMEMBRANE": 26,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 223,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8NHX9",
+      "pdb_id": "8OUO",
+      "chain": "A",
+      "protein": "Two pore channel protein 2",
+      "n_curated_tm": 12,
+      "n_computed_tm": 12,
+      "f1_vs_curation": 0.9167,
+      "boundary_median": 5.0,
+      "membrane_score": 139.946,
+      "placement_quality": "ok",
+      "seconds": 5.18,
+      "roles": {
+        "EXTRAMEMBRANE": 49,
+        "TM_CROSSING": 12,
+        "INTERFACIAL": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 4,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 470,
+        "n_helices_in_string": 10,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q9NXL6",
+      "pdb_id": "8JUN",
+      "chain": "A",
+      "protein": "SID1 transmembrane family member 1",
+      "n_curated_tm": 11,
+      "n_computed_tm": 11,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 116.146,
+      "placement_quality": "ok",
+      "seconds": 5.13,
+      "roles": {
+        "EXTRAMEMBRANE": 67,
+        "TM_CROSSING": 11,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 291,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P25021",
+      "pdb_id": "8YN3",
+      "chain": "R",
+      "protein": "Histamine H2 receptor",
+      "n_curated_tm": 7,
+      "n_computed_tm": 7,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 54.053,
+      "placement_quality": "ok",
+      "seconds": 4.39,
+      "roles": {
+        "EXTRAMEMBRANE": 22,
+        "TM_CROSSING": 7
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 224,
+        "n_helices_in_string": 7,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "P31645",
+      "pdb_id": "9HCO",
+      "chain": "A",
+      "protein": "Sodium-dependent serotonin transporter",
+      "n_curated_tm": 12,
+      "n_computed_tm": 14,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 70.838,
+      "placement_quality": "ok",
+      "seconds": 3.99,
+      "roles": {
+        "EXTRAMEMBRANE": 44,
+        "TM_CROSSING": 11,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 377,
+        "n_helices_in_string": 11,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q86UD5",
+      "pdb_id": "9QUB",
+      "chain": "A",
+      "protein": "Sodium/hydrogen exchanger 9B2",
+      "n_curated_tm": 14,
+      "n_computed_tm": 16,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 4.0,
+      "membrane_score": 93.979,
+      "placement_quality": "ok",
+      "seconds": 6.01,
+      "roles": {
+        "EXTRAMEMBRANE": 34,
+        "TM_CROSSING": 13,
+        "INTERFACIAL": 1,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 340,
+        "n_helices_in_string": 12,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8N695",
+      "pdb_id": "7SL9",
+      "chain": "A",
+      "protein": "Sodium-coupled monocarboxylate transporter 1",
+      "n_curated_tm": 13,
+      "n_computed_tm": 15,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 6.0,
+      "membrane_score": 76.512,
+      "placement_quality": "ok",
+      "seconds": 3.18,
+      "roles": {
+        "EXTRAMEMBRANE": 37,
+        "TM_CROSSING": 12,
+        "BROKEN_TM": 2,
+        "UNWOUND": 1,
+        "INTERFACIAL": 1
+      },
+      "n_broken_helix": 2,
+      "n_unwound": 1,
+      "n_interfacial": 1,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 339,
+        "n_helices_in_string": 9,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "Q8IV77",
+      "pdb_id": "9UPG",
+      "chain": "D",
+      "protein": "Cyclic nucleotide-gated channel alpha-4",
+      "n_curated_tm": 7,
+      "n_computed_tm": 6,
+      "f1_vs_curation": 0.9231,
+      "boundary_median": 6.5,
+      "membrane_score": 78.249,
+      "placement_quality": "ok",
+      "seconds": 8.04,
+      "roles": {
+        "EXTRAMEMBRANE": 51,
+        "TM_CROSSING": 6
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 327,
+        "n_helices_in_string": 6,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    },
+    {
+      "accession": "O43759",
+      "pdb_id": "8A6M",
+      "chain": "A",
+      "protein": "Synaptogyrin-1",
+      "n_curated_tm": 4,
+      "n_computed_tm": 4,
+      "f1_vs_curation": 1.0,
+      "boundary_median": 3.0,
+      "membrane_score": 30.104,
+      "placement_quality": "ok",
+      "seconds": 3.04,
+      "roles": {
+        "EXTRAMEMBRANE": 17,
+        "TM_CROSSING": 4
+      },
+      "n_broken_helix": 0,
+      "n_unwound": 0,
+      "n_interfacial": 0,
+      "n_reentrant": 0,
+      "n_signal": 0,
+      "export_3line": {
+        "n_characters": 130,
+        "n_helices_in_string": 4,
+        "membrane_positions_exact": true,
+        "cytoplasmic_positions_exact": true,
+        "extracellular_positions_exact": true,
+        "consistent": true
+      },
+      "exports_available": [
+        "PNG",
+        "3line",
+        "GFF3",
+        "SVG-in-app"
+      ]
+    }
+  ],
+  "story_b": [
+    {
+      "accession": "Q8TDU9",
+      "model": "AF-Q8TDU9-F1.cif",
+      "n_residues": 374,
+      "n_computed_tm": 7,
+      "membrane_score": 58.658,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 7
+      },
+      "seconds": 3.17,
+      "answered": true
+    },
+    {
+      "accession": "P36021",
+      "model": "AF-P36021-F1.cif",
+      "n_residues": 539,
+      "n_computed_tm": 13,
+      "membrane_score": 56.523,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 13
+      },
+      "seconds": 2.87,
+      "answered": true
+    },
+    {
+      "accession": "O00591",
+      "model": "AF-O00591-F1.cif",
+      "n_residues": 440,
+      "n_computed_tm": 4,
+      "membrane_score": 41.122,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 4
+      },
+      "seconds": 3.17,
+      "answered": true
+    },
+    {
+      "accession": "Q8NBN3",
+      "model": "AF-Q8NBN3-F1.cif",
+      "n_residues": 555,
+      "n_computed_tm": 7,
+      "membrane_score": 57.775,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 7
+      },
+      "seconds": 2.55,
+      "answered": true
+    },
+    {
+      "accession": "Q04844",
+      "model": "AF-Q04844-F1.cif",
+      "n_residues": 493,
+      "n_computed_tm": 5,
+      "membrane_score": 53.051,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 5
+      },
+      "seconds": 3.54,
+      "answered": true
+    },
+    {
+      "accession": "Q01959",
+      "model": "AF-Q01959-F1.cif",
+      "n_residues": 620,
+      "n_computed_tm": 12,
+      "membrane_score": 71.109,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 12
+      },
+      "seconds": 3.47,
+      "answered": true
+    },
+    {
+      "accession": "P47775",
+      "model": "AF-P47775-F1.cif",
+      "n_residues": 334,
+      "n_computed_tm": 7,
+      "membrane_score": 49.566,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 7
+      },
+      "seconds": 3.07,
+      "answered": true
+    },
+    {
+      "accession": "O75110",
+      "model": "AF-O75110-F1.cif",
+      "n_residues": 1047,
+      "n_computed_tm": 10,
+      "membrane_score": 65.39,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 10
+      },
+      "seconds": 4.35,
+      "answered": true
+    },
+    {
+      "accession": "P43657",
+      "model": "AF-P43657-F1.cif",
+      "n_residues": 344,
+      "n_computed_tm": 7,
+      "membrane_score": 53.878,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 7
+      },
+      "seconds": 2.48,
+      "answered": true
+    },
+    {
+      "accession": "Q9HBX9",
+      "model": "AF-Q9HBX9-F1.cif",
+      "n_residues": 757,
+      "n_computed_tm": 7,
+      "membrane_score": 66.202,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 7
+      },
+      "seconds": 3.66,
+      "answered": true
+    },
+    {
+      "accession": "Q99808",
+      "model": "AF-Q99808-F1.cif",
+      "n_residues": 456,
+      "n_computed_tm": 11,
+      "membrane_score": 63.279,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 11
+      },
+      "seconds": 2.45,
+      "answered": true
+    },
+    {
+      "accession": "Q9BV81",
+      "model": "AF-Q9BV81-F1.cif",
+      "n_residues": 110,
+      "n_computed_tm": 1,
+      "membrane_score": 36.736,
+      "placement_quality": "uncertain",
+      "placement_flags": [
+        "the fitted hydrophobic thickness is at the upper bound of the search range: the bilayer is not well determined by this structure",
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 1
+      },
+      "seconds": 1.68,
+      "answered": true
+    },
+    {
+      "accession": "Q7LBE3",
+      "model": "AF-Q7LBE3-F1.cif",
+      "n_residues": 791,
+      "n_computed_tm": 14,
+      "membrane_score": 62.385,
+      "placement_quality": "uncertain",
+      "placement_flags": [
+        "the fitted hydrophobic thickness is at the lower bound of the search range: the bilayer is not well determined by this structure",
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 14
+      },
+      "seconds": 3.3,
+      "answered": true
+    },
+    {
+      "accession": "Q8IU99",
+      "model": "AF-Q8IU99-F1.cif",
+      "n_residues": 346,
+      "n_computed_tm": 4,
+      "membrane_score": 33.461,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 4
+      },
+      "seconds": 2.19,
+      "answered": true
+    },
+    {
+      "accession": "Q96A54",
+      "model": "AF-Q96A54-F1.cif",
+      "n_residues": 375,
+      "n_computed_tm": 7,
+      "membrane_score": 56.854,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 7
+      },
+      "seconds": 2.27,
+      "answered": true
+    },
+    {
+      "accession": "Q9P1Z3",
+      "model": "AF-Q9P1Z3-F1.cif",
+      "n_residues": 774,
+      "n_computed_tm": 6,
+      "membrane_score": 56.144,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 6
+      },
+      "seconds": 3.11,
+      "answered": true
+    },
+    {
+      "accession": "O95477",
+      "model": "AF-O95477-F1.cif",
+      "n_residues": 2261,
+      "n_computed_tm": 12,
+      "membrane_score": 88.169,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 12
+      },
+      "seconds": 8.74,
+      "answered": true
+    },
+    {
+      "accession": "Q15125",
+      "model": "AF-Q15125-F1.cif",
+      "n_residues": 230,
+      "n_computed_tm": 5,
+      "membrane_score": 40.156,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 5
+      },
+      "seconds": 2.13,
+      "answered": true
+    },
+    {
+      "accession": "Q9H221",
+      "model": "AF-Q9H221-F1.cif",
+      "n_residues": 673,
+      "n_computed_tm": 6,
+      "membrane_score": 54.475,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 6
+      },
+      "seconds": 3.25,
+      "answered": true
+    },
+    {
+      "accession": "Q99437",
+      "model": "AF-Q99437-F1.cif",
+      "n_residues": 205,
+      "n_computed_tm": 5,
+      "membrane_score": 66.639,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 5
+      },
+      "seconds": 1.92,
+      "answered": true
+    },
+    {
+      "accession": "P08183",
+      "model": "AF-P08183-F1.cif",
+      "n_residues": 1280,
+      "n_computed_tm": 12,
+      "membrane_score": 82.528,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 12
+      },
+      "seconds": 4.56,
+      "answered": true
+    },
+    {
+      "accession": "Q8TCJ2",
+      "model": "AF-Q8TCJ2-F1.cif",
+      "n_residues": 826,
+      "n_computed_tm": 13,
+      "membrane_score": 76.873,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 13
+      },
+      "seconds": 4.55,
+      "answered": true
+    },
+    {
+      "accession": "P41181",
+      "model": "AF-P41181-F1.cif",
+      "n_residues": 271,
+      "n_computed_tm": 6,
+      "membrane_score": 40.411,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 6
+      },
+      "seconds": 2.15,
+      "answered": true
+    },
+    {
+      "accession": "O15399",
+      "model": "AF-O15399-F1.cif",
+      "n_residues": 1336,
+      "n_computed_tm": 3,
+      "membrane_score": 47.88,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 3
+      },
+      "seconds": 4.75,
+      "answered": true
+    },
+    {
+      "accession": "Q9UHC9",
+      "model": "AF-Q9UHC9-F1.cif",
+      "n_residues": 1359,
+      "n_computed_tm": 13,
+      "membrane_score": 96.589,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 13
+      },
+      "seconds": 5.2,
+      "answered": true
+    },
+    {
+      "accession": "Q9UPC5",
+      "model": "AF-Q9UPC5-F1.cif",
+      "n_residues": 381,
+      "n_computed_tm": 7,
+      "membrane_score": 57.557,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 7
+      },
+      "seconds": 2.44,
+      "answered": true
+    },
+    {
+      "accession": "Q9Y6G1",
+      "model": "AF-Q9Y6G1-F1.cif",
+      "n_residues": 99,
+      "n_computed_tm": 4,
+      "membrane_score": 52.033,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 4
+      },
+      "seconds": 1.36,
+      "answered": true
+    },
+    {
+      "accession": "Q9Y666",
+      "model": "AF-Q9Y666-F1.cif",
+      "n_residues": 1083,
+      "n_computed_tm": 11,
+      "membrane_score": 65.454,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 11
+      },
+      "seconds": 4.37,
+      "answered": true
+    },
+    {
+      "accession": "O75027",
+      "model": "AF-O75027-F1.cif",
+      "n_residues": 752,
+      "n_computed_tm": 6,
+      "membrane_score": 29.263,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 6
+      },
+      "seconds": 3.07,
+      "answered": true
+    },
+    {
+      "accession": "P30531",
+      "model": "AF-P30531-F1.cif",
+      "n_residues": 599,
+      "n_computed_tm": 12,
+      "membrane_score": 68.103,
+      "placement_quality": "ok",
+      "placement_flags": [
+        "the structure is a prediction: the placement depends on the pLDDT filter, which excludes the low-confidence residues"
+      ],
+      "confidence": {
+        "high": 12
+      },
+      "seconds": 3.21,
+      "answered": true
+    }
+  ]
+}

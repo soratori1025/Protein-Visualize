@@ -76,10 +76,14 @@ class EnergyTMProvider(TMProvider):
         * very few transmembrane segments were found in a large assembly, so the
           membrane is inferred from a handful of helices.
 
-        The result is a set of flags and a coarse quality label, both reported to the
-        user instead of being left implicit in the numbers.
+        A predicted structure is reported separately: the fact that the model is a
+        prediction is a caveat, not a defect of the placement, and it must not
+        drown out the geometric verdict.
+
+        The result is a set of flags, a set of notes and a coarse quality label.
         """
         flags = []
+        notes = []
         tolerance = 0.05 * ME.MAX_HALF
         if half_thickness <= ME.MIN_HALF + tolerance:
             flags.append("the fitted hydrophobic thickness is at the lower bound of the "
@@ -96,13 +100,13 @@ class EnergyTMProvider(TMProvider):
                          f"assembly of {n_chains} chains: the membrane placement rests on "
                          f"very little evidence")
         if predicted:
-            flags.append("the structure is a prediction: the placement depends on the "
+            notes.append("the structure is a prediction: the placement depends on the "
                          "pLDDT filter, which excludes the low-confidence residues")
         if not flags:
-            return [], "ok"
+            return flags, notes, "ok"
         if any("not well determined" in f or "very little evidence" in f for f in flags):
-            return flags, "uncertain"
-        return flags, "caution"
+            return flags, notes, "uncertain"
+        return flags, notes, "caution"
 
     def predict_tm(self, file_path: Path, params: Optional[TMParams] = None,
                    frame: Optional[ResidueFrame] = None, **kwargs) -> TMPrediction:
@@ -168,10 +172,12 @@ class EnergyTMProvider(TMProvider):
                             "residue crossing it")
         labels = T._apply_positive_inside_rule(classes, residues_data)
         segments = T._tm_runs(labels, breaks=breaks)
-        flags, quality = self._placement_quality(half, dg, len(segments), fit.n_chains,
-                                                  fit.predicted)
+        flags, notes, quality = self._placement_quality(half, dg, len(segments),
+                                                        fit.n_chains, fit.predicted)
         for flag in flags:
             warnings.append(f"placement quality: {flag}")
+        for note in notes:
+            warnings.append(f"placement note: {note}")
         return TMPrediction(
             regions=L.build_regions(frame, labels, T._groups_for_runs(n, segments)),
             labels=labels,
@@ -180,7 +186,7 @@ class EnergyTMProvider(TMProvider):
             membrane_score=-dg,
             labeler=labeler,
             warnings=warnings,
-            placement_flags=flags,
+            placement_flags=flags + notes,
             placement_quality=quality,
             **geometry,
         )

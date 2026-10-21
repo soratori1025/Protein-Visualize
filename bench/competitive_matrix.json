@@ -1,0 +1,166 @@
+{
+  "tools": [
+    {
+      "tool": "ProteinLab (this work)",
+      "kind": "web application + Python package",
+      "capabilities": {
+        "works on a curated UniProt protein": "yes",
+        "works on a new or predicted model": "yes",
+        "uses the 3-D structure, not only the sequence": "yes",
+        "fits the membrane itself (normal, mid-plane, thickness)": "yes",
+        "reports a transfer free energy for the placement": "yes",
+        "says when the placement is not determined by the data": "yes",
+        "detects hairpins, broken helices, interfacial helices": "yes",
+        "handles a curved membrane": "yes",
+        "per-residue confidence": "yes",
+        "machine-readable export": "yes (3line, GFF3)",
+        "needs a multi-gigabyte model or database": "no"
+      },
+      "evidence": {
+        "fits the membrane itself (normal, mid-plane, thickness)": {
+          "ok": true,
+          "where": "backend/app/services/topology/membrane_energy.py"
+        },
+        "reports a transfer free energy for the placement": {
+          "ok": true,
+          "where": "backend/app/services/topology/membrane_energy.py"
+        },
+        "says when the placement is not determined by the data": {
+          "ok": true,
+          "where": "backend/app/services/topology/providers/tm/energy.py"
+        },
+        "detects hairpins, broken helices, interfacial helices": {
+          "ok": true,
+          "where": "backend/app/services/topology/orchestrator.py"
+        }
+      }
+    },
+    {
+      "tool": "TOPCONS2",
+      "kind": "standalone software + web server",
+      "clone": "TOPCONS2",
+      "capabilities": {
+        "works on a curated UniProt protein": "yes",
+        "works on a new or predicted model": "yes",
+        "uses the 3-D structure, not only the sequence": "no",
+        "fits the membrane itself (normal, mid-plane, thickness)": "no",
+        "reports a transfer free energy for the placement": "no",
+        "says when the placement is not determined by the data": "no",
+        "detects hairpins, broken helices, interfacial helices": "no",
+        "handles a curved membrane": "no",
+        "per-residue confidence": "no",
+        "machine-readable export": "partial (per-residue labels)",
+        "needs a multi-gigabyte model or database": "yes"
+      },
+      "evidence": {
+        "uses the 3-D structure, not only the sequence": {
+          "ok": true,
+          "where": "TOPCONS2/topcons2_webserver"
+        },
+        "needs a multi-gigabyte model or database": {
+          "ok": true,
+          "where": "TOPCONS2/README.md"
+        }
+      }
+    },
+    {
+      "tool": "Protter",
+      "kind": "web application",
+      "clone": "Protter",
+      "capabilities": {
+        "works on a curated UniProt protein": "yes",
+        "works on a new or predicted model": "partial (needs a curated record)",
+        "uses the 3-D structure, not only the sequence": "partial (structure for the figure)",
+        "fits the membrane itself (normal, mid-plane, thickness)": "no",
+        "reports a transfer free energy for the placement": "no",
+        "says when the placement is not determined by the data": "no",
+        "detects hairpins, broken helices, interfacial helices": "no",
+        "handles a curved membrane": "no",
+        "per-residue confidence": "no",
+        "machine-readable export": "partial (SVG, GFF3)",
+        "needs a multi-gigabyte model or database": "no"
+      },
+      "evidence": {
+        "uses the 3-D structure, not only the sequence": {
+          "ok": true,
+          "where": "Protter/src"
+        },
+        "machine-readable export": {
+          "ok": true,
+          "where": "Protter/src"
+        }
+      }
+    },
+    {
+      "tool": "TMbed",
+      "kind": "standalone software (language model)",
+      "clone": "TMbed",
+      "capabilities": {
+        "works on a curated UniProt protein": "yes",
+        "works on a new or predicted model": "yes",
+        "uses the 3-D structure, not only the sequence": "no",
+        "fits the membrane itself (normal, mid-plane, thickness)": "no",
+        "reports a transfer free energy for the placement": "no",
+        "says when the placement is not determined by the data": "no",
+        "detects hairpins, broken helices, interfacial helices": "no",
+        "handles a curved membrane": "no",
+        "per-residue confidence": "partial (probabilities)",
+        "machine-readable export": "partial (per-residue labels)",
+        "needs a multi-gigabyte model or database": "yes"
+      },
+      "evidence": {
+        "uses the 3-D structure, not only the sequence": {
+          "ok": true,
+          "where": "TMbed/README.md"
+        },
+        "needs a multi-gigabyte model or database": {
+          "ok": true,
+          "where": "TMbed/README.md"
+        }
+      }
+    },
+    {
+      "tool": "pyTMHMM",
+      "kind": "Python library (vendored here)",
+      "clone": "pyTMHMM",
+      "capabilities": {
+        "works on a curated UniProt protein": "yes",
+        "works on a new or predicted model": "yes",
+        "uses the 3-D structure, not only the sequence": "no",
+        "fits the membrane itself (normal, mid-plane, thickness)": "no",
+        "reports a transfer free energy for the placement": "no",
+        "says when the placement is not determined by the data": "no",
+        "detects hairpins, broken helices, interfacial helices": "no",
+        "handles a curved membrane": "no",
+        "per-residue confidence": "partial (posteriors)",
+        "machine-readable export": "partial (per-residue labels)",
+        "needs a multi-gigabyte model or database": "no"
+      },
+      "evidence": {
+        "uses the 3-D structure, not only the sequence": {
+          "ok": true,
+          "where": "pyTMHMM/README.md"
+        }
+      }
+    }
+  ],
+  "capabilities": [
+    "works on a curated UniProt protein",
+    "works on a new or predicted model",
+    "uses the 3-D structure, not only the sequence",
+    "fits the membrane itself (normal, mid-plane, thickness)",
+    "reports a transfer free energy for the placement",
+    "says when the placement is not determined by the data",
+    "detects hairpins, broken helices, interfacial helices",
+    "handles a curved membrane",
+    "per-residue confidence",
+    "machine-readable export",
+    "needs a multi-gigabyte model or database"
+  ],
+  "clones": {
+    "TOPCONS2": "C:\\Users\\msmslab5\\AppData\\Local\\Temp\\opencode\\external\\TOPCONS2",
+    "Protter": "C:\\Users\\msmslab5\\AppData\\Local\\Temp\\opencode\\external\\Protter",
+    "TMbed": "C:\\Users\\msmslab5\\AppData\\Local\\Temp\\opencode\\external\\TMbed",
+    "pyTMHMM": "C:\\Users\\msmslab5\\AppData\\Local\\Temp\\opencode\\external\\pyTMHMM"
+  }
+}

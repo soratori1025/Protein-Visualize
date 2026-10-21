@@ -1,0 +1,38 @@
+{
+  "upstream_model_from_history": "34d910180b59b37c7c58c8d7841c0f30cb0a2750",
+  "model_file": {
+    "upstream": "C:\\Users\\msmslab5\\AppData\\Local\\Temp\\tmp6hjja6oj\\TMHMM2.0.model",
+    "vendored": "D:\\ngan-work\\protein-visualize\\backend\\app\\services\\topology\\providers\\tm\\_tmhmm\\TMHMM2.0.model",
+    "byte_identical": false,
+    "identical_after_normalising_line_endings": true,
+    "size_upstream": 22262,
+    "size_vendored": 23253,
+    "n_lines_upstream": 991,
+    "n_lines_vendored": 991
+  },
+  "parsed_model": {
+    "n_states": 133,
+    "n_emission_symbols": 133,
+    "n_char_map": 20,
+    "n_label_map": 133,
+    "upstream_parser_used": "C:\\Users\\msmslab5\\AppData\\Local\\Temp\\opencode\\external\\tmhmm_full\\tmhmm\\model.py",
+    "same_number_of_states": true,
+    "max_transition_difference": 0.0
+  },
+  "upstream_cython_extension_built": false,
+  "reference_annotation": {
+    "protein": "P49641",
+    "length": 1150,
+    "n_helices": 1,
+    "helices": [
+      [
+        6,
+        25
+      ]
+    ],
+    "path": "iiiiiiMMMMMMMMMMMMMMMMMMMMoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo",
+    "exp_aa_tmh": 19.86,
+    "exp_first60": 19.78,
+    "prob_n_in": 0.9979
+  }
+}

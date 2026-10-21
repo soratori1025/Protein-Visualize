@@ -31,7 +31,7 @@ from pathlib import Path
 
 import numpy as np
 
-PLACEHOLDER = re.compile(r"\\todo\{\\detokenize\{([^{}]*)\}\}")
+PLACEHOLDER = re.compile(r"\\todo\{(?:\\detokenize\{([^{}]*)\}|([^{}]*))\}")
 
 
 def fmt(value, decimals=None, unit="", percent=False, pvalue=False):
@@ -190,6 +190,50 @@ def collect(results: Path) -> dict:
                            ("SURVEY_INTERFACIAL", "interfacial_helix"),
                            ("SURVEY_REENTRANT", "reentrant")):
             out[key] = sum(1 for p in per if p.get(field))
+    # ---- the two user stories
+    story_path = results / "user_story_benchmark.json"
+    if story_path.exists():
+        story = json.loads(story_path.read_text())
+        a = story.get("story_a", [])
+        b = story.get("story_b", [])
+        if a:
+            f1 = [r["f1_vs_curation"] for r in a if r.get("f1_vs_curation") is not None]
+            bnd = [r["boundary_median"] for r in a if r.get("boundary_median") is not None]
+            times = [r["seconds"] for r in a]
+            extra = sum(r.get("n_broken_helix", 0) + r.get("n_interfacial", 0)
+                        + r.get("n_reentrant", 0) + r.get("n_unwound", 0) for r in a)
+            out["STORY_A_N"] = len(a)
+            out["STORY_A_F1"] = round(float(np.mean(f1)), 3) if f1 else None
+            out["STORY_A_BND"] = round(float(np.median(bnd)), 1) if bnd else None
+            out["STORY_A_T"] = round(float(np.median(times)), 1) if times else None
+            out["STORY_A_EXTRA"] = extra
+            out["STORY_A_UNCERTAIN"] = sum(1 for r in a
+                                           if r.get("placement_quality") != "ok")
+        if b:
+            times = [r["seconds"] for r in b]
+            out["STORY_B_N"] = len(b)
+            out["STORY_B_ANSWERED"] = sum(1 for r in b if r.get("answered"))
+            out["STORY_B_T"] = round(float(np.median(times)), 1) if times else None
+            out["STORY_B_UNCERTAIN"] = sum(1 for r in b
+                                           if r.get("placement_quality") != "ok")
+
+    # ---- the external validation of the vendored TMHMM port
+    port_path = results / "tmhmm_port_validation.json"
+    if port_path.exists():
+        port = json.loads(port_path.read_text())
+        model = port.get("model_file", {})
+        parsed = port.get("parsed_model", {})
+        out["PORT_MODEL_IDENTICAL"] = ("identical" if model.get(
+            "identical_after_normalising_line_endings") else "different")
+        out["PORT_STATES"] = parsed.get("n_states")
+        out["PORT_TRANS_DIFF"] = parsed.get("max_transition_difference")
+
+    # ---- the competitive matrix
+    matrix_path = Path(__file__).resolve().parent / "competitive_matrix.json"
+    if matrix_path.exists():
+        matrix = json.loads(matrix_path.read_text())
+        out["_matrix"] = matrix
+
     return out
 
 
@@ -243,6 +287,40 @@ def render(key: str, values: dict) -> str | None:
     return None
 
 
+def matrix_table(matrix: dict) -> str:
+    """The competitive matrix as a LaTeX longtable."""
+    tools = matrix.get("tools", [])
+    capabilities = matrix.get("capabilities", [])
+    if not tools or not capabilities:
+        return ""
+    name_width = 0.30
+    col = (1.0 - name_width) / len(tools)
+    out = [r"\begin{longtable}{" + f"p{{{name_width:.2f}\\linewidth}}"
+           + "".join(f"p{{{col:.2f}\\linewidth}}" for _ in tools) + "}",
+           r"\caption{What each tool can do. The entries about the competitors are taken "
+           r"from their own repositories and documentation; the pointers are checked "
+           r"when the table is generated.}" + r"\label{table:matrix}\\",
+           r"\toprule",
+           r"\textbf{capability} & " + " & ".join(r"\textbf{%s}" % t["tool"] for t in tools)
+           + r" \\",
+           r"\midrule",
+           r"\endfirsthead",
+           r"\toprule",
+           r"\textbf{capability} & " + " & ".join(r"\textbf{%s}" % t["tool"] for t in tools)
+           + r" \\",
+           r"\midrule",
+           r"\endhead",
+           r"\bottomrule\endfoot\bottomrule\endlastfoot"]
+    for capability in capabilities:
+        cells = [capability.replace("_", " ")]
+        for tool in tools:
+            value = str(tool["capabilities"].get(capability, "-"))
+            cells.append(value.replace("&", r"\&").replace("_", r"\_"))
+        out.append(" & ".join(cells) + r" \\")
+    out.append(r"\end{longtable}")
+    return "\n".join(out)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="bench/results")
@@ -260,7 +338,7 @@ def main() -> None:
     unresolved: list[str] = []
 
     def replace(match):
-        key = match.group(1)
+        key = match.group(1) if match.group(1) is not None else match.group(2)
         value = render(key, values)
         if value is None:
             unresolved.append(key)
@@ -268,10 +346,21 @@ def main() -> None:
         return value
 
     text = PLACEHOLDER.sub(replace, text)
+
+    # the competitive matrix table is generated, not typed
+    matrix = values.get("_matrix")
+    if matrix:
+        table = matrix_table(matrix)
+        if table:
+            text = text.replace(r"\todo{MATRIX_TABLE}", table)
+            unresolved = [k for k in unresolved if k != "MATRIX_TABLE"]
     out_path.write_text(text, encoding="utf-8")
     print(f"written to {out_path}")
     if unresolved:
-        print(f"\n{len(unresolved)} placeholder(s) could not be filled from the results:")
+        # the reference list keeps its markers on purpose: every reference that still
+        # has to be checked stays visible
+        print(f"\n{len(unresolved)} placeholder(s) left open (author metadata, the "
+              f"declarations and the references that still have to be checked):")
         for key in sorted(set(unresolved)):
             print("  ", key)
     else:

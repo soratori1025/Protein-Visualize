@@ -317,20 +317,33 @@ def test_an_under_determined_placement_is_flagged():
     down by the structure; the tool must say so rather than report a number."""
     from app.services.topology.providers.tm.energy import EnergyTMProvider
 
-    flags, quality = EnergyTMProvider._placement_quality(
+    flags, notes, quality = EnergyTMProvider._placement_quality(
         half_thickness=10.0, energy=-80.0, n_segments=8, n_chains=3, predicted=False)
     assert quality == "uncertain"
     assert any("not well determined" in f for f in flags)
+    assert not notes
 
-    flags, quality = EnergyTMProvider._placement_quality(
+    flags, notes, quality = EnergyTMProvider._placement_quality(
         half_thickness=14.0, energy=-14.0, n_segments=8, n_chains=1, predicted=False)
     assert quality == "caution"
     assert any("marginally" in f for f in flags)
 
-    flags, quality = EnergyTMProvider._placement_quality(
+    flags, notes, quality = EnergyTMProvider._placement_quality(
         half_thickness=14.0, energy=-80.0, n_segments=1, n_chains=4, predicted=False)
     assert quality == "uncertain"
     assert any("very little evidence" in f for f in flags)
+
+
+def test_a_predicted_model_is_a_note_and_not_a_defect():
+    """The fact that a model is a prediction is a caveat; it must not by itself
+    downgrade the verdict on the placement."""
+    from app.services.topology.providers.tm.energy import EnergyTMProvider
+
+    flags, notes, quality = EnergyTMProvider._placement_quality(
+        half_thickness=14.0, energy=-80.0, n_segments=9, n_chains=1, predicted=True)
+    assert quality == "ok"
+    assert not flags
+    assert any("prediction" in n for n in notes)
 
 
 def test_removed_flow_names_still_run_as_consensus():

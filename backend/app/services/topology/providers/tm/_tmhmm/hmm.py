@@ -12,8 +12,21 @@ declarations; the original tmhmm.py also uses ``np.int``, removed in NumPy 1.24)
 The port keeps the reference algorithm step for step; only the inner loop over the
 previous state ``k`` is vectorised. Element-wise it performs the same double-precision
 additions in the same order, and ``argmax`` keeps the FIRST maximum exactly like the
-Cython ``if prob > max_state_prob`` - so the Viterbi path is bit-identical
-(checked against the compiled extension, see scripts/check_tmhmm_port.py).
+Cython ``if prob > max_state_prob``.
+
+What has been verified, and how (``bench/validate_tmhmm_port.py``):
+
+* the vendored ``TMHMM2.0.model`` is the same model the upstream project used - the two
+  files are identical line for line (they differ in size only because of the line
+  endings of the checkout);
+* the vendored parser and the upstream's own pure-Python parser produce the same model:
+  133 states and a largest transition difference of exactly 0.
+
+What has **not** been verified here: that the Viterbi path is bit-identical to the
+compiled Cython extension.  That comparison needs a C compiler, and the extension
+cannot be built with NumPy >= 2 anyway (see above), so on most modern installations
+there is no upstream binary to compare against.  The claim is therefore stated as
+"the port follows the reference algorithm step for step", not as bit-identity.
 
 Two upstream defects are corrected (``reference_quirks=True`` reproduces both, for
 that check):
