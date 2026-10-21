@@ -149,6 +149,17 @@ submitted paper is not publicly available before publication. See `manuscript/RE
 for the compilation instructions and for how every number in the paper is filled
 automatically from the committed benchmark results.
 
+The paper is being written for ***BMC Bioinformatics*** as a **Software article**, and
+the source archive that the journal asks to be attached to the submission is built
+with:
+
+```bash
+python bench/make_source_archive.py --out manuscript/ProteinLab-source-archive.zip
+```
+
+The archive contains the code, the tests, the benchmark harness, the result files and
+the figures — and no part of the paper.
+
 ## Licence
 
 MIT, with the exceptions listed in `LICENSE`: the vendored TMHMM 2.0 model file and the
