@@ -1,0 +1,47 @@
+{
+  "structures": [
+    {
+      "file": "8YEZ_Q92508.cif",
+      "label": "PIEZO1, 8YEZ",
+      "chain": "A",
+      "n_tm": 27,
+      "n_residues": 3837,
+      "n_chains": 3,
+      "plane_energy_kcal_per_mol": -52.09,
+      "sphere_energy_kcal_per_mol": -427.96,
+      "sphere_radius_A": 120.6,
+      "gain_kcal_per_mol": 375.87,
+      "accepted": true
+    },
+    {
+      "file": "8ZU3.cif",
+      "label": "PIEZO1, 8ZU3",
+      "chain": "A",
+      "n_tm": 26,
+      "n_residues": 3903,
+      "n_chains": 6,
+      "plane_energy_kcal_per_mol": -90.51,
+      "sphere_energy_kcal_per_mol": -339.8,
+      "sphere_radius_A": 126.4,
+      "gain_kcal_per_mol": 249.29,
+      "accepted": true
+    },
+    {
+      "file": "hSERT_5I6X_ions.pdb",
+      "label": "hSERT, 5I6X",
+      "chain": "A",
+      "n_tm": 12,
+      "n_residues": 544,
+      "n_chains": 1,
+      "plane_energy_kcal_per_mol": -69.07,
+      "sphere_energy_kcal_per_mol": -69.32,
+      "sphere_radius_A": 225.0,
+      "gain_kcal_per_mol": 0.25,
+      "accepted": false
+    }
+  ],
+  "acceptance_rule": {
+    "min_gain_kcal_per_mol": 10.0,
+    "min_gain_relative": 0.15
+  }
+}

@@ -1,7 +1,7 @@
 """
 Build the source archive that accompanies the manuscript as a supplementary file.
 
-    python bench/make_source_archive.py --out manuscript/ProteinLab-source-archive.zip
+    python bench/make_source_archive.py --out manuscript/archive/Additional_file_5_source_archive.zip
 
 BMC Bioinformatics asks that the software be included with the submitted manuscript as
 additional files, so that it remains available even if the repository moves.  The archive
@@ -71,7 +71,7 @@ def wanted(absolute: Path) -> bool:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default="manuscript/ProteinLab-source-archive.zip")
+    ap.add_argument("--out", default="manuscript/archive/Additional_file_5_source_archive.zip")
     args = ap.parse_args()
     out = Path(args.out)
     if not out.is_absolute():
