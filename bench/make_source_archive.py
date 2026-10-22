@@ -18,8 +18,10 @@ What is in
   LICENSE, CITATION.cff, README.md, .github/  the licence, the citation metadata, CI
 
 What is not in
-  .git, node_modules, .venv, the downloaded coordinate files, the manuscript and the
-  supplementary information.
+  .git, node_modules, .venv, the downloaded coordinate files, the manuscript, the
+  supplementary information, and the TMHMM 2.0 model file, which DTU distributes under
+  an academic licence that does not permit redistribution (the user installs it with
+  backend/scripts/install_tmhmm_model.py).
 """
 from __future__ import annotations
 
@@ -44,10 +46,18 @@ EXCLUDE_PARTS = {
 }
 EXCLUDE_SUFFIXES = {".pyc", ".pyo", ".log", ".tsbuildinfo"}
 MAX_FILE_MB = 5.0
+# Third-party files that may not be redistributed.  The guard below refuses to build an
+# archive that contains one, so a future copy cannot slip in unnoticed.
+EXCLUDE_FILES = {
+    "backend/app/services/topology/providers/tm/_tmhmm/TMHMM2.0.model",
+}
+NEVER_REDISTRIBUTE = {"TMHMM2.0.model"}
 
 
 def wanted(absolute: Path) -> bool:
     relative = absolute.relative_to(ROOT)
+    if relative.as_posix() in EXCLUDE_FILES:
+        return False
     if any(part in EXCLUDE_PARTS for part in relative.parts):
         return False
     if any(str(relative).startswith(d) for d in EXCLUDE_DIRS):
@@ -80,6 +90,11 @@ def main() -> None:
         path = ROOT / name
         if path.exists():
             files.append(path)
+
+    leaked = sorted(p.relative_to(ROOT).as_posix() for p in files
+                    if p.name in NEVER_REDISTRIBUTE)
+    if leaked:
+        raise SystemExit("refusing to build: not redistributable: " + ", ".join(leaked))
 
     with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
         for path in files:

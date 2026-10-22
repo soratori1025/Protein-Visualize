@@ -274,6 +274,13 @@ def test_transition_classifier_reports_a_reason():
 def test_the_consensus_flow_runs_and_reports_its_provenance(algorithm):
     from app.services.topology.service import predict_topology
 
+    if algorithm == "tmhmm":
+        # The DTU licence does not allow the model file to be redistributed, so it is
+        # not in the repository; see backend/scripts/install_tmhmm_model.py.
+        from app.services.topology.providers.tm._tmhmm import model_path
+        if not model_path().is_file():
+            pytest.skip("TMHMM 2.0 model not installed")
+
     response = predict_topology(HSERT, tm_algo=algorithm, ss_algo="none",
                                  flow_type="consensus", chain_id="A")
     assert response.labeler

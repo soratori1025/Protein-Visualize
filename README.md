@@ -91,6 +91,23 @@ The DSSP adapter calls the program on the coordinate file itself, so the mmCIF p
 works with the mmCIF-only builds of DSSP 4.4 and later; an input that the program
 cannot read raises an error rather than returning an empty assignment.
 
+### TMHMM 2.0 (optional)
+
+The TMHMM provider runs a NumPy port of pyTMHMM, but the statistical model itself is
+DTU's, and its academic licence does not permit redistribution: the model file is
+neither in this repository nor in the source archive. Download TMHMM 2.0 from
+<https://services.healthtech.dtu.dk/services/TMHMM-2.0/> and install the model with
+
+```bash
+./.venv/Scripts/python.exe backend/scripts/install_tmhmm_model.py path/to/TMHMM2.0.model
+```
+
+The file is copied to `.tmhmm/TMHMM2.0.model` (git-ignored) and found automatically;
+`TMHMM_MODEL` can point somewhere else. `--check` reports whether a model is
+installed. Without it the TMHMM provider returns HTTP 503 and every other provider,
+figure and test still runs; the predictions behind the published TMHMM comparison are
+cached in `bench/results/`, so the numbers remain reproducible.
+
 ## Tests
 
 ```bash
@@ -162,5 +179,6 @@ the figures — and no part of the paper.
 
 ## Licence
 
-MIT, with the exceptions listed in `LICENSE`: the vendored TMHMM 2.0 model file and the
-Windows builds of DSSP and STRIDE keep their own terms.
+MIT, with the exceptions listed in `LICENSE`: the vendored TMHMM 2.0 *engine* is
+MIT-licensed (pyTMHMM), while the DTU model file is not redistributed and is installed
+by the user; the Windows builds of DSSP and STRIDE keep their own terms.

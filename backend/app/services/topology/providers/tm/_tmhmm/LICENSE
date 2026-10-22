@@ -59,6 +59,5 @@ J Mol Biol 305:567-580, 2001), as distributed with pyTMHMM. The model belongs to
 Health Tech and is covered by DTU's academic licence for TMHMM 2.0
 (https://services.healthtech.dtu.dk/services/TMHMM-2.0/): free for academic,
 non-commercial use; redistribution needs DTU's permission. tmhmm.py therefore does not
-ship it. If this code is published, keep the file out of the public repository and let
-users download TMHMM 2.0 from DTU (the model file is in the package) and point the
-TMHMM_MODEL environment variable at it, or drop it into this folder.
+ship it, and neither does ProteinLab. Download TMHMM 2.0 from DTU and run
+`backend/scripts/install_tmhmm_model.py`, or point `TMHMM_MODEL` at the file.

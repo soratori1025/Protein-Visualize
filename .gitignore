@@ -32,6 +32,10 @@ docs/
 # IDE
 .vscode/
 
+# Locally installed third-party data that may not be redistributed (the TMHMM 2.0
+# model file is downloaded from DTU by the user; see backend/scripts/install_tmhmm_model.py)
+.tmhmm/
+
 # Data
 /data/
 /data/uploads/

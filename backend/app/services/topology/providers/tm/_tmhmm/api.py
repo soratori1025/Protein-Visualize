@@ -23,6 +23,10 @@ from .model import parse
 GROUP_NAMES = ("i", "M", "o")          # inside / membrane / outside
 DEFAULT_MODEL = Path(__file__).with_name("TMHMM2.0.model")
 MODEL_ENV = "TMHMM_MODEL"               # optional override: path to a TMHMM2.0.model
+# The DTU licence does not allow us to redistribute the model, so the repository does
+# not contain it.  A developer who has downloaded TMHMM 2.0 can drop the file in
+# ``<repository>/.tmhmm/`` (git-ignored) and it is found without setting the variable.
+REPO_MODEL = Path(".tmhmm") / "TMHMM2.0.model"
 
 
 @dataclass
@@ -54,9 +58,22 @@ class TMHMMResult:
         return self.exp_first60 > 10.0
 
 
+def _repo_model() -> Optional[Path]:
+    """<repository>/.tmhmm/TMHMM2.0.model, searched upwards from this file."""
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / REPO_MODEL
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def model_path() -> Path:
     env = os.environ.get(MODEL_ENV, "").strip()
-    return Path(env) if env else DEFAULT_MODEL
+    if env:
+        return Path(env)
+    if DEFAULT_MODEL.is_file():          # dropped into this folder by hand
+        return DEFAULT_MODEL
+    return _repo_model() or DEFAULT_MODEL
 
 
 @lru_cache(maxsize=4)
@@ -65,8 +82,11 @@ def load_model(path: Optional[str] = None):
     p = Path(path) if path else model_path()
     if not p.is_file():
         raise FileNotFoundError(
-            f"TMHMM 2.0 model file not found at {p}. Put TMHMM2.0.model there or point "
-            f"the {MODEL_ENV} environment variable at it.")
+            f"TMHMM 2.0 model file not found at {p}. ProteinLab does not redistribute "
+            f"it: download TMHMM 2.0 from DTU (https://services.healthtech.dtu.dk/"
+            f"services/TMHMM-2.0/), then run "
+            f"'python backend/scripts/install_tmhmm_model.py <path to TMHMM2.0.model>' "
+            f"or point the {MODEL_ENV} environment variable at the file.")
     _, model = parse(str(p))
     return model
 
