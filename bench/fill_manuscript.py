@@ -211,6 +211,11 @@ def collect(results: Path) -> dict:
             out["STORY_A_BND"] = round(float(np.median(bnd)), 1) if bnd else None
             out["STORY_A_T"] = round(float(np.median(times)), 1) if times else None
             out["STORY_A_EXTRA"] = extra
+            for key, field in (("STORYA_BROKEN", "n_broken_helix"),
+                               ("STORYA_UNWOUND", "n_unwound"),
+                               ("STORYA_INTERFACIAL", "n_interfacial"),
+                               ("STORYA_REENTRANT", "n_reentrant")):
+                out[key] = sum(int(r.get(field, 0)) for r in a)
             out["STORY_A_UNCERTAIN"] = sum(1 for r in a
                                            if r.get("placement_quality") != "ok")
         if b:
